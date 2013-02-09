@@ -57,12 +57,11 @@ public class SettingsReader extends Settings {
 		return true;
 	}
 	
-	private void readXMLDocument(Document doc) throws Exception {
+	private void readXMLDocument(Document doc) {
 		try {
 			readUsers(doc);
 			readPeersLocation(doc);
 		} catch (Exception e) {
-			System.out.print("Failed reading one or more settings");
 			throw e; 
 		} finally {
 			;
