@@ -1,0 +1,53 @@
+/* NOTE:  This file is officially where I hit the factory wall.
+ * I could have probably used faster tools for the job, but I'm probably gonna toss
+ * my hard drive out the window if I have to read another doc page at this point.
+ * 
+ */
+
+
+package com.subject17.jdfs.client.settings;
+
+import java.io.File;
+
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
+import org.xml.sax.XMLReader;
+
+public class SettingsReader extends Settings {
+	
+	public SettingsReader() {
+		settingsFileName = "";
+	}
+	public SettingsReader(String nameOfSettingsFileToUse) {
+		settingsFileName = nameOfSettingsFileToUse;
+	}
+	
+	public String getSettingsFile() {
+		return settingsFileName;
+	}
+	
+	/**
+	 * 
+	 * @param newSettingsFilename New name of the settings file to be read.  
+	 * No effect if value is same as current value.
+	 * @return true if the new file can be read in, or if it's the same name as before 
+	 * (will not re-read information in that case)
+	 */
+	public boolean setSettingsFileLocation(String newSettingsFilename) {
+		return (newSettingsFilename == settingsFileName) || ( //Hoping short circuit works here
+			setSettingsFile(newSettingsFilename) && parseAndReadXMLDocument() //This may give concurrency issues
+		);
+	}
+	
+	private boolean parseAndReadXMLDocument() {
+		try {
+			SAXParserFactory spf = SAXParserFactory.newInstance(); //gayyyy
+			SAXParser parser = spf.newSAXParser();
+		} catch (Exception e) {
+			e.printStackTrace(); return false;
+		}
+		return true;
+	}
+	
+}

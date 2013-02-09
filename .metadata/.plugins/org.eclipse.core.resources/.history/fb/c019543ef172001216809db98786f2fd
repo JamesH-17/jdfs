@@ -1,0 +1,42 @@
+/* NOTE:  This file is officially where I hit the factory wall.
+ * I could have probably used faster tools for the job, but I'm probably gonna toss
+ * my hard drive out the window if I have to read another doc page at this point.
+ * 
+ */
+
+
+package com.subject17.jdfs.client.install;
+
+import java.io.File;
+
+import org.xml.sax.XMLReader;
+
+public class Settings {
+	private String settingsFileName;
+	
+	public Settings() {
+		settingsFileName="";
+	}
+	public Settings(String nameOfSettingsFileToUse) {
+		settingsFileName = nameOfSettingsFileToUse;
+	}
+	
+	public String getSettingsFile() {
+		return settingsFileName;
+	}
+	
+	/**
+	 *
+	 * @param newSettingsFilename name of the file to try reading in settings from
+	 * @return true if the file exists, false if it doesn't
+	 */
+	private boolean setSettingsFile(String newSettingsFilename) {
+		if ((new File(newSettingsFilename).exists())) {
+			if (settingsFileName != newSettingsFilename)
+			settingsFileName = newSettingsFilename;
+			return true;
+		}
+		else return false;
+	}
+	
+}

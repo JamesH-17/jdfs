@@ -1,0 +1,20 @@
+package com.subject17.jdfs.client.install;
+
+using java.io.File;
+
+public class Settings {
+	private String settingsFile;
+	
+	public Settings() {
+		settingsFile="";
+		
+	}
+	
+	public String getSettingsFile() {
+		return settingsFile;
+	}
+	
+	private boolean setSettingsFile(String newSettingsFile) {
+		if ()
+	}
+}

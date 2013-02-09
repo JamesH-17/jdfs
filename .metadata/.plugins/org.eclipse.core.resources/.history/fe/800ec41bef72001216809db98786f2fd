@@ -1,0 +1,27 @@
+package com.subject17.jdfs.client.install;
+
+import java.io.File;
+
+import org.xml.sax.XMLReader;
+
+public class Settings {
+	private String settingsFileName;
+	private XMLReader settingsReader; 
+	
+	public Settings() {
+		settingsFileName="";
+	}
+	
+	public String getSettingsFile() {
+		return settingsFileName;
+	}
+	
+	private boolean setSettingsFile(String newSettingsFilename) {
+		if ((new File(newSettingsFilename).exists())) {
+			settingsFileName = newSettingsFilename;
+			settingsReader = new StAXReader(settingsFileName); ///ahhhh, auto garbage collection
+			return true;
+		}
+		else return false;
+	}
+}

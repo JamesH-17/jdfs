@@ -1,0 +1,24 @@
+package com.subject17.jdfs.client.install;
+
+import java.io.File;
+
+public class Settings {
+	private String settingsFileName;
+	private XMLReader settingsReader; 
+	
+	public Settings() {
+		settingsFileName="";
+	}
+	
+	public String getSettingsFile() {
+		return settingsFileName;
+	}
+	
+	private boolean setSettingsFile(String newSettingsFile) {
+		if ((new File(newSettingsFile).exists())) {
+			settingsFileName = newSettingsFile;
+			return true;
+		}
+		else return false;
+	}
+}
