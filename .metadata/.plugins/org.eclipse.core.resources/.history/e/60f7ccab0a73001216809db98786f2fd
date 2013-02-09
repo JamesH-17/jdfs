@@ -21,10 +21,10 @@ public class Settings {
 		} catch (Exception e) {e.printStackTrace(); return false;}
 	}
 	
-	protected boolean setPeerFile(String newPeerFilename) {
+	protected boolean setPeerFile(String newSettingsFilename) {
 		try {
-			if ((new File(newPeerFilename)).exists()) {
-				peerFileLocation = newPeerFilename;
+			if ((new File(newSettingsFilename)).exists()) {
+				settingsFileName = newSettingsFilename;
 				return true;
 			}
 			else return false;

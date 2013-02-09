@@ -62,7 +62,6 @@ public class SettingsReader extends Settings {
 			readUsers(doc);
 			readPeersLocation(doc);
 		} catch (Exception e) {
-			System.out.print("Failed reading one or more settings");
 			throw e; 
 		} finally {
 			;

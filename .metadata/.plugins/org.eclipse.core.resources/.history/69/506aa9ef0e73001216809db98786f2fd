@@ -37,7 +37,7 @@ public class SettingsReader extends Settings {
 	 * (will not re-read information in that case)
 	 */
 	public boolean setSettingsFileLocation(String newSettingsFilename) {
-		return (newSettingsFilename.equals(settingsFileName)) || ( //Hoping short circuit works here
+		return (newSettingsFilename == settingsFileName) || ( //Hoping short circuit works here
 			setSettingsFile(newSettingsFilename) && parseAndReadXMLDocument() //This may give concurrency issues
 		);
 	}
@@ -50,40 +50,33 @@ public class SettingsReader extends Settings {
 			readXMLDocument(doc);
 			
 		} catch (Exception e) {
-			System.out.print("Error parsing xml document for settings");
+			System.out.print("Error parsing settings for xml document");
 			e.printStackTrace();
 			return false;
 		}
 		return true;
 	}
 	
-	private void readXMLDocument(Document doc) throws Exception {
-		try {
-			readUsers(doc);
-			readPeersLocation(doc);
-		} catch (Exception e) {
-			System.out.print("Failed reading one or more settings");
-			throw e; 
-		} finally {
-			;
-		}
+	private void readXMLDocument(Document doc) {
+		readUsers(doc);
+		readPeersLocation(doc);
 	}
 	
-	private void readUsers(Document doc) throws Exception {
+	private boolean readUsers(Document doc) throws Exception {
 		//Nodelist isn't iterable, so we have to use a for loop
 		NodeList xmlUsernames = doc.getElementsByTagName("user");
 		
 		if (xmlUsernames != null) {
 			users = new ArrayList<String>();
 			for (int i = 0; i < xmlUsernames.getLength(); ++i) {
-				String val = xmlUsernames.item(i).getNodeValue();
-				if (val!=null && !val.isEmpty())
-					users.add(xmlUsernames.item(i).getNodeValue());
+				users.add(xmlUsernames.item(i).getNodeValue());
 			}
 			if (users.size() > 0)
 				currentUser = users.get(0);
-			else throw new Exception("No users found in file, or error accessing class variable users");
-		} else throw new Exception("No tag users found in xml document "+doc.getDocumentURI());
+			else return false;
+		} else return false;
+		
+		return true;
 	}
 	
 	private void readPeersLocation(Document doc) {

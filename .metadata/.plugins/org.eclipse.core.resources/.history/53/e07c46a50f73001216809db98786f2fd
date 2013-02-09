@@ -57,16 +57,9 @@ public class SettingsReader extends Settings {
 		return true;
 	}
 	
-	private void readXMLDocument(Document doc) throws Exception {
-		try {
-			readUsers(doc);
-			readPeersLocation(doc);
-		} catch (Exception e) {
-			System.out.print("Failed reading one or more settings");
-			throw e; 
-		} finally {
-			;
-		}
+	private void readXMLDocument(Document doc) {
+		readUsers(doc);
+		readPeersLocation(doc);
 	}
 	
 	private void readUsers(Document doc) throws Exception {
@@ -77,12 +70,12 @@ public class SettingsReader extends Settings {
 			users = new ArrayList<String>();
 			for (int i = 0; i < xmlUsernames.getLength(); ++i) {
 				String val = xmlUsernames.item(i).getNodeValue();
-				if (val!=null && !val.isEmpty())
-					users.add(xmlUsernames.item(i).getNodeValue());
+				if ()
+				users.add(xmlUsernames.item(i).getNodeValue());
 			}
 			if (users.size() > 0)
 				currentUser = users.get(0);
-			else throw new Exception("No users found in file, or error accessing class variable users");
+			else throw new Exception("No users found, or ");
 		} else throw new Exception("No tag users found in xml document "+doc.getDocumentURI());
 	}
 	
