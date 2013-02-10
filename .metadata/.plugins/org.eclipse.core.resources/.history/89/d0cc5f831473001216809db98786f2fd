@@ -30,6 +30,7 @@ public class SettingsReader extends Settings {
 	}
 	
 	/**
+	 * 
 	 * @param newSettingsFilename New name of the settings file to be read.  
 	 * No effect if value is same as current value.
 	 * @return true if the new file can be read in, or if it's the same name as before 
@@ -70,9 +71,11 @@ public class SettingsReader extends Settings {
 	
 	private void readUsers(Document doc) throws Exception {
 		//Nodelist isn't iterable, so we have to use a for loop
-		NodeList xmlUsernames = doc.getElementsByTagName("user");
+		NodeList xmlUsers = doc.getElementsByTagName("users");
 		
 		if (xmlUsernames != null) {
+			NodeList xmlUsernames
+			
 			users = new ArrayList<String>();
 			for (int i = 0; i < xmlUsernames.getLength(); ++i) {
 				String val = xmlUsernames.item(i).getNodeValue();
@@ -93,5 +96,6 @@ public class SettingsReader extends Settings {
 			setPeerFile(xmlPeerFileLocations.item(0).getNodeValue());
 		}
 	}
+	
 	
 }

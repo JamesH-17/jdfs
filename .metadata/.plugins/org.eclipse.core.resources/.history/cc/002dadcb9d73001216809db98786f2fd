@@ -30,6 +30,7 @@ public class SettingsReader extends Settings {
 	}
 	
 	/**
+	 * 
 	 * @param newSettingsFilename New name of the settings file to be read.  
 	 * No effect if value is same as current value.
 	 * @return true if the new file can be read in, or if it's the same name as before 
@@ -93,5 +94,6 @@ public class SettingsReader extends Settings {
 			setPeerFile(xmlPeerFileLocations.item(0).getNodeValue());
 		}
 	}
+	
 	
 }
