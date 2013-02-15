@@ -16,23 +16,22 @@ import java.util.Scanner;
  *
  */
 public class UserNode {
-	static BufferedReader input;
+	static Scanner input;
 	/**
 	 * @param args 
 	 */
 	public static void main(String[] args) {
-		input = new BufferedReader(new InputStreamReader(System.in));
+		Scanner input = new Scanner(System.in);
 		// TODO Auto-generated method stub
 		final int port = 27312;
-		
+		System.out.println("Please enter a servername:");
+		String serverName = input.next();
 		
 		createServerListener(port);
 	}
 	
-	public static void createClientListener(int port) {
+	public static void createClientListener(int port, String serverName) {
 		try {
-			System.out.println("Please enter a servername:");
-			String serverName = input.readLine();
 			Socket sock = new Socket(serverName, port);
 			
 			PrintWriter output = new PrintWriter(sock.getOutputStream(), true);
@@ -42,7 +41,7 @@ public class UserNode {
 			while (!((serverMsg = in.readLine()) == null ? "" : serverMsg).equals("exit")) {
 				System.out.println(serverMsg);
 				
-				output.println(input.readLine());
+				output.println(input.nextLine());
 			}
 
 			output.close();
@@ -68,17 +67,21 @@ public class UserNode {
 			BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 			
 			String serverMsg;
-			System.out.println("Connected to client ");
-			output.println("Welcome to mah server!");
 			
+			output.println("Welcome to mah server!");
 			do {
 				serverMsg = in.readLine();
-				if (serverMsg!=null)
-					System.out.println(serverMsg);
+				System.out.println(serverMsg);
 				
-				output.println(input.readLine());
+				output.println(input.nextLine());
 			} while(!serverMsg.equals("exit"));
 			
+			/*
+			while (!((serverMsg = in.readLine()) == null ? "" : serverMsg).equals("exit")) {
+				System.out.println(serverMsg);
+				 
+				output.println(input.nextLine());
+			}*/
 
 			output.close();
 			in.close();
@@ -86,8 +89,7 @@ public class UserNode {
 			sock.close();
 			socket.close();
 		} catch(IOException e){
-			System.out.println("Server Could not listen on port "+port);
-			System.out.println("ReasON: "+e.getMessage());
+			System.out.println("Could not listen on port "+port);
 		}
 		catch (Exception e) {
 			System.out.println(e.getMessage());
