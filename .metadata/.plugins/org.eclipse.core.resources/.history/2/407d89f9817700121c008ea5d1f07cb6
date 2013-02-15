@@ -64,7 +64,7 @@ public class UserNode {
 			ServerSocket socket = new ServerSocket(port);
 			Socket sock = socket.accept();
 			PrintWriter output = new PrintWriter(sock.getOutputStream(), true);
-			BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 			
 			String serverMsg;
 			while (!((serverMsg = in.readLine()) == null ? "" : serverMsg).equals("exit")) {
@@ -76,7 +76,6 @@ public class UserNode {
 			output.close();
 			in.close();
 			input.close();
-			sock.close();
 			socket.close();
 		} catch(IOException e){
 			System.out.println("Could not listen on port "+port);
