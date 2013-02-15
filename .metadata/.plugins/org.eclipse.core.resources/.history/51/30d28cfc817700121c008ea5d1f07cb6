@@ -76,7 +76,6 @@ public class UserNode {
 			output.close();
 			in.close();
 			input.close();
-			sock.close();
 			socket.close();
 		} catch(IOException e){
 			System.out.println("Could not listen on port "+port);
