@@ -1,4 +1,7 @@
-dfs
+jdfs
 ===
 
-Distributed File System (Senior Project)
+(java-based) Distributed File System
+A utility to painlessly sync files across multiple machines through a decentralized system
+Created for an undergraduate senior project
+
