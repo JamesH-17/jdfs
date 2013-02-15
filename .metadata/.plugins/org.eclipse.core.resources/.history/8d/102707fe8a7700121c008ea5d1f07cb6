@@ -32,7 +32,7 @@ public class UserNode {
 	public static void createClientListener(int port) {
 		try {
 			System.out.println("Please enter a servername:");
-			String serverName = input.readLine();
+			String serverName = input.readLine()();
 			Socket sock = new Socket(serverName, port);
 			
 			PrintWriter output = new PrintWriter(sock.getOutputStream(), true);
