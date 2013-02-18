@@ -1,9 +1,3 @@
-/* NOTE:  This file is officially where I hit the factory wall.
- * I could have probably used faster tools for the job, but I'm probably gonna toss
- * my hard drive out the window if I have to read another doc page at this point.
- */
-
-
 package com.subject17.jdfs.client.settings;
 
 import java.util.ArrayList;
@@ -17,16 +11,20 @@ import org.w3c.dom.NodeList;
 public class SettingsReader extends Settings {
 	
 	public SettingsReader() {
-		settingsFileName = "";
+		setSettingsFileLocation(defaultSettingsFileName);
 	}
 	public SettingsReader(String nameOfSettingsFileToUse) {
-		settingsFileName = nameOfSettingsFileToUse;
-		parseAndReadXMLDocument();
+		setSettingsFileLocation(nameOfSettingsFileToUse);
+		//parseAndReadXMLDocument();
 	}
 	
 	public String getSettingsFile() {
 		return settingsFileName;
 	}
+	
+	public ArrayList<String> getUsers() {return users;}
+	public String getCurrentUser(){return currentUser;}
+	public String getPeerFileLocation(){return peerFileLocation;}
 	
 	/**
 	 * @param newSettingsFilename New name of the settings file to be read.  

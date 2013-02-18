@@ -1,0 +1,5 @@
+package com.subject17.jdfs.client.settings;
+
+public class PeersHandler {
+
+}

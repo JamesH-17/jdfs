@@ -1,0 +1,14 @@
+package com.subject17.jdfs.client.net;
+
+public class LanguageProtocol {
+	public final static String SYN="jdfs-Attempt-Connect";
+	public final static String ACK="jdfs-Acknowledge-Connect";
+	public final static String UNKNOWN="jdfs-Unknown-Communication";
+	
+	public String handleResponse(String s) {
+		switch (s) {
+			case SYN: return ACK;
+		}
+		return UNKNOWN;
+	}
+}
