@@ -1,7 +1,6 @@
 /* NOTE:  This file is officially where I hit the factory wall.
  * I could have probably used faster tools for the job, but I'm probably gonna toss
  * my hard drive out the window if I have to read another doc page at this point.
- * 
  */
 
 
