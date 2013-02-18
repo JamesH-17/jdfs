@@ -33,9 +33,44 @@ public class UserNode {
 		
 	}
 	
+<<<<<<< HEAD
 	private static void dispatchServer() {
 		int port = (int)(Math.random()*Math.pow(2, 15));
 		Listener serv = new Listener();
+		
+=======
+	public static void createClientListener(int port, String serverName) {
+		try {
+			String servername = input.readLine();
+			Socket sock = new Socket(serverName, port);
+			
+			PrintWriter output = new PrintWriter(sock.getOutputStream(), true);
+			BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
+			System.out.println("Connected!");
+			String serverMsg;
+			
+			do {
+				serverMsg = in.readLine();
+				if (serverMsg!=null)
+					System.out.println(serverMsg);
+				
+				output.println(input.readLine());
+			} while (!serverMsg.equals("exit"));
+			
+
+			output.close();
+			in.close();
+			input.close();
+			sock.close();
+		} catch(IOException e){
+			System.out.println("Client Could not listen on port "+port);
+		}
+		catch (Exception e) {
+			System.out.println(e.getMessage());
+		}
+		finally {
+		}
+>>>>>>> 9037695bbad3b0645daa0d49eacbe18d70c3ab05
 	}
 
 	public static void dispatchClient() {
