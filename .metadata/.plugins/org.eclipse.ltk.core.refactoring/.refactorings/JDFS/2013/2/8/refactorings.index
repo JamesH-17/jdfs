@@ -1,3 +1,7 @@
 1361147285263	Rename type 'Server'
 1361150074609	Delete element
 1361150121544	Rename type 'Account'
+1361155631623	Rename package 'com.subject17.jdfs.client.reciever'
+1361155642220	Rename package 'com.subject17.jdfs.client.sender'
+1361158568009	Rename local variable 'socket'
+1361159904668	Rename local variable 'in'

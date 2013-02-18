@@ -1,0 +1,13 @@
+package com.subject17.jdfs.client.net.reciever;
+
+import java.net.Socket;
+
+import com.subject17.jdfs.client.settings.PeersHandler;
+
+public class ListenConnectionHandler {
+
+	public ListenConnectionHandler(Socket accept, PeersHandler peers) {
+		// TODO Auto-generated constructor stub
+	}
+
+}

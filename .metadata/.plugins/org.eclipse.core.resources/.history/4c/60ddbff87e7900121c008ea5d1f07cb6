@@ -1,0 +1,84 @@
+package com.subject17.jdfs.client.net.reciever;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.net.PortMgr;
+
+public class Listener {
+	private static int defaultPort = 2718;
+	
+	protected int port;
+	
+	/**
+	 * @category Constructor
+	 * Creates a new listener using {@defaultPort}
+	 */
+	public Listener() { this(defaultPort); }
+	/**
+	 * @category Constructor
+	 * @param port -- The port Number that this service will listen on
+	 */
+	public Listener(int targetPort){
+		setPort(targetPort);
+	}
+
+	public void setPort(int newPort) {port = newPort;}
+	public int getPort() {return port;}
+	
+	public void createListener() {
+
+		ServerSocket servSock;
+		Socket handlingSock;
+		try {
+			servSock = new ServerSocket(port);
+			handlingSock = servSock.accept();
+			handleSocketAcception(handlingSock);
+
+			handlingSock.close();
+			servSock.close();
+		} catch(IOException e){
+			Printer.println("IO exception: "+e.getMessage());
+			Printer.println("Port in use:"+port);
+		}
+		catch (Exception e) {
+			Printer.println("Exception: "+e.getMessage());
+			Printer.println("Port in use:"+port);
+		}
+		finally {
+		}
+	}
+	private void handleSocketAcception(Socket handlingSock) throws IOException {
+		BufferedReader userInput = null; 
+		PrintWriter output = null;
+		BufferedReader in = null;
+		try {
+			userInput = new BufferedReader(new InputStreamReader(System.in));
+			output = new PrintWriter(handlingSock.getOutputStream(), true);
+			in = new BufferedReader(new InputStreamReader(handlingSock.getInputStream()));
+			
+			String serverMsg;
+			Printer.println("Connected to client ");
+			output.println("Welcome to mah server!");
+			
+			do {
+				serverMsg = in.readLine();
+				if (serverMsg != null)
+					Printer.println(serverMsg);
+				
+				output.println(userInput.readLine());
+			} while(!serverMsg.equals("exit"));
+		}
+		catch (Exception e) {throw e;}
+		finally {
+			if (userInput != null)
+				userInput.close();
+		}
+	}
+
+}

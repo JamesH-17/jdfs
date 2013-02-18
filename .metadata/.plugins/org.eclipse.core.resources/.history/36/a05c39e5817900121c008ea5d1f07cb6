@@ -1,0 +1,7 @@
+package com.subject17.jdfs.client.settings;
+
+public class PeersHandler {
+	public void addPeer(String ip, String port) {
+		//TODO add peer to peersfileList
+	}
+}

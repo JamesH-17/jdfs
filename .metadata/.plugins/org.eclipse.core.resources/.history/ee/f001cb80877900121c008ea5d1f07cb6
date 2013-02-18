@@ -1,0 +1,95 @@
+package com.subject17.jdfs.client.net.reciever;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
+
+import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.net.LanguageProtocol;
+import com.subject17.jdfs.client.settings.PeersHandler;
+
+public class ListenConnectionHandler {
+	final protected PeersHandler peers; //<3 final, much better than const in a lot of situations (such as this)
+	final protected Socket handlingSock;
+	
+	public ListenConnectionHandler(Socket accept, PeersHandler prs) {
+		handlingSock = accept;
+		peers = prs;
+	}
+	public void run(){
+		try {
+			handleSocketAcception();
+			handlingSock.close();
+		} catch(IOException e) {
+			
+		}
+		finally {
+			try {
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private void handleSocketAcception() throws IOException {
+		BufferedReader userInput = null; 
+		PrintWriter output = null;
+		BufferedReader fromClient = null;
+		try {
+			userInput = new BufferedReader(new InputStreamReader(System.in));
+			output = new PrintWriter(handlingSock.getOutputStream(), true);
+			fromClient = new BufferedReader(new InputStreamReader(handlingSock.getInputStream()));
+			
+			String serverMsg;
+			Printer.log("Connected to client,"+handlingSock.getInetAddress()+" awaiting SYN");
+			
+			if (handleInitialConnection(fromClient, output, handlingSock)) {
+				handleConnection(fromClient,output,handlingSock);
+			}
+			do {
+				
+				output.println("Welcome to mah server!");
+				if (serverMsg != null)
+					Printer.println(serverMsg);
+				
+				output.println(userInput.readLine());
+			} while(!serverMsg.equals(LanguageProtocol.CLOSE));
+			
+			Printer.log("Closed connection to client "+handlingSock.getInetAddress());
+		}
+		catch (Exception e) {throw e;} //Try/catch only to ensure streams are closed
+		finally {
+			if (userInput != null)
+				userInput.close();
+			if (output != null)
+				output.close();
+			if (fromClient != null)
+				fromClient.close();
+		}
+	}
+	
+	public boolean handleInitialConnection(BufferedReader fromClient, PrintWriter output, Socket handlingSock) throws IOException {
+		String clientResponse = "", serverResponse = "";
+		for (int attempt=0; attempt < 3 ; ++attempt) {
+			clientResponse = fromClient.readLine();
+			output.print(
+				serverResponse = LanguageProtocol.handleResponse(clientResponse)
+			);
+			
+			Printer.log("Client Says:"+clientResponse);
+			Printer.log("Responded with:"+serverResponse);
+			
+			if (serverResponse.equals(LanguageProtocol.ACK))
+				return true;
+		}
+		return false;
+	}
+	
+	public void handleConnection(BufferedReader fromClient, PrintWriter output, Socket sock){
+		peers.addIncomingPeer(sock.getInetAddress(), sock.getPort());
+	}
+
+}

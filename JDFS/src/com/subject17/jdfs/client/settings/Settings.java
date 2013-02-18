@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 
 public abstract class Settings {
+	protected final String defaultSettingsFileName = "settigns.conf";
 	protected String settingsFileName;
 	
 	protected ArrayList<String> users;

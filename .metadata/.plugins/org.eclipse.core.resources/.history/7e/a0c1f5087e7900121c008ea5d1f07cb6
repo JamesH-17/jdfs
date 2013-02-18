@@ -1,0 +1,10 @@
+package com.subject17.jdfs.client.net;
+
+public class LanguageProtocol {
+	final static String ss="";
+	public handleResponse(String s) {
+		switch (s) {
+			
+		}
+	}
+}
