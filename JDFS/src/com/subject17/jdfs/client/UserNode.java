@@ -77,12 +77,17 @@ public class UserNode {
 	
 	//this function for testing only TODO delete and move code to watch service
 	public static void dispatchClient() { //public for now
-		Printer.log("dispatching client");
-		Printer.println("What port do you wish to use?");
+
 		Scanner inScan = new Scanner(System.in);
-		Talker talk = new Talker(inScan.nextInt());
-		talk.createTalker();
-		inScan.close();
+		while (true) {
+			try {
+				Printer.log("dispatching client");
+				Printer.println("What port do you wish to use?");
+				Talker talk = new Talker(inScan.nextInt());
+				talk.createTalker();
+			} catch (Exception e){}
+		}
+		
 	}
 	
 	private static void dispatchWatchService() {
