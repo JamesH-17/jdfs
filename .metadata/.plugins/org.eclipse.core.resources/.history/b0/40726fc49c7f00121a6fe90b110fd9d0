@@ -52,23 +52,14 @@ public class ListenConnectionHandler implements Runnable {
 	
 	public boolean handleInitialConnection(BufferedReader fromClient, PrintWriter toClient) throws IOException {
 		String clientResponse = "", serverResponse = "";
-		Printer.log("here");
+		Printer.log(s);
 		for (int attempt = 0; attempt < 3 ; ++attempt) {
-			while (!fromClient.ready()) {
-				Printer.log("client not ready");
-				try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
 			clientResponse = fromClient.readLine();
-			Printer.log("Client Says:"+clientResponse);
 			toClient.print(
 				serverResponse = LanguageProtocol.handleResponse(clientResponse)
 			);
 			
+			Printer.log("Client Says:"+clientResponse);
 			Printer.log("Responded with:"+serverResponse);
 			
 			if (serverResponse.equals(LanguageProtocol.ACK))
