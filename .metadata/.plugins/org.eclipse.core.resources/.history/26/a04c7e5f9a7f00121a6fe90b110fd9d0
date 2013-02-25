@@ -8,7 +8,6 @@ import java.util.Scanner;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
-import com.subject17.jdfs.client.net.sender.Talker;
 import com.subject17.jdfs.client.settings.PeersHandler;
 import com.subject17.jdfs.client.settings.SettingsReader;
 /**
@@ -78,11 +77,6 @@ public class UserNode {
 	//this function for testing only TODO delete and move code to watch service
 	public static void dispatchClient() { //public for now
 		Printer.log("dispatching client");
-		Printer.println("What port do you wish to use?");
-		Scanner inScan = new Scanner(System.in);
-		Talker talk = new Talker(inScan.nextInt());
-		talk.createTalker();
-		inScan.close();
 	}
 	
 	private static void dispatchWatchService() {

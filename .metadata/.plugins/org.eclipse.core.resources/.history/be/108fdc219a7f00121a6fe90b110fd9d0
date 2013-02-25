@@ -12,7 +12,7 @@ public class Talker {
 	private static int defaultPort = 0;
 	
 	protected String serverName;
-	protected static int port;
+	protected int port;
 	
 	/**
 	 * @category Constructor
@@ -34,12 +34,12 @@ public class Talker {
 	public int getPort() {return port;}
 	public String getServer() {return serverName;}
 	
-	public static void createTalker() {
+	public static void createTalker(int port) {
 		//TODO switch from user input to the config file
 		
 		
 		
-		BufferedReader userInput2 = new BufferedReader(new InputStreamReader(System.in));
+		//BufferedReader userInput = new BufferedReader(new InputStreamReader(System.in));
 		Scanner userInput = new Scanner(System.in);
 		System.out.println("Please enter a servername:");
 		String serverName = userInput.next();
@@ -53,7 +53,7 @@ public class Talker {
 			while (!((serverMsg = in.readLine()) == null ? "" : serverMsg).equals("exit")) {
 				System.out.println(serverMsg);
 				
-				output.println(userInput2.readLine());
+				output.println(userInput.readLine());
 			}
 
 			output.close();
