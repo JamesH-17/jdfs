@@ -81,8 +81,6 @@ public class UserNode {
 		Printer.println("What port do you wish to use?");
 		Scanner inScan = new Scanner(System.in);
 		Talker talk = new Talker(inScan.nextInt());
-		talk.createTalker();
-		inScan.close();
 	}
 	
 	private static void dispatchWatchService() {

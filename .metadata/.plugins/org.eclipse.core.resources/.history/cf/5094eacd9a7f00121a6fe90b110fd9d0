@@ -12,7 +12,7 @@ public class Talker {
 	private static int defaultPort = 0;
 	
 	protected String serverName;
-	protected static int port;
+	protected int port;
 	
 	/**
 	 * @category Constructor

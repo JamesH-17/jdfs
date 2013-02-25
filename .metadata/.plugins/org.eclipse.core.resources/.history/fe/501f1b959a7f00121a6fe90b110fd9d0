@@ -80,9 +80,7 @@ public class UserNode {
 		Printer.log("dispatching client");
 		Printer.println("What port do you wish to use?");
 		Scanner inScan = new Scanner(System.in);
-		Talker talk = new Talker(inScan.nextInt());
-		talk.createTalker();
-		inScan.close();
+		Talker talk = new Talker();
 	}
 	
 	private static void dispatchWatchService() {
