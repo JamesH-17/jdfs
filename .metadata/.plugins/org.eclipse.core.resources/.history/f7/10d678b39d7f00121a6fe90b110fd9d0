@@ -56,12 +56,7 @@ public class ListenConnectionHandler implements Runnable {
 		for (int attempt = 0; attempt < 3 ; ++attempt) {
 			while (!fromClient.ready()) {
 				Printer.log("client not ready");
-				try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				sleep(100);
 			}
 			clientResponse = fromClient.readLine();
 			Printer.log("Client Says:"+clientResponse);
