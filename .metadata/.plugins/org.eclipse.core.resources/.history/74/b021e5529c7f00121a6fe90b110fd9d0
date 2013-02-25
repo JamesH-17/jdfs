@@ -44,31 +44,18 @@ public class ListenConnectionHandler implements Runnable {
 			}
 			
 			Printer.log("Closed connection to client "+handlingSock.getInetAddress());
-		} catch (IOException e) {
-			Printer.logErr("Exception encountered with client "+handlingSock.getInetAddress()+" on port "+handlingSock.getPort());
-			throw e;
-		}
+		} catch (IOException e){}
 	}
 	
 	public boolean handleInitialConnection(BufferedReader fromClient, PrintWriter toClient) throws IOException {
 		String clientResponse = "", serverResponse = "";
-		Printer.log("here");
-		for (int attempt = 0; attempt < 3 ; ++attempt) {
-			while (!fromClient.ready()) {
-				Printer.log("client not ready");
-				try {
-					Thread.sleep(3000);
-				} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
+		for (int attempt=0; attempt < 3 ; ++attempt) {
 			clientResponse = fromClient.readLine();
-			Printer.log("Client Says:"+clientResponse);
 			toClient.print(
 				serverResponse = LanguageProtocol.handleResponse(clientResponse)
 			);
 			
+			Printer.log("Client Says:"+clientResponse);
 			Printer.log("Responded with:"+serverResponse);
 			
 			if (serverResponse.equals(LanguageProtocol.ACK))
