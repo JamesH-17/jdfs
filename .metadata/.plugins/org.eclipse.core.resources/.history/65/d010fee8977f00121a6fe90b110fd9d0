@@ -17,9 +17,11 @@ public class Listener {
 	/**
 	 * @category Constructor
 	 * @param port -- The port Number that this service will listen on
+	 * @throws IOException 
 	 */
-	public Listener(int targetPort){
+	public Listener(int targetPort) throws IOException{
 		setPort(targetPort);
+		createListener();
 	}
 
 	public void setPort(int newPort) {port = newPort;}
@@ -34,13 +36,13 @@ public class Listener {
 					connHandler = new ListenConnectionHandler(servSock.accept());
 					Thread t = new Thread(connHandler);
 					t.start();
-				} catch(Exception e) {
+				}catch(Exception e){
 					Printer.logErr("Exception encountered for a connecting client");
 					Printer.logErr("Port in use:"+port);
 					Printer.logErr(e.getMessage());
 				}
 			}
-		} catch(IOException e) {
+		} catch(IOException e){
 			Printer.log("IO exception: "+e.getMessage());
 			Printer.log("Port in use:"+port);
 		}
@@ -49,4 +51,6 @@ public class Listener {
 			Printer.log("Port in use:"+port);
 		}
 	}
+	
+
 }

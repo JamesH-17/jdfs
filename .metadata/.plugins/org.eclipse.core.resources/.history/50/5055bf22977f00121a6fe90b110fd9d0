@@ -58,15 +58,12 @@ public class UserNode {
 	}
 	
 	private static void dispatchServer() {
-		Printer.log("Dispatching server");
+		Printer.print("Dispatching server");
 		//int port = (int)(Math.random()*Math.pow(2, 15));
 		int port;
 		try {
 			port = PortMgr.getRandomPort();
-			Printer.log("Starting Server");
-			
 			Listener serv = new Listener(port);
-			serv.createListener();
 		} catch (Exception e) {
 			Printer.logErr("Could not start server");
 			e.printStackTrace();

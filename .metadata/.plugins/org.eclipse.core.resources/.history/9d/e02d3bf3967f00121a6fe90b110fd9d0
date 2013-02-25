@@ -41,8 +41,8 @@ public class UserNode {
 		Printer.println("1) [S]erver");
 		Printer.println("2) [C]lient");
 		switch(inScan.next().toLowerCase().charAt(0)) {
-			case 's': case '1': dispatchServer(); break;
-			case 'c': case '2': dispatchClient(); break;
+			case 's': case '1': dispatchClient(); break;
+			case 'c': case '2': dispatchServer(); break;
 		}
 		inScan.close();
 	}
@@ -58,15 +58,12 @@ public class UserNode {
 	}
 	
 	private static void dispatchServer() {
-		Printer.log("Dispatching server");
+		Printer.print("Dispatching server");
 		//int port = (int)(Math.random()*Math.pow(2, 15));
 		int port;
 		try {
 			port = PortMgr.getRandomPort();
-			Printer.log("Starting Server");
-			
 			Listener serv = new Listener(port);
-			serv.createListener();
 		} catch (Exception e) {
 			Printer.logErr("Could not start server");
 			e.printStackTrace();

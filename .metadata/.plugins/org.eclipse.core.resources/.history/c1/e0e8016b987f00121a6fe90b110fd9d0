@@ -16,9 +16,8 @@ public class ListenConnectionHandler implements Runnable {
 	public ListenConnectionHandler(Socket accept) {
 		handlingSock = accept;
 	}
-	
 	public void run(){
-		try {			
+		try {
 			handleSocket();
 			handlingSock.close();
 		} catch(IOException e) {
