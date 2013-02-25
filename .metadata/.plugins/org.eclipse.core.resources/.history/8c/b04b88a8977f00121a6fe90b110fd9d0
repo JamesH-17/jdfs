@@ -26,21 +26,22 @@ public class Listener {
 	public int getPort() {return port;}
 	
 	public void createListener() throws IOException {
+
+		ServerSocket servSock = null;
 		try (ServerSocket servSock = new ServerSocket(port)){
-			Printer.log("Listener started");
 			while(true) {
 				ListenConnectionHandler connHandler;
 				try {
 					connHandler = new ListenConnectionHandler(servSock.accept());
 					Thread t = new Thread(connHandler);
 					t.start();
-				} catch(Exception e) {
+				}catch(Exception e){
 					Printer.logErr("Exception encountered for a connecting client");
 					Printer.logErr("Port in use:"+port);
 					Printer.logErr(e.getMessage());
 				}
 			}
-		} catch(IOException e) {
+		} catch(IOException e){
 			Printer.log("IO exception: "+e.getMessage());
 			Printer.log("Port in use:"+port);
 		}
@@ -48,5 +49,10 @@ public class Listener {
 			Printer.log("Exception: "+e.getMessage());
 			Printer.log("Port in use:"+port);
 		}
+		finally {
+			servSock.close();
+		}
 	}
+	
+
 }

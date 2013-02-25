@@ -64,7 +64,6 @@ public class UserNode {
 		try {
 			port = PortMgr.getRandomPort();
 			Printer.log("Starting Server");
-			
 			Listener serv = new Listener(port);
 			serv.createListener();
 		} catch (Exception e) {
