@@ -24,10 +24,10 @@ public class PortMgr {
 	    {
 	        // If the code makes it this far without an exception it means
 	        // something is using the port and has responded.
-	        Printer.println("--------------Port " + port + " is not available");
+	        Printer.log("--------------Port " + port + " is not available");
 	        return false;
 	    } catch (IOException e) {
-	    	Printer.println("--------------Port " + port + " is available");
+	    	Printer.log("--------------Port " + port + " is available");
 	        return true;
 	    }
 	}

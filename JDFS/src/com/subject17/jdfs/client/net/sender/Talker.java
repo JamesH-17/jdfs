@@ -7,6 +7,8 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+import com.subject17.jdfs.client.io.Printer;
+
 public class Talker {
 	private static String defaultServerName = "";
 	private static int defaultPort = 0;
@@ -34,7 +36,7 @@ public class Talker {
 	public int getPort() {return port;}
 	public String getServer() {return serverName;}
 	
-	public static void createTalker() {
+	public void createTalker() {
 		//TODO switch from user input to the config file
 		
 		
@@ -61,9 +63,9 @@ public class Talker {
 			userInput.close();
 			sock.close();
 		} catch(IOException e){
-			System.out.println("Could not listen on port "+port);
+			Printer.logErr("Could not listen on port "+port);
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			Printer.logErr(e.getMessage());
 		}
 	}
 }

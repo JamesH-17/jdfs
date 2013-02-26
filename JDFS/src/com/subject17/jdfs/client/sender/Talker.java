@@ -52,26 +52,23 @@ public class Talker {
 			Printer.log("begin output");
 			output.println(LanguageProtocol.SYN);
 			Printer.log("output done");
-			//if (in.readLine().equals(LanguageProtocol.ACK)) {
-			//	
-				String msg;
-				do {
-					msg = userInput.readLine();
-					output.println(msg);
-				}
-				while(msg!=null && msg.equals("") && !msg.equals("exit"));
-			//}
+			
+			String msg;
+			do {
+				msg = userInput.readLine();
+				output.println(msg);
+			}
+			while(msg != null && msg.equals("") && !msg.equals("exit"));
+			
 			output.close();
 			in.close();
 			userInput.close();
 			sock.close();
 		} catch(IOException e){
-			System.out.println("Could not listen on port "+port);
+			Printer.logErr("Could not listen on port "+port);
 		}
 		catch (Exception e) {
-			System.out.println(e.getMessage());
-		}
-		finally {
+			Printer.logErr(e.getMessage());
 		}
 	}
 }
