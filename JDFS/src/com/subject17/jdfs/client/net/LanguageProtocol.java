@@ -22,4 +22,3 @@ public class LanguageProtocol {
 		}
 	}
 }
-//10.1.56.22

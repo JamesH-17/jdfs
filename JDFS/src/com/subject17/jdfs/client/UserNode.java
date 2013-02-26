@@ -76,18 +76,30 @@ public class UserNode {
 	
 	
 	//this function for testing only TODO delete and move code to watch service
-	public static void dispatchClient() { //public for now
-
-		Scanner inScan = new Scanner(System.in);
-		while (true) {
-			try {
-				Printer.log("dispatching client");
-				Printer.println("What port do you wish to use?");
-				Talker talk = new Talker(inScan.nextInt());
-				talk.createTalker();
-			} catch (Exception e){}
-		}
-		
+	private static void dispatchClient() { //public for now
+		Printer.log("dispatching client");
+		try {
+			Scanner inScan = new Scanner(System.in);
+			int port;
+			String serverName;
+			
+			do {
+				Printer.println("What server do you wish to use?");
+				serverName = inScan.next();
+				if (!serverName.equals("exit")) {
+					Printer.println("What port do you wish to use?");
+					port = inScan.nextInt();
+					
+					Printer.log("Using server "+serverName+":"+port);
+					
+					Talker talk = new Talker(serverName, port);
+					talk.createTalker();
+					Printer.log("Closed talker");
+				}
+			} while(!serverName.equals("exit"));
+			
+			inScan.close();
+		} catch (Exception e){}
 	}
 	
 	private static void dispatchWatchService() {
