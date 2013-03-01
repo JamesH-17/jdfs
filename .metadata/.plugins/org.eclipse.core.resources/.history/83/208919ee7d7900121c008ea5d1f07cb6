@@ -1,9 +1,0 @@
-package com.subject17.jdfs.client.net;
-
-public class LanguageProtocol {
-	public handleResponse(String s) {
-		switch (s) {
-		
-		}
-	}
-}

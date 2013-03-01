@@ -1,0 +1,28 @@
+package com.subject17.jdfs.client.net.reciever;
+
+import java.net.ServerSocket;
+
+public class FileReciever {
+	
+	protected String serverName;
+	protected int port;
+	
+	protected String secretMsg;
+	protected long fileSizeInBytes; 
+	
+	ServerSocket servSock;
+	
+	public FileReciever(String server, int prt, String SecretMsg, long fileSize) {
+		serverName=server; 
+		port=prt; 
+		servSock=null;
+	}
+	
+	public String RecieveFile() {
+		try (servSock = new ServerSocket(port)){
+			
+			return LanguageProtocol.;
+		} catch(Exception e){return false;}
+	}
+	
+}

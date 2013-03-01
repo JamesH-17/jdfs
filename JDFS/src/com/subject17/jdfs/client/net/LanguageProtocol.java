@@ -23,6 +23,8 @@ public class LanguageProtocol {
 	public final static String REFUSE_FILE_TRANS="jdfs-Refuse-File-Transfer";
 	public final static String ACCEPT_FILE_TRANS="jdfs-Accept-File-Transfer";
 	public final static String FILE_SIZE="jdfs-Initialize-File-Transfer";
+	public final static String FILE_RECV_SUCC="jdfs-File-Recieved-Successfully";
+	public final static String FILE_RECV_FAIL="jdfs-File-Recieved-Unsuccessfully";
 	
 	public static String handleResponse(String s) {
 		if (s == null) return ERROR;
