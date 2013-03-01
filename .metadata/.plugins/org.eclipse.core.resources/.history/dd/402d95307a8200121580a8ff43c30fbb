@@ -8,8 +8,6 @@ public class LanguageProtocol {
 	public final static String CLOSE="jdfs-Close-Connection";
 	public final static String ERROR="jdfs-Invalid-Response";
 	
-	public final static String RESEND_LAST="jdfs-Resend-Last-Transmission";
-	
 	//Peer handling
 	
 	//Account querying
@@ -25,8 +23,6 @@ public class LanguageProtocol {
 	public final static String FILE_SIZE="jdfs-Initialize-File-Transfer";
 	
 	public static String handleResponse(String s) {
-		if (s == null) return ERROR;
-		
 		switch (s) {
 			case SYN: return ACK;
 			default: return UNKNOWN;
