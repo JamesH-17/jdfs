@@ -92,12 +92,9 @@ public class ListenConnectionHandler implements Runnable {
 	}
 	
 	public String handleClientResponse(String resp) {
-		if (resp == null)
-			return "";
 		switch(resp) {
 			default: return LanguageProtocol.UNKNOWN;
 		}
-		
 	}
 	
 	

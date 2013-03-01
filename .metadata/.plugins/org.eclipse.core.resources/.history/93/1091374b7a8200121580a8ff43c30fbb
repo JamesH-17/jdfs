@@ -25,8 +25,8 @@ public class LanguageProtocol {
 	public final static String FILE_SIZE="jdfs-Initialize-File-Transfer";
 	
 	public static String handleResponse(String s) {
-		if (s == null) return ERROR;
-		
+		if (s==null)
+			return ERROR;
 		switch (s) {
 			case SYN: return ACK;
 			default: return UNKNOWN;
