@@ -60,7 +60,9 @@ public class Talker {
 			String msg;
 			do {
 				msg = userInput.next();
-				output.println(msg);
+				Printer.log("Message to post:"+msg);
+				if (msg!=null && !msg.equals(""))
+					output.println(msg);
 			}
 			while(msg != null && msg.equals("") && !msg.equals("exit"));
 
