@@ -1,0 +1,11 @@
+package com.subject17.jdfs.client.account;
+
+public class UserUtil {
+	
+	public static boolean isValidUsername(String usrName) {
+		return  !(usrName == null || usrName.isEmpty());
+	}
+	
+	
+
+}

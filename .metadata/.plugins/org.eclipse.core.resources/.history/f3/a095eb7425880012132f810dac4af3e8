@@ -1,0 +1,13 @@
+package com.subject17.jdfs.client.settings;
+
+public class PeerSettingsReader extends SettingsReader {
+	private String peerSettingsFile;
+	private String peerSettingsPath;
+	
+	private Document peerSettingsDoc;
+	
+	public PeerSettingsReader(String filename, String pathName){
+		peerSettingsFile = filename;
+		peerSettingsPath = pathName;
+	}
+}

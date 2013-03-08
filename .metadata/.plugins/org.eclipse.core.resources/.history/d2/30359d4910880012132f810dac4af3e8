@@ -1,0 +1,5 @@
+package com.subject17.jdfs.client.account;
+
+public static class UserUtil {
+
+}

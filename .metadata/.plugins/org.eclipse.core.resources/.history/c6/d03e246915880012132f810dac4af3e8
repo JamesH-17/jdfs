@@ -1,0 +1,9 @@
+<?xml version="1.0" standalone="yes" ?>
+<users>
+	<user active="true">
+		<userName>james</userName>
+		<email>dboyzetown@gmail.com</test>
+	</user>
+	<peersFilePath>/home/james/prog/school/Senior Project/</peersFilePath>
+	<peersFileStoragePath>/home/james/prog/school/Senior Project/</peersFileStoragePath>
+</users>
