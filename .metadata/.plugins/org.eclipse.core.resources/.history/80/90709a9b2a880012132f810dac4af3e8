@@ -1,0 +1,40 @@
+package com.subject17.jdfs.client.settings;
+
+import java.io.File;
+import java.util.ArrayList;
+
+public abstract class Settings {
+	protected final String defaultSettingsFileName = "settings.conf";
+	protected static String settingsFileName;
+	
+	protected static String peerFilePath;
+	protected static String peerFileLocation;
+	
+	protected static String userFileLocation;
+	protected static String userFilePath;
+	
+	protected static String watchFileLocation;
+	protected static String watchFilePath;
+	
+	protected static String storageDirectory;
+	
+	protected boolean setSettingsFile(String newSettingsFilename) {
+		try {
+			if ((new File(newSettingsFilename)).exists()) {
+				settingsFileName = newSettingsFilename;
+				return true;
+			}
+			else return false;
+		} catch (Exception e) {e.printStackTrace(); return false;}
+	}
+	
+	protected boolean setPeerFile(String newPeerFilename) {
+		try {
+			if ((new File(newPeerFilename)).exists()) {
+				peerFileLocation = newPeerFilename;
+				return true;
+			}
+			else return false;
+		} catch (Exception e) {e.printStackTrace(); return false;}
+	}
+}

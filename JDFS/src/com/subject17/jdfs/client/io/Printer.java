@@ -22,4 +22,7 @@ public class Printer {
 		public static void logErr(String s) {
 			System.err.println(s);
 		}
+		public static void logErr(Exception e) {
+			logErr(e.getMessage());
+		}
 }

@@ -1,0 +1,46 @@
+package com.subject17.jdfs.client.settings;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+
+public abstract class Settings {
+	protected final String defaultSettingsFileName = "settings.conf";
+	protected final String defaultSettingsFilePath = "~/";
+	
+	protected static File settingsFile;
+	protected static File peerSettingsFile;
+	protected static File userSettingsFile;
+	protected static File watchSettingsFile;
+	protected static File storageDirectory;
+	
+	protected static void setPeersFilename(String fname){
+		peerSettingsFile = setFileName(peerSettingsFile, fname);
+	}
+	protected static void setUsersFilename(String fname){
+		userSettingsFile = setFileName(userSettingsFile, fname);
+	}
+	protected static void setWatchFilename(String fname){
+		watchSettingsFile = setFileName(watchSettingsFile, fname);
+	}
+	
+	private static File setFileName(File file, String newName) {
+		return new File(file.getPath(), newName);
+	}
+	
+	private static File setFilePathSafe(File file, String newPath) {
+		newPath = new File(newPath).getPath();
+		if (new File(newPath).isDirectory()) {
+			return file.isDirectory() ?
+				new File(newPath) : 
+				new File(newPath, file.getName());
+		}
+		else return file;
+	}
+	
+	
+	
+	protected static void setStorageDirectory(String path){
+		storageDirectory = setFilePathSafe(storageDirectory, path);
+	}
+	
+}

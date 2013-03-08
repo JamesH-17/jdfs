@@ -1,0 +1,6 @@
+package com.subject17.jdfs.client.settings;
+
+public class UserSettingsReader extends SettingsReader {
+	public String filename;
+	public String path;
+}
