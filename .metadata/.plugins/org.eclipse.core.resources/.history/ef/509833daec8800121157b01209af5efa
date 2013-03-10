@@ -1,0 +1,66 @@
+package com.subject17.jdfs.client.settings;
+
+import java.io.File;
+import java.io.IOException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
+public class SettingsReader extends Settings {
+
+	public SettingsReader() throws ParserConfigurationException, SAXException, IOException {
+		settingsFile = new File(defaultSettingsFileName);
+		parseAndReadXMLDocument();
+	}
+	public SettingsReader(String nameOfSettingsFileToUse) throws ParserConfigurationException, SAXException, IOException {
+		settingsFile = new File(nameOfSettingsFileToUse);
+		parseAndReadXMLDocument();
+	}
+	public SettingsReader(String pathOfFile, String nameOfFile) throws ParserConfigurationException, SAXException, IOException {
+		settingsFile = new File(pathOfFile, nameOfFile);
+		parseAndReadXMLDocument();
+	}
+	
+	public File getSettingsFile() {
+		return settingsFile;
+	}
+	
+	protected void parseAndReadXMLDocument() throws ParserConfigurationException, SAXException, IOException {
+		Document settingsXML = GetDocument(settingsFile);
+	}
+	
+	public static Document GetDocument(String filePath, String fileName) throws ParserConfigurationException, SAXException, IOException {
+		return GetDocument(new File(filePath, fileName));
+	}
+	
+	public static Document GetDocument(String fileName) throws ParserConfigurationException, SAXException, IOException {
+		return GetDocument(new File(fileName));
+	}
+	
+	public static Document GetDocument(File file) throws ParserConfigurationException, SAXException, IOException {
+		DocumentBuilderFactory docbuilder = DocumentBuilderFactory.newInstance();
+		DocumentBuilder parser = docbuilder.newDocumentBuilder();
+		return parser.parse(file);
+	}
+	
+	protected static Element GetNode(Document Doc, String param ){
+		NodeList elements = Doc.getElementsByTagName(param);
+		return elements.getLength() > 0 ? elements.item(0) : null;
+	}
+	
+	private void readPeersLocation(Document doc) {
+		//Nodelist isn't iterable, so we have to use a for loop
+		NodeList xmlPeerFileLocations = doc.getElementsByTagName("peersFileLocation");
+		
+		if (xmlPeerFileLocations != null && xmlPeerFileLocations.getLength() > 0) {
+			setPeersFile(xmlPeerFileLocations.item(0).getNodeValue());
+		}
+	}
+	
+	
+}
