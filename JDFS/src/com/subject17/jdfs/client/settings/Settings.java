@@ -17,6 +17,8 @@ public abstract class Settings {
 	protected static File watchSettingsFile;
 	protected static File storageDirectory;
 	
+	
+	//Setters
 	protected static void setPeersFile(File f){
 		peerSettingsFile = f;
 	}
@@ -63,5 +65,22 @@ public abstract class Settings {
 				new File(newPath, file.getName());
 		}
 		else return file;
+	}
+	
+	//Getters
+	public static File getSettingsFile() {
+		return settingsFile;
+	}
+	public static File getPeerSettingsFile() {
+		return peerSettingsFile;
+	}
+	public static File getUserSettingsFile() {
+		return userSettingsFile;
+	}
+	public static File getWatchSettingsFile() {
+		return watchSettingsFile;
+	}
+	public static File getStorageDirectory() {
+		return storageDirectory;
 	}
 }

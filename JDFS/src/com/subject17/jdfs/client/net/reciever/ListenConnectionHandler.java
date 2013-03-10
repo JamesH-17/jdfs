@@ -8,7 +8,7 @@ import java.net.Socket;
 
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.LanguageProtocol;
-import com.subject17.jdfs.client.settings.PeersHandler;
+import com.subject17.jdfs.client.peers.PeersHandler;
 
 public class ListenConnectionHandler implements Runnable {
 	final protected Socket handlingSock; //<3 final, much more useful than const in many situations

@@ -27,7 +27,7 @@ public class SettingsReader extends Settings {
 		parseAndReadXMLDocument();
 	}
 	
-	public File getSettingsFile() {
+	public static File getSettingsFile() {
 		return settingsFile;
 	}
 	
@@ -93,11 +93,11 @@ public class SettingsReader extends Settings {
 		return parser.parse(file);
 	}
 	
-	protected static Element GetFirstNode(Document Doc, String tagName) {
+	public static Element GetFirstNode(Document Doc, String tagName) {
 		return (Element) Doc.getElementsByTagName(tagName).item(0);
 	}
 	
-	protected static Element GetFirstNode(Element parent, String tagName) {
+	public static Element GetFirstNode(Element parent, String tagName) {
 		return (Element) parent.getElementsByTagName(tagName).item(0);
 	}
 	
@@ -105,16 +105,5 @@ public class SettingsReader extends Settings {
 		Element root = GetFirstNode(Doc, "jdfsSettings");
 		Element configRoot = GetFirstNode(root, "configLocations");
 		return configRoot;
-	}
-	
-	private void readPeersLocation(Document doc) {
-		//Nodelist isn't iterable, so we have to use a for loop
-		NodeList xmlPeerFileLocations = doc.getElementsByTagName("peersFileLocation");
-		
-		if (xmlPeerFileLocations != null && xmlPeerFileLocations.getLength() > 0) {
-			setPeersFile(xmlPeerFileLocations.item(0).getNodeValue());
-		}
-	}
-	
-	
+	}	
 }
