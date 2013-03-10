@@ -15,8 +15,10 @@ public class Printer {
 		public static void println(String s) {
 			System.out.println(s);
 		}
-		
 		public static void log(String s) {
+			System.out.println(s);
+		}
+		public static void log(String s, int logLevel) {
 			System.out.println(s);
 		}
 		public static void logErr(String s) {

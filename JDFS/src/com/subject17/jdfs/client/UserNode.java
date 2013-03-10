@@ -3,19 +3,25 @@
  */
 package com.subject17.jdfs.client;
 
+import java.io.IOException;
 import java.util.Scanner;
+
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.xml.sax.SAXException;
 
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
 import com.subject17.jdfs.client.net.sender.Talker;
-import com.subject17.jdfs.client.settings.PeersHandler;
+import com.subject17.jdfs.client.peers.PeersHandler;
 import com.subject17.jdfs.client.settings.SettingsReader;
 /**
  * @author James Hughes
  *
  */
 public class UserNode {	
+	public static Listener serv;
 	public static SettingsReader reader;
 	public static PeersHandler peers;
 	/**
@@ -27,46 +33,52 @@ public class UserNode {
 	 * 
 	 */
 	public static void main(String[] args) {
-		Scanner inScan = new Scanner(System.in);
-		// TODO Auto-generated method stub
-		initialize();
-		//dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
-		
-		//dispatchWatchService(); //Will get the directories and files to watch from configuration.
-								//upon change, spawns new child process that will attempt to connect to peers (eventually extended to a peer server)
-								//and send the modified files over.
-		//Now, how to close program?
-		
-		
-		Printer.println("Do you wish to start a server or client?");
-		Printer.println("1) [S]erver");
-		Printer.println("2) [C]lient");
-		switch(inScan.next().toLowerCase().charAt(0)) {
-			case 's': case '1': dispatchServer(); break;
-			case 'c': case '2': dispatchClient(); break;
+		try {
+			Scanner inScan = new Scanner(System.in);
+			// TODO Auto-generated method stub
+			initializeSettingsAndHandlers();
+			//dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
+			
+			//dispatchWatchService(); //Will get the directories and files to watch from configuration.
+									//upon change, spawns new child process that will attempt to connect to peers (eventually extended to a peer server)
+									//and send the modified files over.
+			//Now, how to close program?
+			
+			
+			Printer.println("Do you wish to start a server or client?");
+			Printer.println("1) [S]erver");
+			Printer.println("2) [C]lient");
+			switch(inScan.next().toLowerCase().charAt(0)) {
+				case 's': case '1': dispatchServer(); break;
+				case 'c': case '2': dispatchClient(); break;
+			}
+			inScan.close();
+		} catch (Exception e){
+			Printer.log("An exception was encountered running the program:  Terminating application", 1);
+			Printer.logErr(e);
+			e.printStackTrace();
 		}
-		inScan.close();
 	}
 	
-	private static void initialize(){
+	private static void initializeSettingsAndHandlers() throws ParserConfigurationException, SAXException, IOException {
+		//This function will handle setting up any settings and any handlers related to them
 		reader = new SettingsReader();
-		String peerFileLocation = reader.getPeerFileLocation();
-		peers = new PeersHandler(peerFileLocation);
+		peers = new PeersHandler(reader.getPeerSettingsFile());
 		
-		//Next, read in user account data
-		//This will also read in what directories are being watched 
+		//TODO: put dispatch server code in here as well
+		//Next, read in user account data 
 		
 	}
 	
 	private static void dispatchServer() {
 		Printer.log("Dispatching server");
-		//int port = (int)(Math.random()*Math.pow(2, 15));
+		//TODO: Find a better way to choose port for server than just getting a random one
 		int port;
 		try {
 			port = PortMgr.getRandomPort();
 			Printer.log("Starting Server");
 			
-			Listener serv = new Listener(port);
+			serv = new Listener(port);
 			serv.createListener();
 		} catch (Exception e) {
 			Printer.logErr("Could not start server");
