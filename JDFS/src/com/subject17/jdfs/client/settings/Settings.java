@@ -6,6 +6,10 @@ import java.io.FileNotFoundException;
 public abstract class Settings {
 	protected final String defaultSettingsFileName = "settings.conf";
 	protected final String defaultSettingsFilePath = "~/";
+	protected final String defaultPeersFileName = "Peers.xml";
+	protected final String defaultUserFileName = "Users.xml";
+	protected final String defaultWatchFileName = "FileWatch.xml";
+	protected final String defaultStorageDirectory = "~/prog/school/Senior Project/storage";
 	
 	protected static File settingsFile;
 	protected static File peerSettingsFile;
