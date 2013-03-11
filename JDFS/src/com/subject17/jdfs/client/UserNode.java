@@ -10,11 +10,13 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
+import com.subject17.jdfs.client.account.AccountManager;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
 import com.subject17.jdfs.client.net.sender.Talker;
 import com.subject17.jdfs.client.peers.PeersHandler;
+import com.subject17.jdfs.client.settings.PeerSettingsReader;
 import com.subject17.jdfs.client.settings.SettingsReader;
 /**
  * @author James Hughes
@@ -22,8 +24,9 @@ import com.subject17.jdfs.client.settings.SettingsReader;
  */
 public class UserNode {	
 	public static Listener serv;
-	public static SettingsReader reader;
+	public static SettingsReader settingsReader;
 	public static PeersHandler peers;
+	public static AccountManager accountMgr;
 	/**
 	 * @param args  There will be a "nogui" flag here, or maybe a "gui" flag, which will affect
 	 * whether or not a graphical interface appears to edit settings.
@@ -53,21 +56,24 @@ public class UserNode {
 				case 'c': case '2': dispatchClient(); break;
 			}
 			inScan.close();
-		} catch (Exception e){
-			Printer.log("An exception was encountered running the program:  Terminating application", 1);
+		} catch (Exception e) {
+			Printer.logErr("An exception was encountered running the program:  Terminating application", Printer.Level.Extreme);
 			Printer.logErr(e);
 			e.printStackTrace();
 		}
 	}
 	
-	private static void initializeSettingsAndHandlers() throws ParserConfigurationException, SAXException, IOException {
+	private static void initializeSettingsAndHandlers() throws Exception {
 		//This function will handle setting up any settings and any handlers related to them
-		reader = new SettingsReader();
-		peers = new PeersHandler(reader.getPeerSettingsFile());
+		settingsReader = new SettingsReader();
+		peers = new PeersHandler(settingsReader.getPeerSettingsFile());
+		accountMgr = new AccountManager(settingsReader.getUserSettingsFile());
+		
+		//Next, add in code for watch service monitor
 		
 		//TODO: put dispatch server code in here as well
-		//Next, read in user account data 
 		
+		//TODO Finally:  Add in logic for gui
 	}
 	
 	private static void dispatchServer() {

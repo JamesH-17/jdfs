@@ -11,6 +11,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import com.subject17.jdfs.client.file.handler.FileUtils;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.user.User;
 
@@ -22,8 +23,18 @@ public class UserSettingsReader extends SettingsReader {
 	private User activeUser;
 	private ArrayList<User> users;
 	
-	public UserSettingsReader(String pathloc, String fname) throws ParserConfigurationException, SAXException, IOException {
+	public UserSettingsReader(String pathloc, String fname) throws Exception {
 		usersFile = new File(pathloc, fname);
+		Init();
+	}
+	
+	public UserSettingsReader(File src) throws Exception {
+		usersFile = src;
+		Init();
+	}
+	
+	private void Init() throws Exception {
+		FileUtils.checkIfFileReadable(usersFile);
 		usersDoc = getUsersDocument();
 		readUsers();
 	}
