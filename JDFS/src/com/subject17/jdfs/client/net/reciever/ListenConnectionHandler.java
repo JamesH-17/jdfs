@@ -28,7 +28,7 @@ public class ListenConnectionHandler implements Runnable {
 	}
 	
 	/**
-	 * This function intializes the input/output streams for the client
+	 * This function initializes the input/output streams for the client
 	 * @throws IOException
 	 */
 	private void handleSocket() throws IOException {
@@ -99,12 +99,6 @@ public class ListenConnectionHandler implements Runnable {
 		}
 		
 	}
-	
-	
-	
-	
-	
-	
 	
 	protected void finalize() {
 		try {handlingSock.close();}

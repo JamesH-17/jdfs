@@ -17,6 +17,8 @@ public class Peer {
 	//Getters
 	public ArrayList<String> getIp4s() {return ip4s;}
 	public ArrayList<String> getIp6s() {return ip6s;}
+	public String getEmail() { return accountEmail; }
+	public String getUsername() { return userName; }
 	public void addIp4(String ip4) {ip4s.add(ip4);}
 	public void addIp6(String ip6) {ip6s.add(ip6);}
 	

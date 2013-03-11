@@ -1,7 +1,6 @@
 package com.subject17.jdfs.client.settings;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 
 public abstract class Settings {
 	protected final String defaultSettingsFileName = "settings.conf";
