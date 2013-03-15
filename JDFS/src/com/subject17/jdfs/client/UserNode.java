@@ -16,8 +16,8 @@ import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
 import com.subject17.jdfs.client.net.sender.Talker;
 import com.subject17.jdfs.client.peers.PeersHandler;
-import com.subject17.jdfs.client.settings.PeerSettingsReader;
-import com.subject17.jdfs.client.settings.SettingsReader;
+import com.subject17.jdfs.client.settings.reader.PeerSettingsReader;
+import com.subject17.jdfs.client.settings.reader.SettingsReader;
 /**
  * @author James Hughes
  *

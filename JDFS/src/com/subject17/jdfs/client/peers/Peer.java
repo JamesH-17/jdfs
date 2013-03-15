@@ -6,7 +6,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import com.subject17.jdfs.client.account.UserUtil;
-import com.subject17.jdfs.client.settings.SettingsReader;
+import com.subject17.jdfs.client.settings.reader.SettingsReader;
 
 public class Peer {
 	private String accountEmail;

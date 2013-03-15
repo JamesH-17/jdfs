@@ -5,7 +5,8 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 
 import org.w3c.dom.Document;
-import com.subject17.jdfs.client.settings.PeerSettingsReader;
+
+import com.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 
 public class PeersHandler {
 	

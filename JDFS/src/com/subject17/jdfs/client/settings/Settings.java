@@ -3,18 +3,18 @@ package com.subject17.jdfs.client.settings;
 import java.io.File;
 
 public abstract class Settings {
-	protected final String defaultSettingsFileName = "settings.conf";
-	protected final String defaultSettingsFilePath = "~/";
-	protected final String defaultPeersFileName = "Peers.xml";
-	protected final String defaultUserFileName = "Users.xml";
-	protected final String defaultWatchFileName = "FileWatch.xml";
-	protected final String defaultStorageDirectory = "~/prog/school/Senior Project/storage";
+	protected final static String defaultSettingsFileName = "settings.conf";
+	protected final static String defaultSettingsFilePath = "~/";
+	protected final static String defaultPeersFileName = "Peers.xml";
+	protected final static String defaultUserFileName = "Users.xml";
+	protected final static String defaultWatchFileName = "FileWatch.xml";
+	protected final static String defaultStorageDirectory = "~/prog/school/Senior Project/storage";
 	
-	protected static File settingsFile;
-	protected static File peerSettingsFile;
-	protected static File userSettingsFile;
-	protected static File watchSettingsFile;
-	protected static File storageDirectory;
+	protected static File settingsFile = new File(defaultSettingsFilePath,defaultSettingsFileName);
+	protected static File peerSettingsFile = new File(defaultSettingsFilePath, defaultPeersFileName);
+	protected static File userSettingsFile = new File(defaultSettingsFilePath, defaultUserFileName);
+	protected static File watchSettingsFile = new File(defaultSettingsFilePath, defaultWatchFileName);
+	protected static File storageDirectory = new File(defaultStorageDirectory);
 	
 	
 	//Setters
