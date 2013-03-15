@@ -3,7 +3,7 @@ package com.subject17.jdfs.client.account;
 import java.io.File;
 import java.util.ArrayList;
 
-import com.subject17.jdfs.client.settings.UserSettingsReader;
+import com.subject17.jdfs.client.settings.reader.UserSettingsReader;
 import com.subject17.jdfs.client.user.User;
 
 public class AccountManager {
