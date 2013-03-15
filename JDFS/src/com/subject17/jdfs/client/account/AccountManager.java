@@ -43,4 +43,18 @@ public class AccountManager {
 	public void writeUsersToFile(File file){
 		
 	}
+
+	public static User getAccount(User user) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public static boolean accountExists(String account) {
+		for (User user : users) {
+			if (user.getAccountEmail().equals(account))
+				return true;
+		}
+		return false;
+	}
+
 }

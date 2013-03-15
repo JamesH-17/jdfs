@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import org.w3c.dom.Document;
 
 import com.subject17.jdfs.client.settings.reader.PeerSettingsReader;
+import com.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 
 public class PeersHandler {
 	
@@ -20,11 +21,10 @@ public class PeersHandler {
 		peersFile = peerSettingsFile;
 		
 		peers.addAll(peersReader.getPeers());
-		peersXML = peersReader.getPeerDocument();
+		peersXML = peersReader.getPeerDocument(); //TODO is needed?
 	}
 
 	public static File getPeersFile() { return peersFile; }
-
 	public static void addIncomingPeer(InetAddress ip, int port) {
 		//TODO add peer to peersfileList
 	}
@@ -72,6 +72,7 @@ public class PeersHandler {
 	}
 	
 	public void writePeersToFile(File file) {
-		
+		PeerSettingsWriter writer = new PeerSettingsWriter();
+		writer.writePeerSettings(file,peers);
 	}
 }

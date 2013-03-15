@@ -20,34 +20,28 @@ import com.subject17.jdfs.client.settings.Settings;
 
 public class SettingsWriter extends Settings {
 	
-	//public void writeXMLSettings() { writeXMLSettings(settingsFileName); }
-	
+	public void writeXMLSettings() {
+		writeXMLSettings(defaultSettingsFileName);
+	}
 	public void writeXMLSettings(String settingsFileLocation) {
+		writeXMLSettings(getWriteLocation(settingsFileLocation));
+	}
+	public void writeXMLSettings(File loc) {
 		try {
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc);
-			writeDocument(doc);
-		} catch (TransformerException e) {
-			Printer.logErr("Could not instatiate transformer to write settings file", Printer.Level.High);
-		} catch (Exception e) {
 			
+			writeDocument(doc, loc);
+			
+		} catch (TransformerException e) {
+			Printer.logErr("Could not instatiate transformer to write settings file", Printer.Level.Medium);
+		} catch (Exception e) {
+			Printer.logErr("An unexpected error occured in SettingsWriter.writeXMLSettings.  Wrong filepath?");
 		}
 	}
 	
-	public Document getNewDocBuilder() throws ParserConfigurationException {
-		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-
-		// root elements
-		return docBuilder.newDocument();
-	}
 	
-	private Transformer getNewTransformer() throws TransformerConfigurationException {
-		TransformerFactory transFact = TransformerFactory.newInstance();
-		return transFact.newTransformer();
-	}
-	
-	public Document createDocument(Document doc) {
+	private Document createDocument(Document doc) {
 		Element root = doc.createElement("jdfsSettings");
 		doc.appendChild(root); //TODO:  Should we move this to the end of this function:
 		
@@ -89,16 +83,52 @@ public class SettingsWriter extends Settings {
 		return doc;
 	}
 	
-	public void writeDocument(Document doc) throws TransformerException {
+	
+	
+	//Utilities
+	protected void writeDocument(Document doc) throws TransformerException {
 		writeDocument(doc, new File(defaultSettingsFilePath, defaultSettingsFileName));
 	}
 	
-	public void writeDocument(Document doc, File writeLocation) throws TransformerException {
+	protected void writeDocument(Document doc, File writeLocation) throws TransformerException {
 		Transformer transformer = getNewTransformer();
 		DOMSource src = new DOMSource(doc);
 		StreamResult res = new StreamResult(writeLocation);
 		
 		transformer.transform(src, res);
+	}
+	
+	protected File getWriteLocation(String settingsFileLocation) {
+		File loc = new File(settingsFileLocation);
+		
+		if (settingsFileLocation == null || settingsFileLocation.equals(""))
+			loc = new File(defaultSettingsFilePath, defaultSettingsFileName); //Trusting that I'll always have this be valid
+		else if (loc.isDirectory())
+			loc = new File(settingsFileLocation, defaultSettingsFileName);
+		else if (!new File(loc.getPath()).exists())
+			loc = new File(defaultSettingsFilePath, settingsFileLocation);
+		
+		return loc;
+	}
+	
+	protected File getWriteLocation(String settingsFilePath, String settingsFileName) {
+		if (settingsFilePath == null || settingsFilePath.equals(""))
+			settingsFilePath = defaultSettingsFilePath;
+		if (settingsFileName == null || settingsFileName.equals(""))
+			settingsFileName = defaultSettingsFileName;
+		
+		return new File(settingsFilePath, settingsFileName); //If they supply a wrong location, not our problem
+	}
+	
+	protected Document getNewDocBuilder() throws ParserConfigurationException {
+		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+		return docBuilder.newDocument();
+	}
+
+	private Transformer getNewTransformer() throws TransformerConfigurationException {
+		TransformerFactory transFact = TransformerFactory.newInstance();
+		return transFact.newTransformer();
 	}
 }
 
