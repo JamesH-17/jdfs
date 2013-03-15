@@ -10,4 +10,11 @@ public class FileUtils {
 		if (!toCheck.canRead())
 			throw new Exception("Cannot read from file "+toCheck.getAbsolutePath()+" for some reason");
 	}
+	
+	public static boolean isValidDirectory(File loc){
+		return (loc.isDirectory());
+	}
+	public static boolean isValidDirectory(String loc){
+		return isValidDirectory(new File(loc));
+	}
 }

@@ -5,6 +5,7 @@ import org.w3c.dom.Element;
 public class User {
 	private String username;
 	private String account;
+	private static final char seperatorChar = ':';
 	
 	public User(String name, String email) {
 		username = name;
@@ -24,4 +25,12 @@ public class User {
 				&& this.username.equals(((User)cmp).username)
 				&& this.account.equals(((User)cmp).account);
 	}
+	
+	@Override
+	public int hashCode() {
+		return (username+seperatorChar+account).hashCode();
+	} 
+	
+	public String getUsername() {return username;}
+	public String getAccountEmail() {return account;}
 }
