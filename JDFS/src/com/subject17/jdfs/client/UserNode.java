@@ -11,6 +11,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
 import com.subject17.jdfs.client.account.AccountManager;
+import com.subject17.jdfs.client.file.monitor.WatchService;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
@@ -24,9 +25,6 @@ import com.subject17.jdfs.client.settings.reader.SettingsReader;
  */
 public class UserNode {	
 	public static Listener serv;
-	public static SettingsReader settingsReader;
-	public static PeersHandler peers;
-	public static AccountManager accountMgr;
 	/**
 	 * @param args  There will be a "nogui" flag here, or maybe a "gui" flag, which will affect
 	 * whether or not a graphical interface appears to edit settings.
@@ -65,9 +63,11 @@ public class UserNode {
 	
 	private static void initializeSettingsAndHandlers() throws Exception {
 		//This function will handle setting up any settings and any handlers related to them
-		settingsReader = new SettingsReader();
-		peers = new PeersHandler(settingsReader.getPeerSettingsFile());
-		accountMgr = new AccountManager(settingsReader.getUserSettingsFile());
+		SettingsReader settingsReader = new SettingsReader();
+		
+		PeersHandler.setPeersSettingsFile(settingsReader.getPeerSettingsFile());
+		AccountManager.setUsersSettingsFile(settingsReader.getUserSettingsFile());
+		WatchService.setWatchSettingsFile(settingsReader.getWatchSettingsFile());
 		
 		//Next, add in code for watch service monitor
 		

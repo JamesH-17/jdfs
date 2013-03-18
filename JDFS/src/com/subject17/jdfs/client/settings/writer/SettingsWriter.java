@@ -21,7 +21,7 @@ import com.subject17.jdfs.client.settings.Settings;
 public class SettingsWriter extends Settings {
 	
 	public void writeXMLSettings() {
-		writeXMLSettings(defaultSettingsFileName);
+		writeXMLSettings(settingsFile);
 	}
 	public void writeXMLSettings(String settingsFileLocation) {
 		writeXMLSettings(getWriteLocation(settingsFileLocation));
@@ -78,7 +78,7 @@ public class SettingsWriter extends Settings {
 		//User settings
 		Element storageDirectoryTag = doc.createElement("storageDirectory");
 		storageDirectoryTag.appendChild(doc.createTextNode(storageDirectory.getPath()));
-		configLocations.appendChild(storageDirectoryTag);
+		root.appendChild(storageDirectoryTag);
 		
 		return doc;
 	}
@@ -103,10 +103,11 @@ public class SettingsWriter extends Settings {
 		
 		if (settingsFileLocation == null || settingsFileLocation.equals(""))
 			loc = new File(defaultSettingsFilePath, defaultSettingsFileName); //Trusting that I'll always have this be valid
-		else if (loc.isDirectory())
-			loc = new File(settingsFileLocation, defaultSettingsFileName);
-		else if (!new File(loc.getPath()).exists())
-			loc = new File(defaultSettingsFilePath, settingsFileLocation);
+		
+		if (loc.isDirectory())
+			loc = new File(loc.getParent(), defaultSettingsFileName);
+		if (!new File(loc.getParent()).exists())
+			loc = new File(defaultSettingsFilePath, loc.getName());
 		
 		return loc;
 	}

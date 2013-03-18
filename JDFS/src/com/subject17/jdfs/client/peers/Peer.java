@@ -7,6 +7,7 @@ import org.w3c.dom.NodeList;
 
 import com.subject17.jdfs.client.account.UserUtil;
 import com.subject17.jdfs.client.settings.reader.SettingsReader;
+import com.subject17.jdfs.client.user.User;
 
 public class Peer {
 	private String accountEmail;
@@ -21,6 +22,8 @@ public class Peer {
 	public String getUsername() { return userName; }
 	public void addIp4(String ip4) {ip4s.add(ip4);}
 	public void addIp6(String ip6) {ip6s.add(ip6);}
+	
+	private static final char seperatorChar = '\n';
 	
 	//Constructors
 	public Peer(Element peerTag) {
@@ -67,4 +70,17 @@ public class Peer {
 		}
 		else return false; 
 	}
+	
+	@Override
+	public boolean equals(Object cmp) {
+		return cmp != null 
+				&& cmp instanceof Peer 
+				&& this.userName.equals(((Peer)cmp).userName)
+				&& this.accountEmail.equals(((Peer)cmp).accountEmail);
+	}
+	
+	@Override
+	public int hashCode() {
+		return (""+(userName+seperatorChar+accountEmail).hashCode()+seperatorChar+ip4s.hashCode()+seperatorChar+ip6s.hashCode()).hashCode();
+	} 
 }

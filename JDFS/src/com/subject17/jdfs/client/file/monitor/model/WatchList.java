@@ -27,7 +27,7 @@ public class WatchList {
 	}
 	private void setUser(String account) {
 		if (AccountManager.accountExists(account))
-			user = AccountManager.getAccount(account);
+			user = AccountManager.getUserByAccount(account);
 	}
 	public ArrayList<WatchDirectory> getDirectories() {return directories;}
 	public ArrayList<WatchFile> getFiles() {return files;}
@@ -41,7 +41,7 @@ public class WatchList {
 				directories.add(watchDir);
 			}
 			catch (Exception e){
-				Printer.logErr("Could not read Wath List, number "+i+" in list.");
+				Printer.logErr("Could not read Watch List, number "+i+" in list.");
 				Printer.logErr(e);
 			}
 		}
@@ -55,7 +55,7 @@ public class WatchList {
 				files.add(watchFile);
 			}
 			catch (Exception e){
-				Printer.logErr("Could not read Wath List, number "+i+" in list.");
+				Printer.logErr("Could not read Watch List, number "+i+" in list.");
 				Printer.logErr(e);
 			}
 		}
