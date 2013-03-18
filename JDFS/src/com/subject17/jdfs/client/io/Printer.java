@@ -1,5 +1,8 @@
 package com.subject17.jdfs.client.io;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 
 /**
  * @author james
@@ -7,7 +10,8 @@ package com.subject17.jdfs.client.io;
  * Also provides direct lines to each mode if needed
  */
 public class Printer {
-		
+	
+	
 		public static void print(String s) {
 			System.out.print(s);
 		}

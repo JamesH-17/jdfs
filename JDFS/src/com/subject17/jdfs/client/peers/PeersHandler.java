@@ -17,11 +17,7 @@ public class PeersHandler {
 	private static ArrayList<Peer> peers;
 	
 	public PeersHandler(File peerSettingsFile) throws Exception {
-		peersReader = new PeerSettingsReader(peerSettingsFile);
-		peersFile = peerSettingsFile;
 		
-		peers.addAll(peersReader.getPeers());
-		peersXML = peersReader.getPeerDocument(); //TODO is needed?
 	}
 
 	public static File getPeersFile() { return peersFile; }
@@ -74,5 +70,14 @@ public class PeersHandler {
 	public void writePeersToFile(File file) {
 		PeerSettingsWriter writer = new PeerSettingsWriter();
 		writer.writePeerSettings(file,peers);
+	}
+
+	public static void setPeersSettingsFile(File peerSettingsFile) throws Exception {
+		peersReader = new PeerSettingsReader(peerSettingsFile);
+		peersFile = peerSettingsFile;
+		
+		peers.addAll(peersReader.getPeers());
+		peersXML = peersReader.getPeerDocument(); //TODO is needed?
+		
 	}
 }

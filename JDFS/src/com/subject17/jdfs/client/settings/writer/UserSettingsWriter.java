@@ -13,11 +13,19 @@ import com.subject17.jdfs.client.user.User;
 
 
 public class UserSettingsWriter extends SettingsWriter {
+	private File outputFile = null;
+	
+	public UserSettingsWriter() {
+		outputFile = userSettingsFile;
+	}
+	public UserSettingsWriter(File file) {
+		outputFile = file;
+	}
 	public void writeUserSettings(ArrayList<User> users) {
-		writeUserSettings(userSettingsFile, users, null);
+		writeUserSettings(outputFile, users, null);
 	}
 	public void writeUserSettings(ArrayList<User> users, User activeUser) {
-		writeUserSettings(userSettingsFile, users, activeUser);
+		writeUserSettings(outputFile, users, activeUser);
 	}
 	public void writeUserSettings(File loc, ArrayList<User> users) {
 		writeUserSettings(loc, users, null);
@@ -39,14 +47,14 @@ public class UserSettingsWriter extends SettingsWriter {
 	private Document createDocument(Document doc, ArrayList<User> users, User activeUser){
 		Element root = doc.createElement("users");
 		
-		for(User user : users) {
+		for (User user : users) {
 			//User settings
 			Element userTag = doc.createElement("user");
 			Element accountTag = doc.createElement("email");
 			Element userNameTag = doc.createElement("userName");
 			
 			accountTag.appendChild(doc.createTextNode(user.getAccountEmail()));
-			userNameTag.appendChild(doc.createTextNode(user.getUsername()));
+			userNameTag.appendChild(doc.createTextNode(user.getUserName()));
 			
 			if (activeUser != null && user.equals(activeUser)) {
 				userTag.setAttribute("active", "true");
