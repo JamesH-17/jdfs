@@ -4,8 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 
-import com.subject17.jdfs.client.io.Printer;
-
 public abstract class Settings {
 	protected static final String defaultSettingsFileName = "settings.conf";
 	protected static final String defaultSettingsFilePath = System.getProperty("user.dir"); //Gets current directory
@@ -79,10 +77,19 @@ public abstract class Settings {
 	public void setPeersDirectory(String loc) throws IOException {peerSettingsFile = setFilePath(peerSettingsFile, loc);}
 	public void setUsersDirectory(String loc) throws IOException {userSettingsFile = setFilePath(userSettingsFile, loc);}
 	public void setWatchDirectory(String loc) throws IOException {watchSettingsFile = setFilePath(watchSettingsFile, loc);}
-	public void setStorageDirectory(String path) throws IOException {storageDirectory = setFilePath(storageDirectory, path);}
+	public void setStorageDirectory(String path) throws IOException {storageDirectory = new File(path);}
 	
 	//Utilities
-	public File setFileName(File file, String newName) throws IOException {
+	public File setFileName(File file, String newName) {
+		file = file.getParentFile();
+		return new File(file, newName);
+	}
+	
+	public File setFilePath(File file, String newPath) {
+		return new File(newPath,file.getName());
+	}
+	
+	public File setFileNameDefunct(File file, String newName) throws IOException {
 		if (!file.isDirectory())
 			file = file.getParentFile();
 		if (!file.isDirectory())
@@ -90,22 +97,18 @@ public abstract class Settings {
 		return new File(file, newName);
 	}
 		
-	public File setFilePath(File file, String newPath) throws IOException {
-		Printer.println(defaultStorageDirectory);
-		Printer.println("hr");
-		Printer.println(file.getPath());
-		Printer.println(newPath);
+	public File setFilePathDefunct(File file, String newPath) throws IOException {
 		String fname = (file == null || file.isDirectory()) ? "" : file.getName(); 
 		file = new File(newPath);
-		Printer.println(file.getPath());
-		Printer.println("fname:"+fname);
 		if (file.isDirectory())
 			file = new File(file.getParent());
-		Printer.println("getparent:"+file.getPath());
 		if(!fname.equals(""))
 			file = new File(file, fname);
-		Printer.println(file.getPath());
 		return file;
+	}
+	
+	public File setDirectoryPath(File oldPath, File newPath) throws IOException {
+		return new File(oldPath.getParentFile(),newPath.getPath());
 	}
 	
 	//Getters

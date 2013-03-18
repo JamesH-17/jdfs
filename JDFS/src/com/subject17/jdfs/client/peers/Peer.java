@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import com.subject17.jdfs.client.account.UserUtil;
+import com.subject17.jdfs.client.user.UserUtil;
+import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.settings.reader.SettingsReader;
-import com.subject17.jdfs.client.user.User;
 
 public class Peer {
 	private String accountEmail;
@@ -32,16 +32,16 @@ public class Peer {
 		
 		NodeList ip4Tags = peerTag.getElementsByTagName("ip4");
 		NodeList ip6Tags = peerTag.getElementsByTagName("ip6");
-		accountEmail = SettingsReader.GetFirstNode(peerTag, "email").getNodeValue();
-		userName = SettingsReader.GetFirstNode(peerTag, "userName").getNodeValue();
+		setAccountEmail(SettingsReader.GetFirstNodeValue(peerTag, "accountEmail"));
+		setUsername(SettingsReader.GetFirstNodeValue(peerTag, "userName"));
 		
 		for (int i = 0; i<ip4Tags.getLength(); ++i) {
-			String ip4 = ip4Tags.item(0).getNodeValue();
+			String ip4 = ip4Tags.item(0).getTextContent();
 			if (!ip4.isEmpty())
 				ip4s.add(ip4);
 		}
 		for (int i = 0; i < ip6Tags.getLength(); ++i){
-			String ip6 = ip6Tags.item(0).getNodeValue();
+			String ip6 = ip6Tags.item(0).getTextContent();
 			if (!ip6.isEmpty())
 				ip6s.add(ip6);
 		}
@@ -64,8 +64,9 @@ public class Peer {
 	}
 	
 	public boolean setAccountEmail(String email) {
+		Printer.log("Validating email: "+email);
 		if (UserUtil.isValidEmail(email)) {
-			userName = email;
+			accountEmail = email;
 			return true;
 		}
 		else return false; 

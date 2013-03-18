@@ -1,14 +1,9 @@
 /**
- * 
+ * @author James Hughes
  */
 package com.subject17.jdfs.client;
 
-import java.io.IOException;
 import java.util.Scanner;
-
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
 
 import com.subject17.jdfs.client.account.AccountManager;
 import com.subject17.jdfs.client.file.monitor.WatchService;
@@ -17,12 +12,8 @@ import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
 import com.subject17.jdfs.client.net.sender.Talker;
 import com.subject17.jdfs.client.peers.PeersHandler;
-import com.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 import com.subject17.jdfs.client.settings.reader.SettingsReader;
-/**
- * @author James Hughes
- *
- */
+
 public class UserNode {	
 	public static Listener serv;
 	/**
@@ -63,10 +54,18 @@ public class UserNode {
 	
 	private static void initializeSettingsAndHandlers() throws Exception {
 		//This function will handle setting up any settings and any handlers related to them
+		Printer.log("Initializing reader....");
 		SettingsReader settingsReader = new SettingsReader();
 		
+		Printer.log("Reader initialized.  Starting Services...");
+		
+		Printer.log("Starting Peers Handler");
 		PeersHandler.setPeersSettingsFile(settingsReader.getPeerSettingsFile());
+		
+		Printer.log("Starting Account Manager");
 		AccountManager.setUsersSettingsFile(settingsReader.getUserSettingsFile());
+		
+		Printer.log("Starting Watch Service");
 		WatchService.setWatchSettingsFile(settingsReader.getWatchSettingsFile());
 		
 		//Next, add in code for watch service monitor
