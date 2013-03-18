@@ -12,38 +12,29 @@ public class FileUtil {
 	 * Returns true if the string represents a valid directory path on windows, unix, and mac
 	 */
 	public boolean isValidDirectory(String path){
+		boolean ret = true;
 		try {
-			path = new File(path).getCanonicalPath();
+			path = new File(path).getCanonicalPath().toLowerCase();
+			String[] paths = path.split(java.io.File.separator);
 			
-			return isValidCrossPlatformDirectory(path);
-		} catch(IOException e){return false;}
+			for(String pth : paths){
+				ret &= isValidXplatformName(pth);
+			}
+			
+		} catch(IOException e){
+			ret =  false;
+		}
+		return ret;
 	}
 	
-	public boolean isValidDirectoryHelper(String path){
-		switch (JDFSUtil.getOS()){
-			case Linux: return isValidLinuxDirectory(path);
-			case Windows: return isValidWindowsDirectory(path);
-			case MAC: return isValidMacDirectory(path);
-			default: return isValidCrossPlatformDirectory(path);
-		}
+	private boolean isValidXplatformName(String pth) {
+		return !(pth.contains("<") || pth.contains(">") || pth.contains("|") || pth.contains(":") || pth.contains("*") || pth.contains("?"));
+		//return pth.matches("/[]");
+		///return pth.matches("[^<>\\*:\\|\\?]");
+		//return !(pth.matches("<*>*:*\"[*]*|*"));
 	}
-
-	private boolean isValidCrossPlatformDirectory(String path) {
-		return path.matches("/*"); //TODO Wait, canonical will eff it up
-	}
-
-	private boolean isValidMacDirectory(String path) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	private boolean isValidWindowsDirectory(String path) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	private boolean isValidLinuxDirectory(String path) {
-		// TODO Auto-generated method stub
-		return false;
+	
+	private boolean isValidRootWindows(String prefix) {
+		return prefix.matches("[a-z]+:\\");
 	}
 }

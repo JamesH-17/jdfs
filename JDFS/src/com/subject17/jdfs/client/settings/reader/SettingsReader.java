@@ -1,6 +1,7 @@
 package com.subject17.jdfs.client.settings.reader;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -21,9 +22,9 @@ public class SettingsReader extends Settings {
 		settingsFile = new File(defaultSettingsFilePath,defaultSettingsFileName);
 		try {
 			parseAndReadXMLDocument();
-		} catch(IOException e) {
+		} catch(FileNotFoundException e) {
 			Printer.logErr("Could not parse document -- using default values for locations");
-			Printer.logErr(e);
+			//Printer.logErr(e);
 			Printer.logErr("Attempting to create file with default values");
 			createDefaultSettingsFile();
 		}
@@ -50,7 +51,8 @@ public class SettingsReader extends Settings {
 	
 	private void parseAndReadXMLDocument() throws ParserConfigurationException, SAXException, IOException {
 		setDefaultFileLocations();
-		Document settingsXML = GetDocument(settingsFile);
+			Document settingsXML = GetDocument(settingsFile);
+
 		if (settingsXML != null) {
 			Element configNode = GetConfigNode(settingsXML);
 			if (configNode != null) {
@@ -63,41 +65,52 @@ public class SettingsReader extends Settings {
 	}
 	
 	private void readAndSetStorageDirectory(Document settingsXML) throws IOException {
-		Element root = SettingsReader.GetFirstNode(settingsXML, "jdfsSettings");
-		Element storageNode = SettingsReader.GetFirstNode(root, "fileStoragePath");
-		String storagePath = storageNode == null ? "" : storageNode.getNodeValue();
-		if (!(storagePath == null || storagePath.trim().isEmpty()))
-			setStorageDirectory(storagePath);
+		Element root = GetFirstNode(settingsXML, "jdfsSettings");
+		if (root != null) {
+			String storagePath = extractNodeValue(root, "fileStoragePath");
+			
+			if (!(storagePath == null || storagePath.trim().isEmpty()))
+				setStorageDirectory(storagePath);
+			
+		} else throw new IOException("Invalid XML layout");
 	}
 	
 	private void readAndSetWatchFile(Element configNode) throws IOException {
-		String watchFilePath = GetFirstNode(configNode, "watchFilePath").getNodeValue();
-		String watchFileName = GetFirstNode(configNode, "watchFileName").getNodeValue();
+		String watchFilePath = extractNodeValue(configNode, "watchFilesPath");
+		String watchFileName = extractNodeValue(configNode, "watchFilesName");
 
-		if (!(watchFilePath == null || watchFilePath.trim().isEmpty()))
-			setWatchDirectory(watchFilePath);
-		if (!(watchFileName == null || watchFileName.trim().isEmpty()))
-			setWatchFileName(watchFileName);
+		if ((watchFilePath == null || watchFilePath.trim().isEmpty() ))
+			watchFilePath = defaultSettingsFilePath;
+		if ((watchFileName == null || watchFileName.trim().isEmpty()))
+			watchFileName = defaultWatchFileName;
+		setWatchFile(new File(watchFilePath,watchFileName));
 	}
-	private void readAndSetUsersFile(Element configNode) throws IOException {
-		String userFilePath = GetFirstNode(configNode, "userFilePath").getNodeValue();
-		String userFileName = GetFirstNode(configNode, "userFileName").getNodeValue();
+	
+	private final void readAndSetUsersFile(Element configNode) throws IOException {
+		String userFilePath = extractNodeValue(configNode, "userFilePath");
+		String userFileName = extractNodeValue(configNode, "userFileName");
 
-		if (!(userFilePath == null || userFilePath.trim().isEmpty()))
-			setUsersDirectory(userFilePath);
-		if (!(userFileName == null || userFileName.trim().isEmpty()))
-			setUsersFileName(userFileName);
+		if ((userFilePath == null || userFilePath.trim().isEmpty() ))
+			userFilePath = defaultSettingsFilePath;
+		if ((userFileName == null || userFileName.trim().isEmpty()))
+			userFileName = defaultUserFileName;
+		setUsersFile(new File(userFilePath,userFileName));
 		
 	}
-	private void readAndSetPeersFile(Element configNode) throws IOException {
-		String peersFilePath = GetFirstNode(configNode, "peersFilePath").getNodeValue();
-		String peersFileName = GetFirstNode(configNode, "peersFileName").getNodeValue();
+	private final void readAndSetPeersFile(Element configNode) throws IOException {
+		String peersFilePath = extractNodeValue(configNode, "peersFilePath");
+		String peersFileName = extractNodeValue(configNode, "peersFileName");
 		
-		if (!(peersFilePath == null || peersFilePath.trim().isEmpty() ))
-			setPeersDirectory(peersFilePath);
-		if (!(peersFileName == null || peersFileName.trim().isEmpty()))
-			setPeersFilename(peersFileName);
-		
+		if ((peersFilePath == null || peersFilePath.trim().isEmpty() ))
+			peersFilePath = defaultSettingsFilePath;
+		if ((peersFileName == null || peersFileName.trim().isEmpty()))
+			peersFileName = defaultPeersFileName;
+		setPeersFile(new File(peersFilePath,peersFileName));
+	}
+	
+	private static final String extractNodeValue(Element srcNode, String tagName){
+		Element tag = GetFirstNode(srcNode, tagName);
+		return tag == null || tag.getTextContent() == null ? "" : tag.getTextContent().trim();
 	}
 	
 	protected Document GetDocument(String filePath, String fileName) throws ParserConfigurationException, SAXException, IOException {
@@ -109,9 +122,8 @@ public class SettingsReader extends Settings {
 	}
 	
 	protected Document GetDocument(File file) throws ParserConfigurationException, SAXException, IOException {
-		DocumentBuilderFactory docbuilder = DocumentBuilderFactory.newInstance();
-		DocumentBuilder parser = docbuilder.newDocumentBuilder();
-		return parser.parse(file);
+		Printer.log("Parsing file "+file.getPath(),Printer.Level.VeryLow);
+		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file);
 	}
 	
 	public static Element GetFirstNode(Document Doc, String tagName) {
@@ -119,7 +131,12 @@ public class SettingsReader extends Settings {
 	}
 	
 	public static Element GetFirstNode(Element parent, String tagName) {
-		return (Element) parent.getElementsByTagName(tagName).item(0);
+		return parent == null ? parent : (Element) parent.getElementsByTagName(tagName).item(0);
+	}
+	
+	public static String GetFirstNodeValue(Element parent, String tagName) {
+		Element ele = GetFirstNode(parent,tagName);
+		return ele == null ? "" : ele.getTextContent();
 	}
 	
 	private Element GetConfigNode(Document Doc) {

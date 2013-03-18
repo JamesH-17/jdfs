@@ -1,7 +1,7 @@
 package com.subject17.jdfs.client.settings.writer;
 
 import java.io.File;
-import java.util.ArrayList;
+import java.util.HashSet;
 
 import javax.xml.transform.TransformerException;
 
@@ -13,10 +13,12 @@ import com.subject17.jdfs.client.net.IPUtil;
 import com.subject17.jdfs.client.peers.Peer;
 
 public class PeerSettingsWriter extends SettingsWriter {
-	public void writePeerSettings(ArrayList<Peer> peers) {
-		writePeerSettings(peerSettingsFile, peers);
+	
+	public PeerSettingsWriter(){}
+	public void writePeerSettings(HashSet<Peer> peers) {
+		writePeerSettings(getPeerSettingsFile(), peers);
 	}
-	public void writePeerSettings(File loc, ArrayList<Peer> peers) {
+	public void writePeerSettings(File loc, HashSet<Peer> peers) {
 		try {
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc, peers);
@@ -30,7 +32,7 @@ public class PeerSettingsWriter extends SettingsWriter {
 		}
 	}
 	
-	private Document createDocument(Document doc, ArrayList<Peer> peers){
+	private Document createDocument(Document doc, HashSet<Peer> peers){
 		Element root = doc.createElement("peers");
 		
 		for(Peer peer : peers) {

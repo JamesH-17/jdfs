@@ -2,7 +2,7 @@ package com.subject17.jdfs.client.peers;
 
 import java.io.File;
 import java.net.InetAddress;
-import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.w3c.dom.Document;
 
@@ -14,7 +14,7 @@ public class PeersHandler {
 	private static File peersFile;
 	private static Document peersXML;
 	private static PeerSettingsReader peersReader;
-	private static ArrayList<Peer> peers;
+	private static HashSet<Peer> peers;
 	
 	public PeersHandler(File peerSettingsFile) throws Exception {
 		
@@ -41,8 +41,8 @@ public class PeersHandler {
 		return null;
 	}
 	
-	public static ArrayList<Peer> getPeersByIp4(String ip4) {
-		ArrayList<Peer> peersMatchingIp4 = new ArrayList<Peer>();
+	public static HashSet<Peer> getPeersByIp4(String ip4) {
+		HashSet<Peer> peersMatchingIp4 = new HashSet<Peer>();
 		for (Peer peer : peers){
 			if (peer.getIp4s().contains(ip4))
 				peersMatchingIp4.add(peer);
@@ -50,8 +50,8 @@ public class PeersHandler {
 		return peersMatchingIp4;
 	}
 	
-	public static ArrayList<Peer> getPeersByIp6(String ip6) {
-		ArrayList<Peer> peersMatchingIp6 = new ArrayList<Peer>();
+	public static HashSet<Peer> getPeersByIp6(String ip6) {
+		HashSet<Peer> peersMatchingIp6 = new HashSet<Peer>();
 		for (Peer peer : peers) {
 			if (peer.getIp6s().contains(ip6))
 				peersMatchingIp6.add(peer);

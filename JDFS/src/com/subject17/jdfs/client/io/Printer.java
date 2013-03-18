@@ -11,27 +11,22 @@ import java.nio.file.Paths;
  */
 public class Printer {
 	
-	
-		public static void print(String s) {
-			System.out.print(s);
-		}
-		public static void println(String s) {
+		public static void print(Object o) { print(o.toString()); }
+		public static void print(String s) { System.out.print(s); }
+		public static void println(String s) { System.out.println(s); }
+		
+		public static void log(Object o) { log(o.toString()); }
+		public static void log(Object o, Level i) { log(o.toString(),i); }
+		public static void log(String s) { log(s,Level.Medium); }
+		public static void log(String s, Level i) {
 			System.out.println(s);
 		}
-		public static void log(String s) {
-			System.out.println(s);
-		}
-		public static void log(String s, int logLevel) {
-			System.out.println(s);
-		}
-		public static void logErr(String s) {
-			logErr(s, Level.Medium);
-		}
-		public static void logErr(Exception e) {
-			logErr(e.getMessage());
-		}
+
+		public static void logErr(Object o) { logErr(o.toString()); }
+		public static void logErr(Object o, Level i) { logErr(o.toString(), i); }
+		public static void logErr(Exception e) { logErr(e.getMessage()); }
+		public static void logErr(String s) { logErr(s, Level.Medium); }
 		public static void logErr(String s, Level i) {
-			// TODO Auto-generated method stub
 			System.err.println(s);
 		}
 		

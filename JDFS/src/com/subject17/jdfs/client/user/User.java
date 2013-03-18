@@ -14,8 +14,8 @@ public class User {
 	public User(Element node) throws Exception {
 		if (!node.getTagName().equals("user"))
 			throw new Exception("Invalid data");
-		username = node.getElementsByTagName("userName").item(0).getNodeValue();
-		account = node.getElementsByTagName("email").item(0).getNodeValue();
+		username = node.getElementsByTagName("userName").item(0).getTextContent();
+		account = node.getElementsByTagName("email").item(0).getTextContent();
 	}
 	
 	@Override

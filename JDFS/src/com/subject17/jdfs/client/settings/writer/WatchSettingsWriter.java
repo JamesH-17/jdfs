@@ -41,7 +41,7 @@ public class WatchSettingsWriter extends SettingsWriter {
 			
 			accountTag.appendChild(doc.createTextNode(peer.getEmail()));
 			userNameTag.appendChild(doc.createTextNode(peer.getUsername()));
-			
+
 			for(String ip4 : peer.getIp4s()){
 				if (IPUtil.isValidIP4Address(ip4)) {
 					Element ip4Tag = doc.createElement("ip4");

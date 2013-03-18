@@ -5,6 +5,7 @@ import java.io.File;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -12,6 +13,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.w3c.dom.Comment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -50,40 +52,50 @@ public class SettingsWriter extends Settings {
 		
 		//User settings
 		Element userFilePath = doc.createElement("userFilePath");
-		userFilePath.appendChild(doc.createTextNode(userSettingsFile.getPath()));
+		userFilePath.appendChild(doc.createTextNode(userSettingsFile.getParent()));
 		configLocations.appendChild(userFilePath);
 		
 		Element userFileName = doc.createElement("userFileName");
 		userFileName.appendChild(doc.createTextNode(userSettingsFile.getName()));
 		configLocations.appendChild(userFileName);
 		
+		Comment userComm = doc.createComment("User Settings");
+		configLocations.insertBefore(userComm, userFilePath);
+		
 		//Peer settings
 		Element peersFilePath = doc.createElement("peersFilePath");
-		peersFilePath.appendChild(doc.createTextNode(peerSettingsFile.getPath()));
+		peersFilePath.appendChild(doc.createTextNode(peerSettingsFile.getParent()));
 		configLocations.appendChild(peersFilePath);
 		
 		Element peersFileName = doc.createElement("peersFileName");
 		peersFileName.appendChild(doc.createTextNode(peerSettingsFile.getName()));
 		configLocations.appendChild(peersFileName);
 		
+		Comment peerComm = doc.createComment("Peer Settings");
+		configLocations.insertBefore(peerComm, peersFilePath);
+		
 		//Watch settings
 		Element watchFilePath = doc.createElement("watchFilePath");
-		watchFilePath.appendChild(doc.createTextNode(watchSettingsFile.getPath()));
+		watchFilePath.appendChild(doc.createTextNode(watchSettingsFile.getParent()));
 		configLocations.appendChild(watchFilePath);
 		
 		Element watchFileName = doc.createElement("watchFileName");
 		watchFileName.appendChild(doc.createTextNode(watchSettingsFile.getName()));
 		configLocations.appendChild(watchFileName);
 		
+		Comment watchComm = doc.createComment("Watch Settings");
+		configLocations.insertBefore(watchComm, watchFilePath);
+		
 		//User settings
 		Element storageDirectoryTag = doc.createElement("storageDirectory");
 		storageDirectoryTag.appendChild(doc.createTextNode(storageDirectory.getPath()));
 		root.appendChild(storageDirectoryTag);
 		
+		Comment storageComm = doc.createComment("Locations where other user's files will be stored");
+		root.insertBefore(storageComm, storageDirectoryTag);
+		
 		return doc;
 	}
-	
-	
 	
 	//Utilities
 	protected void writeDocument(Document doc) throws TransformerException {
@@ -91,7 +103,7 @@ public class SettingsWriter extends Settings {
 	}
 	
 	protected void writeDocument(Document doc, File writeLocation) throws TransformerException {
-		Transformer transformer = getNewTransformer();
+		Transformer transformer = getNewTransformer(); //Has pretty print in it as well
 		DOMSource src = new DOMSource(doc);
 		StreamResult res = new StreamResult(writeLocation);
 		
@@ -129,7 +141,11 @@ public class SettingsWriter extends Settings {
 
 	private Transformer getNewTransformer() throws TransformerConfigurationException {
 		TransformerFactory transFact = TransformerFactory.newInstance();
-		return transFact.newTransformer();
+		Transformer trans = transFact.newTransformer();
+		trans.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+		trans.setOutputProperty(OutputKeys.INDENT, "yes");
+		trans.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+		return trans;
 	}
 }
 
