@@ -4,4 +4,8 @@
 		<userName>james</userName>
 		<email>dboyzetown@gmail.com</email>
 	</user>
+	<user>
+		<userName>inactive</userName>
+		<email>inactive@gmail.com</email>
+	</user>
 </users>

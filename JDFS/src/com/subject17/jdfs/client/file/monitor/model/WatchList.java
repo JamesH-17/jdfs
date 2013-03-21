@@ -61,10 +61,22 @@ public class WatchList {
 		}
 	}
 	
-	public void AddDirectory(File directory) throws FileSystemException{
-		directories.add(new WatchDirectory(directory));		
+	public boolean AddDirectory(File directory, boolean trackSubdirectories) throws FileSystemException {
+		return directories.add(new WatchDirectory(directory, trackSubdirectories));		
 	}
-	public void AddFile(File file){
-		files.add(new WatchFile(file));
+	public boolean AddFile(File file){
+		return files.add(new WatchFile(file));
+	}
+	
+	public boolean isEmpty(){
+		return !(hasWatchDirectories() || hasWatchFiles()); 
+	}
+	
+	public boolean hasWatchDirectories() {
+		return !(directories == null || directories.isEmpty()); 
+	}
+	
+	public boolean hasWatchFiles() {
+		return !(files == null || files.isEmpty());
 	}
 }

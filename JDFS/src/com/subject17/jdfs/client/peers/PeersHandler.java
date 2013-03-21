@@ -6,19 +6,15 @@ import java.util.HashSet;
 
 import org.w3c.dom.Document;
 
+import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 import com.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 
 public class PeersHandler {
 	
 	private static File peersFile;
-	private static Document peersXML;
 	private static PeerSettingsReader peersReader;
-	private static HashSet<Peer> peers;
-	
-	public PeersHandler(File peerSettingsFile) throws Exception {
-		
-	}
+	private static HashSet<Peer> peers = new HashSet<Peer>();
 
 	public static File getPeersFile() { return peersFile; }
 	public static void addIncomingPeer(InetAddress ip, int port) {
@@ -75,9 +71,6 @@ public class PeersHandler {
 	public static void setPeersSettingsFile(File peerSettingsFile) throws Exception {
 		peersReader = new PeerSettingsReader(peerSettingsFile);
 		peersFile = peerSettingsFile;
-		
 		peers.addAll(peersReader.getPeers());
-		peersXML = peersReader.getPeerDocument(); //TODO is needed?
-		
 	}
 }

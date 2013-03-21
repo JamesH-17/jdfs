@@ -1,6 +1,7 @@
 package com.subject17.jdfs.client.settings.reader;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -13,6 +14,7 @@ import org.xml.sax.SAXException;
 
 import com.subject17.jdfs.client.file.handler.FileUtils;
 import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.settings.writer.UserSettingsWriter;
 import com.subject17.jdfs.client.user.User;
 
 public class UserSettingsReader extends SettingsReader {
@@ -21,19 +23,28 @@ public class UserSettingsReader extends SettingsReader {
 	private Document usersDoc;
 	
 	private User activeUser;
-	private ArrayList<User> users;
+	private ArrayList<User> users = new ArrayList<User>();
 	
-	public UserSettingsReader(String pathloc, String fname) throws Exception {
+	public UserSettingsReader(String pathloc, String fname) throws FileNotFoundException, IOException, SAXException, ParserConfigurationException {
 		usersFile = new File(pathloc, fname);
 		Init();
 	}
 	
-	public UserSettingsReader(File src) throws Exception {
+	public UserSettingsReader(File src) throws IOException, SAXException, ParserConfigurationException {
 		usersFile = src;
-		Init();
+		try {
+			Init();
+		} catch(FileNotFoundException e){
+			Printer.logErr("File not found -- "+usersFile.getPath());
+			Printer.logErr(e);
+			Printer.logErr("Attempting to create a default user settings file");
+			
+			UserSettingsWriter writer = new UserSettingsWriter();
+			writer.writeUserSettings(new ArrayList<User>());
+		}
 	}
 	
-	private void Init() throws Exception {
+	private void Init() throws IOException, FileNotFoundException, SAXException, ParserConfigurationException  {
 		FileUtils.checkIfFileReadable(usersFile);
 		usersDoc = getUsersDocument();
 		readUsers();

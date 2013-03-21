@@ -2,7 +2,7 @@ package com.subject17.jdfs.client.settings.reader;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 import com.subject17.jdfs.client.file.handler.FileUtils;
 import com.subject17.jdfs.client.file.monitor.model.WatchList;
 import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.user.User;
 
 
 /**
@@ -25,37 +26,37 @@ public class WatchSettingsReader extends SettingsReader {
 	
 	private Document watchDoc;
 	
-	private ArrayList<WatchList> watchLists;
+	private HashMap<User,WatchList> watchLists;
 	
-	public WatchSettingsReader(String pathloc, String fname) throws Exception {
+	public WatchSettingsReader(String pathloc, String fname) throws ParserConfigurationException, SAXException, IOException {
 		watchSettingsFile = new File(pathloc, fname);
 		Init();
 	}
 	
-	public WatchSettingsReader(File src) throws Exception {
+	public WatchSettingsReader(File src) throws ParserConfigurationException, SAXException, IOException {
 		watchSettingsFile = src;
 		Init();
 	}
 	
-	private void Init() throws Exception {
+	private void Init() throws ParserConfigurationException, SAXException, IOException {
 		FileUtils.checkIfFileReadable(watchSettingsFile);
 		watchDoc = getWatchDocument();
 		readWatchLists();
 	}
 	
 	//Getters
-	public ArrayList<WatchList> getWatchLists() { return watchLists; }
+	public HashMap<User,WatchList> getAllWatchLists() { return watchLists; }
 	
 	//
 	private void readWatchLists() {
-		watchLists = new ArrayList<WatchList>();
+		watchLists = new HashMap<User,WatchList>();
 		
 		NodeList lst = watchDoc.getElementsByTagName("watchList");
 		for (int i = 0; i < lst.getLength(); ++i) {
 			try {
 				Element watchList = (Element)lst.item(i);
 				WatchList watchLst = new WatchList(watchList);
-				watchLists.add(watchLst);
+				watchLists.put(watchLst.getUser(),watchLst);
 			}
 			catch (Exception e){
 				Printer.logErr("Could not read Wath List, number "+i+" in list.");
