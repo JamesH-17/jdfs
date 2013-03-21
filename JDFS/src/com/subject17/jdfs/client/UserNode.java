@@ -6,7 +6,7 @@ package com.subject17.jdfs.client;
 import java.util.Scanner;
 
 import com.subject17.jdfs.client.account.AccountManager;
-import com.subject17.jdfs.client.file.monitor.WatchService;
+import com.subject17.jdfs.client.file.monitor.FileWatcher;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
@@ -66,7 +66,7 @@ public class UserNode {
 		AccountManager.setUsersSettingsFile(settingsReader.getUserSettingsFile());
 		
 		Printer.log("Starting Watch Service");
-		WatchService.setWatchSettingsFile(settingsReader.getWatchSettingsFile());
+		FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsFile());
 		
 		//Next, add in code for watch service monitor
 		

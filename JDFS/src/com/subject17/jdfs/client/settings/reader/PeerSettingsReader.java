@@ -35,7 +35,6 @@ public class PeerSettingsReader extends SettingsReader {
 	}
 	private void Init() throws IOException, ParserConfigurationException, SAXException {
 		try {
-			
 			FileUtils.checkIfFileReadable(sourceFile);
 			peerDoc = GetDocument(sourceFile);
 			peers = ReadInPeers(peerDoc);
