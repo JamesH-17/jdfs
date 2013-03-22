@@ -2,7 +2,7 @@ package com.subject17.jdfs.client.file.monitor.model;
 
 import java.nio.file.FileSystemException;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.HashSet;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -12,8 +12,8 @@ import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.user.User;
 
 public class WatchList {
-	private ArrayList<WatchDirectory> directories;
-	private ArrayList<WatchFile> files;
+	private HashSet<WatchDirectory> directories;
+	private HashSet<WatchFile> files;
 	private User user;
 	
 	public WatchList(Element watchEle){
@@ -29,8 +29,8 @@ public class WatchList {
 		user = newUser;
 	}
 
-	public final ArrayList<WatchDirectory> getDirectories() {return directories;}
-	public final ArrayList<WatchFile> getFiles() {return files;}
+	public final HashSet<WatchDirectory> getDirectories() {return directories;}
+	public final HashSet<WatchFile> getFiles() {return files;}
 	public final User getUser() {return user;}
 	
 	private final void setUser(String account) {
@@ -39,8 +39,8 @@ public class WatchList {
 	}
 	
 	private final void resetFilesAndDirectories(){
-		files = new ArrayList<WatchFile>();
-		directories = new ArrayList<WatchDirectory>();
+		files = new HashSet<WatchFile>();
+		directories = new HashSet<WatchDirectory>();
 	}
 	private final void readDirectories(NodeList directoryNodes){
 		for (int i = 0; i < directoryNodes.getLength(); ++i) {
@@ -82,13 +82,7 @@ public class WatchList {
 		}
 	}
 	
-	public final boolean isEmpty(){
-		return !(hasWatchDirectories() || hasWatchFiles()); 
-	}
-	public final boolean hasWatchDirectories() {
-		return !(directories == null || directories.isEmpty()); 
-	}
-	public final boolean hasWatchFiles() {
-		return !(files == null || files.isEmpty());
-	}
+	public final boolean isEmpty(){ return !(hasWatchDirectories() || hasWatchFiles());  }
+	public final boolean hasWatchDirectories() { return !(directories == null || directories.isEmpty());  }
+	public final boolean hasWatchFiles() { return !(files == null || files.isEmpty()); }
 }

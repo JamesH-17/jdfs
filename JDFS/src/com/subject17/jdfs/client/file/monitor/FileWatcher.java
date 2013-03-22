@@ -1,6 +1,5 @@
 package com.subject17.jdfs.client.file.monitor;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
@@ -20,6 +19,7 @@ import com.subject17.jdfs.client.file.monitor.model.WatchDirectory;
 import com.subject17.jdfs.client.file.monitor.model.WatchFile;
 import com.subject17.jdfs.client.file.monitor.model.WatchList;
 import com.subject17.jdfs.client.settings.reader.WatchSettingsReader;
+import com.subject17.jdfs.client.settings.writer.WatchSettingsWriter;
 import com.subject17.jdfs.client.user.User;
 import com.subject17.jdfs.client.user.UserUtil;
 
@@ -29,6 +29,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 public class FileWatcher {
 
+	private static volatile boolean isRunning = false; 
 	private static Path watchSettingsFile;
 	private static WatchSettingsReader watchSettingsReader;
 	
@@ -43,8 +44,13 @@ public class FileWatcher {
 	
 	
 	public final static void setWatchSettingsFile(Path target) throws FileNotFoundException, IOException, ParserConfigurationException, SAXException {
-		if (!Files.isReadable(target))
-			throw new IOException("Path ["+target+"] is not readable");
+		if (!Files.isReadable(target)) {
+			try {
+				//TODO set up a writer in the watch reader class
+			} catch(Exception e) {
+				
+			}
+		}
 		watchSettingsFile = target;
 		watchSettingsReader = new WatchSettingsReader(watchSettingsFile);
 		watchLists = watchSettingsReader.getAllWatchLists();		
@@ -57,16 +63,21 @@ public class FileWatcher {
 		return haystack.get(key);
 	}
 	
-	public final static boolean setActiveWatchList(User user){ /* ----------------This is the magic function that inits everything else--------------------*/
+	public final static boolean setActiveWatchList(User user) throws IOException{ /* ----------------This is the magic function that inits everything else--------------------*/
 		if (!UserUtil.isEmptyUser(user)){
+			commitChangesToWatchlist();
+			
 			activeWatchList = watchLists.get(activeUser = user); //could be set to null here
 			if (activeWatchList == null) { //This user doesn't have a watchlist!  Make a default!
 				activeWatchList = new WatchList(user);
 				watchLists.put(activeUser,activeWatchList);
 			}
+			initWatchService();
+			registerAllFilesToWatchService();
 			return true;
 		}
 		else return false;
+		
 	}
 	
 	public final static boolean addWatchList(WatchList lst, User usr){
@@ -101,17 +112,26 @@ public class FileWatcher {
 		return addDirectoryToWatchList(watchLists, user, directory, trackSubdirectories);
 	}
 	
+	private final static boolean commitChangesToWatchlist(){
+		if(isRunning){
+			WatchSettingsWriter writer = new WatchSettingsWriter();
+			writer.writeWatchSettings(watchSettingsFile, watchLists.values());
+			return true;
+		}
+		else return true;
+	}
+	
 	private final static boolean addDirectoryToWatchList(HashMap<User,WatchList> haystack, User user, Path directory, boolean trackSubdirectories) throws FileSystemException{
 		if 	(haystack==null || haystack.isEmpty() || user==null || user.isEmpty() || !haystack.containsKey(user))
 			return false;
 		else return haystack.get(user).AddDirectory(directory, trackSubdirectories); //TODO check out the reference tracking here
 	}
 	
-	private final void initWatchService() throws IOException {
+	private final static void initWatchService() throws IOException {
 		watcher = FileSystems.getDefault().newWatchService();
 	}
 		
-	private final void registerAllFilesToWatchService() throws IOException {
+	private final static void registerAllFilesToWatchService() throws IOException {
 		assert(activeWatchList != null);
 		
 		//This function only handles the current watchlist

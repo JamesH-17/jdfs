@@ -1,6 +1,5 @@
 package com.subject17.jdfs.client.settings.reader;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,7 +58,7 @@ public class WatchSettingsReader extends SettingsReader {
 				watchLists.put(watchLst.getUser(),watchLst);
 			}
 			catch (Exception e){
-				Printer.logErr("Could not read Wath List, number "+i+" in list.");
+				Printer.logErr("Could not read Watch List, number "+i+" in list.");
 				Printer.logErr(e);
 			}
 		}

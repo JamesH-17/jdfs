@@ -1,25 +1,27 @@
 package com.subject17.jdfs.client.settings.writer;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.xml.transform.TransformerException;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import com.subject17.jdfs.client.file.monitor.model.WatchList;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.IPUtil;
 import com.subject17.jdfs.client.peers.Peer;
+import com.subject17.jdfs.client.user.User;
 
 public class WatchSettingsWriter extends SettingsWriter {
-	public void writeWatchSettings(ArrayList<Peer> peers) {
-		writePeerSettings(userSettingsPath, peers);
+	public void writeWatchSettings(Collection<WatchList> watchLists) {
+		writeWatchSettings(userSettingsPath, watchLists);
 	}
-	public void writePeerSettings(Path loc, ArrayList<Peer> peers) {
+	public void writeWatchSettings(Path loc, Collection<WatchList> watchLists) {
 		try {
 			Document doc = getNewDocBuilder();
-			doc = createDocument(doc, peers);
+			doc = createDocument(doc, watchLists);
 			
 			writeDocument(doc, loc);
 			
@@ -30,17 +32,18 @@ public class WatchSettingsWriter extends SettingsWriter {
 		}
 	}
 	
-	private Document createDocument(Document doc, ArrayList<Peer> peers){
+	private Document createDocument(Document doc, Collection<WatchList> watchLists){
 		Element root = doc.createElement("peers");
 		
-		for(Peer peer : peers) {
+		for (WatchList list : watchLists) { //Note that storing the users is redundant
 			//Peer settings
+			/*
 			Element peerTag = doc.createElement("peer");
 			Element accountTag = doc.createElement("accountEmail");
 			Element userNameTag = doc.createElement("userName");
 			
-			accountTag.appendChild(doc.createTextNode(peer.getEmail()));
-			userNameTag.appendChild(doc.createTextNode(peer.getUsername()));
+			accountTag.appendChild(doc.createTextNode(list.getEmail()));
+			userNameTag.appendChild(doc.createTextNode(list.getUsername()));
 
 			for(String ip4 : peer.getIp4s()){
 				if (IPUtil.isValidIP4Address(ip4)) {
@@ -60,8 +63,7 @@ public class WatchSettingsWriter extends SettingsWriter {
 			
 			peerTag.appendChild(accountTag);
 			peerTag.appendChild(userNameTag);
-			
-			root.appendChild(peerTag);
+			root.appendChild(peerTag);*/
 		}
 		
 		doc.appendChild(root);
