@@ -33,7 +33,7 @@ public class PeerSettingsTest {
 		settingsReader = new SettingsReader();
 		settingsReaderTest = new SettingsReader(rootTestDirectory,"SettingsReaderTest.conf");
 	}
-
+/*
 	@Test
 	public void test() throws ParserConfigurationException, SAXException, IOException, Exception {
 		try {
@@ -55,7 +55,8 @@ public class PeerSettingsTest {
 			Printer.logErr(e);
 		}
 	}
-	
+	*/
+	@Test
 	public void testBlankFile() throws ParserConfigurationException, SAXException, IOException, Exception {
 		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReader.getPeerSettingsPath());
 		assertEquals(new File(rootDirectory,"Peers.xml").getCanonicalPath(),settingsReader.getPeerSettingsPath().toString());
@@ -74,7 +75,7 @@ public class PeerSettingsTest {
 			}
 		}
 	}
-	
+	@Test
 	public void testTestFile() throws ParserConfigurationException, SAXException, IOException, Exception {
 		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReaderTest.getPeerSettingsPath());
 		
@@ -99,6 +100,7 @@ public class PeerSettingsTest {
 			}
 		}
 	}
+	@Test
 	private void TestRegexEmailValidation(){
 		String validEmail = "jdfs-test@mailinator.net";
 		assertEquals("Valid email does not match regex",true,validEmail.matches("[^@]+@[^@]+"));

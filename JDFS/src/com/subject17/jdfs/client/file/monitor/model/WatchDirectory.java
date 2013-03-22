@@ -6,17 +6,22 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.nio.file.Paths;
+import java.util.HashSet;
 
 import org.w3c.dom.Element;
 
 import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.settings.reader.SettingsReader;
 
 public class WatchDirectory {
 	private Path directory;
 	public boolean followSubDirectories;
 	public WatchDirectory(Element e) {
-		//TODO add this
+		Element ele = SettingsReader.GetFirstNode(e, "");
+		//Element ele = SettingsReader.GetFirstNode(e, "");
+		directory = Paths.get(e.getTextContent());
+		//followSubDirectories = e.l
 	}
 	public WatchDirectory(Path loc) throws FileSystemException{
 		this(loc, false);
@@ -37,12 +42,12 @@ public class WatchDirectory {
 	public final void disabeSubdirectoryTracking(){followSubDirectories = false;}
 	public final boolean followSubdirectories() { return followSubDirectories; }
 	
-	public final ArrayList<Path> getFilesToWatch() throws IOException {
+	public final HashSet<Path> getFilesToWatch() throws IOException {
 		return getFilesToWatch(directory);
 	}
-	private final ArrayList<Path> getFilesToWatch(Path loc) throws IOException { //TODO may have to extend this to take a level parameter
-		final ArrayList<Path> filesToWatch = new ArrayList<Path>();
-		
+	private final HashSet<Path> getFilesToWatch(Path loc) throws IOException { //TODO may have to extend this to take a level parameter
+		final HashSet<Path> filesToWatch = new HashSet<Path>();
+		//TODO watch out for symlinks!
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(loc)){
 			for(Path path : stream){
 				if(Files.isRegularFile(path))
@@ -57,4 +62,5 @@ public class WatchDirectory {
 		return filesToWatch;
 	}
 	
+	public final int hashCode() { return directory.hashCode(); }
 }
