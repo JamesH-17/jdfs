@@ -1,6 +1,9 @@
 package com.subject17.jdfs.client.settings.writer;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,12 +26,12 @@ import com.subject17.jdfs.client.settings.Settings;
 public class SettingsWriter extends Settings {
 	
 	public void writeXMLSettings() {
-		writeXMLSettings(settingsFile);
+		writeXMLSettings(settingsPath);
 	}
 	public void writeXMLSettings(String settingsFileLocation) {
 		writeXMLSettings(getWriteLocation(settingsFileLocation));
 	}
-	public void writeXMLSettings(File loc) {
+	public void writeXMLSettings(Path loc) {
 		try {
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc);
@@ -52,11 +55,11 @@ public class SettingsWriter extends Settings {
 		
 		//User settings
 		Element userFilePath = doc.createElement("userFilePath");
-		userFilePath.appendChild(doc.createTextNode(userSettingsFile.getParent()));
+		userFilePath.appendChild(doc.createTextNode(userSettingsPath.getParent().toString()));
 		configLocations.appendChild(userFilePath);
 		
 		Element userFileName = doc.createElement("userFileName");
-		userFileName.appendChild(doc.createTextNode(userSettingsFile.getName()));
+		userFileName.appendChild(doc.createTextNode(userSettingsPath.getFileName().toString()));
 		configLocations.appendChild(userFileName);
 		
 		Comment userComm = doc.createComment("User Settings");
@@ -64,11 +67,11 @@ public class SettingsWriter extends Settings {
 		
 		//Peer settings
 		Element peersFilePath = doc.createElement("peersFilePath");
-		peersFilePath.appendChild(doc.createTextNode(peerSettingsFile.getParent()));
+		peersFilePath.appendChild(doc.createTextNode(peerSettingsPath.getParent().toString()));
 		configLocations.appendChild(peersFilePath);
 		
 		Element peersFileName = doc.createElement("peersFileName");
-		peersFileName.appendChild(doc.createTextNode(peerSettingsFile.getName()));
+		peersFileName.appendChild(doc.createTextNode(peerSettingsPath.getFileName().toString()));
 		configLocations.appendChild(peersFileName);
 		
 		Comment peerComm = doc.createComment("Peer Settings");
@@ -76,11 +79,11 @@ public class SettingsWriter extends Settings {
 		
 		//Watch settings
 		Element watchFilePath = doc.createElement("watchFilePath");
-		watchFilePath.appendChild(doc.createTextNode(watchSettingsFile.getParent()));
+		watchFilePath.appendChild(doc.createTextNode(watchSettingsPath.getParent().toString()));
 		configLocations.appendChild(watchFilePath);
 		
 		Element watchFileName = doc.createElement("watchFileName");
-		watchFileName.appendChild(doc.createTextNode(watchSettingsFile.getName()));
+		watchFileName.appendChild(doc.createTextNode(watchSettingsPath.getFileName().toString()));
 		configLocations.appendChild(watchFileName);
 		
 		Comment watchComm = doc.createComment("Watch Settings");
@@ -88,7 +91,7 @@ public class SettingsWriter extends Settings {
 		
 		//User settings
 		Element storageDirectoryTag = doc.createElement("storageDirectory");
-		storageDirectoryTag.appendChild(doc.createTextNode(storageDirectory.getPath()));
+		storageDirectoryTag.appendChild(doc.createTextNode(storageDirectory.toString()));
 		root.appendChild(storageDirectoryTag);
 		
 		Comment storageComm = doc.createComment("Locations where other user's files will be stored");
@@ -99,36 +102,34 @@ public class SettingsWriter extends Settings {
 	
 	//Utilities
 	protected void writeDocument(Document doc) throws TransformerException {
-		writeDocument(doc, new File(defaultSettingsFilePath, defaultSettingsFileName));
+		writeDocument(doc, Paths.get(defaultSettingsDirectory, defaultSettingsPathName));
 	}
 	
-	protected void writeDocument(Document doc, File writeLocation) throws TransformerException {
+	protected void writeDocument(Document doc, Path sourceFile) throws TransformerException {
 		Transformer transformer = getNewTransformer(); //Has pretty print in it as well
 		DOMSource src = new DOMSource(doc);
-		StreamResult res = new StreamResult(writeLocation);
+		StreamResult res = new StreamResult(sourceFile.toFile());
 		
 		transformer.transform(src, res);
 	}
 	
-	protected File getWriteLocation(String settingsFileLocation) {
-		File loc = new File(settingsFileLocation);
+	protected Path getWriteLocation(String settingsFileLocation) {
+		Path path = Paths.get(settingsFileLocation);
 		
-		if (settingsFileLocation == null || settingsFileLocation.equals(""))
-			loc = new File(defaultSettingsFilePath, defaultSettingsFileName); //Trusting that I'll always have this be valid
+		if (!Files.exists(path))
+			path = Paths.get(defaultSettingsDirectory, defaultSettingsPathName); //Trusting that I'll always have this be valid
 		
-		if (loc.isDirectory())
-			loc = new File(loc.getParent(), defaultSettingsFileName);
-		if (!new File(loc.getParent()).exists())
-			loc = new File(defaultSettingsFilePath, loc.getName());
+		if (Files.isDirectory(path))
+			path = path.resolve(defaultSettingsPathName);
 		
-		return loc;
+		return path;
 	}
 	
 	protected File getWriteLocation(String settingsFilePath, String settingsFileName) {
 		if (settingsFilePath == null || settingsFilePath.equals(""))
-			settingsFilePath = defaultSettingsFilePath;
+			settingsFilePath = defaultSettingsDirectory;
 		if (settingsFileName == null || settingsFileName.equals(""))
-			settingsFileName = defaultSettingsFileName;
+			settingsFileName = defaultSettingsPathName;
 		
 		return new File(settingsFilePath, settingsFileName); //If they supply a wrong location, not our problem
 	}

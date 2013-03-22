@@ -1,6 +1,6 @@
 package com.subject17.jdfs.client.settings.writer;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.HashSet;
 
 import javax.xml.transform.TransformerException;
@@ -16,9 +16,9 @@ public class PeerSettingsWriter extends SettingsWriter {
 	
 	public PeerSettingsWriter(){}
 	public void writePeerSettings(HashSet<Peer> peers) {
-		writePeerSettings(getPeerSettingsFile(), peers);
+		writePeerSettings(peerSettingsPath, peers);
 	}
-	public void writePeerSettings(File loc, HashSet<Peer> peers) {
+	public void writePeerSettings(Path loc, HashSet<Peer> peers) {
 		try {
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc, peers);

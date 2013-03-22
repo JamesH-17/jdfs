@@ -1,6 +1,7 @@
 package com.subject17.jdfs.client.settings.writer;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 import javax.xml.transform.TransformerException;
@@ -13,12 +14,12 @@ import com.subject17.jdfs.client.user.User;
 
 
 public class UserSettingsWriter extends SettingsWriter {
-	private File outputFile = null;
+	private Path outputFile = null;
 	
 	public UserSettingsWriter() {
-		outputFile = userSettingsFile;
+		outputFile = userSettingsPath;
 	}
-	public UserSettingsWriter(File file) {
+	public UserSettingsWriter(Path file) {
 		outputFile = file;
 	}
 	public void writeUserSettings(ArrayList<User> users) {
@@ -27,10 +28,10 @@ public class UserSettingsWriter extends SettingsWriter {
 	public void writeUserSettings(ArrayList<User> users, User activeUser) {
 		writeUserSettings(outputFile, users, activeUser);
 	}
-	public void writeUserSettings(File loc, ArrayList<User> users) {
+	public void writeUserSettings(Path loc, ArrayList<User> users) {
 		writeUserSettings(loc, users, null);
 	}
-	public void writeUserSettings(File loc, ArrayList<User> users, User activeUser) {
+	public void writeUserSettings(Path loc, ArrayList<User> users, User activeUser) {
 		try {
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc, users, activeUser);

@@ -47,19 +47,19 @@ public class SettingsReaderTest {
 	
 	public void testDefaultLocations() throws ParserConfigurationException, SAXException, IOException {
 		SettingsReader settingsReader = new SettingsReader();
-		assertEquals(new File(rootDirectory,"settings.conf").getCanonicalPath(),settingsReader.getSettingsFile().getCanonicalPath());
-		assertEquals(new File(rootDirectory,"Peers.xml").getCanonicalPath(),settingsReader.getPeerSettingsFile().getCanonicalPath());
-		assertEquals(new File(rootDirectory,"Users.xml").getCanonicalPath(),settingsReader.getUserSettingsFile().getCanonicalPath());
-		assertEquals(new File(rootDirectory,"FileWatch.xml").getCanonicalPath(),settingsReader.getWatchSettingsFile().getCanonicalPath());
-		assertEquals(new File(rootDirectory,"storage").getCanonicalPath(),settingsReader.getStorageDirectory().getCanonicalPath());
+		assertEquals(new File(rootDirectory,"settings.conf").getCanonicalPath(),settingsReader.getSettingsPath().toString());
+		assertEquals(new File(rootDirectory,"Peers.xml").getCanonicalPath(),settingsReader.getPeerSettingsPath().toString());
+		assertEquals(new File(rootDirectory,"Users.xml").getCanonicalPath(),settingsReader.getUserSettingsPath().toString());
+		assertEquals(new File(rootDirectory,"FileWatch.xml").getCanonicalPath(),settingsReader.getWatchSettingsPath().toString());
+		assertEquals(new File(rootDirectory,"storage").getCanonicalPath(),settingsReader.getStorageDirectory().toString());
 	}
 	
 	public void testSpecificLocations() throws ParserConfigurationException, SAXException, IOException {
 		SettingsReader settingsReader = new SettingsReader(rootTestDirectory,"SettingsReaderTest.conf");
-		assertEquals("Failed settings File equality",new File(rootTestDirectory,"SettingsReaderTest.conf").getCanonicalPath(),settingsReader.getSettingsFile().getCanonicalPath());
-		assertEquals("Failed peers settings file equality",new File(rootTestDirectory,"PeersTest.xml").getCanonicalPath(),settingsReader.getPeerSettingsFile().getCanonicalPath());
-		assertEquals("Failed user settings file equality",new File(rootTestDirectory,"UsersTest.xml").getCanonicalPath(),settingsReader.getUserSettingsFile().getCanonicalPath());
-		assertEquals("Failed watch settings file equality",new File(rootTestDirectory,"FileWatchTest.xml").getCanonicalPath(),settingsReader.getWatchSettingsFile().getCanonicalPath());
-		assertEquals("Failed storage directory equality",new File(rootTestDirectory,"storage").getCanonicalPath(),settingsReader.getStorageDirectory().getCanonicalPath());
+		assertEquals("Failed settings File equality",new File(rootTestDirectory,"SettingsReaderTest.conf").getCanonicalPath(),settingsReader.getSettingsPath().toString());
+		assertEquals("Failed peers settings file equality",new File(rootTestDirectory,"PeersTest.xml").getCanonicalPath(),settingsReader.getPeerSettingsPath().toString());
+		assertEquals("Failed user settings file equality",new File(rootTestDirectory,"UsersTest.xml").getCanonicalPath(),settingsReader.getUserSettingsPath().toString());
+		assertEquals("Failed watch settings file equality",new File(rootTestDirectory,"FileWatchTest.xml").getCanonicalPath(),settingsReader.getWatchSettingsPath().toString());
+		assertEquals("Failed storage directory equality",new File(rootTestDirectory,"storage").getCanonicalPath(),settingsReader.getStorageDirectory().toString());
 	}
 }

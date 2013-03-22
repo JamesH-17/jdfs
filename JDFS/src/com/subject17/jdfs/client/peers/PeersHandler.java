@@ -1,22 +1,20 @@
 package com.subject17.jdfs.client.peers;
 
-import java.io.File;
 import java.net.InetAddress;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 
-import org.w3c.dom.Document;
-
-import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 import com.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 
 public class PeersHandler {
 	
-	private static File peersFile;
+	private static Path peersFile;
 	private static PeerSettingsReader peersReader;
 	private static HashSet<Peer> peers = new HashSet<Peer>();
 
-	public static File getPeersFile() { return peersFile; }
+	public static Path getPeersFile() { return peersFile; }
 	public static void addIncomingPeer(InetAddress ip, int port) {
 		//TODO add peer to peersfileList
 	}
@@ -60,15 +58,15 @@ public class PeersHandler {
 	}
 	
 	public void writePeersToFile(String path, String filename) {
-		writePeersToFile(new File(path, filename));
+		writePeersToFile(Paths.get(path, filename));
 	}
 	
-	public void writePeersToFile(File file) {
+	public void writePeersToFile(Path file) {
 		PeerSettingsWriter writer = new PeerSettingsWriter();
 		writer.writePeerSettings(file,peers);
 	}
 
-	public static void setPeersSettingsFile(File peerSettingsFile) throws Exception {
+	public static void setPeersSettingsFile(Path peerSettingsFile) throws Exception {
 		peersReader = new PeerSettingsReader(peerSettingsFile);
 		peersFile = peerSettingsFile;
 		peers.addAll(peersReader.getPeers());

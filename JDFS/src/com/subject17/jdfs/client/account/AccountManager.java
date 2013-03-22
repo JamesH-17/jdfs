@@ -1,6 +1,7 @@
 package com.subject17.jdfs.client.account;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import com.subject17.jdfs.client.settings.reader.UserSettingsReader;
@@ -8,14 +9,14 @@ import com.subject17.jdfs.client.settings.writer.UserSettingsWriter;
 import com.subject17.jdfs.client.user.User;
 
 public class AccountManager {
-	private static File usersFile = null;
+	private static Path usersFile = null;
 	private static ArrayList<User> users = new ArrayList<User>();	//Using array list here since data integrity is important
 																	//(don't trust unique hashCode), we do a lot of lookup based
 																	//upon element properties (necessitating a lookup anyway)
 																	//and there won't be too many elements in here anyway. 
 	private static User activeUser =  null;
 	
-	public void readUsersFromFile(File userSettingsFile) throws Exception {
+	public void readUsersFromFile(Path userSettingsFile) throws Exception {
 		usersFile = userSettingsFile;
 		UserSettingsReader settingsSource = new UserSettingsReader(userSettingsFile);
 		
@@ -24,13 +25,10 @@ public class AccountManager {
 		activeUser = settingsSource.getActiveUser();
 	}
 	
-	public static void setUsersSettingsFile(File newLocation) {
+	public static void setUsersSettingsFile(Path newLocation) {
 		usersFile = newLocation;
 	}
-	
-	
-	
-	
+		
 	//ACTIVE USER
 	
 	public static User getActiveUser() {
@@ -88,10 +86,10 @@ public class AccountManager {
 	}
 	
 	public static void writeUsersToFile(String path, String filename) {
-		writeUsersToFile(new File(path, filename));
+		writeUsersToFile(Paths.get(path, filename));
 	}
 	
-	public static void writeUsersToFile(File file) {
+	public static void writeUsersToFile(Path file) {
 		UserSettingsWriter writer = new UserSettingsWriter(file);
 		writer.writeUserSettings(users, activeUser);
 	}

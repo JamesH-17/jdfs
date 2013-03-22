@@ -4,6 +4,7 @@ import static org.junit.Assert.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -56,8 +57,8 @@ public class PeerSettingsTest {
 	}
 	
 	public void testBlankFile() throws ParserConfigurationException, SAXException, IOException, Exception {
-		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReader.getPeerSettingsFile());
-		assertEquals(new File(rootDirectory,"Peers.xml").getCanonicalPath(),settingsReader.getPeerSettingsFile().getCanonicalPath());
+		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReader.getPeerSettingsPath());
+		assertEquals(new File(rootDirectory,"Peers.xml").getCanonicalPath(),settingsReader.getPeerSettingsPath().toString());
 		
 		HashSet<Peer> peers = peerSettingsReader.getPeers();
 		assertEquals(true, peers != null && peers.isEmpty());
@@ -75,10 +76,10 @@ public class PeerSettingsTest {
 	}
 	
 	public void testTestFile() throws ParserConfigurationException, SAXException, IOException, Exception {
-		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReaderTest.getPeerSettingsFile());
+		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReaderTest.getPeerSettingsPath());
 		
-		assertEquals("Failed settings File equality",new File(rootTestDirectory,"SettingsReaderTest.conf").getCanonicalPath(),settingsReaderTest.getSettingsFile().getCanonicalPath());
-		assertEquals("Failed peers settings file equality",new File(rootTestDirectory,"PeersTest.xml").getCanonicalPath(),settingsReaderTest.getPeerSettingsFile().getCanonicalPath());
+		assertEquals("Failed settings File equality",Paths.get(rootTestDirectory,"SettingsReaderTest.conf").toString(),settingsReaderTest.getSettingsPath().toString());
+		assertEquals("Failed peers settings file equality",new File(rootTestDirectory,"PeersTest.xml").getCanonicalPath(),settingsReaderTest.getPeerSettingsPath().toString());
 		
 		HashSet<Peer> peers = peerSettingsReader.getPeers();
 		assertEquals("No peers found (Make sure file pointed to contains some)",false, peers == null || peers.isEmpty());
