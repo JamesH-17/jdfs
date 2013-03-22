@@ -66,7 +66,7 @@ public class UserNode {
 		AccountManager.setUsersSettingsFile(settingsReader.getUserSettingsPath());
 		
 		Printer.log("Starting Watch Service");
-		FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsPath());
+		//FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsPath());
 		
 		//Next, add in code for watch service monitor
 		
