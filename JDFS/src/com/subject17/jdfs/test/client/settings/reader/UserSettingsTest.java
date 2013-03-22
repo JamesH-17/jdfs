@@ -34,8 +34,8 @@ public class UserSettingsTest {
 	}
 	@Before
 	public void setUp() throws Exception {
-		userSettingsReader = new UserSettingsReader(settingsReader.getUserSettingsFile());
-		userSettingsReaderTest = new UserSettingsReader(settingsReaderTest.getUserSettingsFile());
+		userSettingsReader = new UserSettingsReader(settingsReader.getUserSettingsPath());
+		userSettingsReaderTest = new UserSettingsReader(settingsReaderTest.getUserSettingsPath());
 	}
 
 	@After
@@ -50,8 +50,8 @@ public class UserSettingsTest {
 	
 	@Test
 	public void testGetSettingsFile(){
-		userSettingsReader.getUserSettingsFile();
-		userSettingsReaderTest.getUserSettingsFile();
+		userSettingsReader.getUserSettingsPath();
+		userSettingsReaderTest.getUserSettingsPath();
 	}
 	@Test
 	public void testGetUsers() {

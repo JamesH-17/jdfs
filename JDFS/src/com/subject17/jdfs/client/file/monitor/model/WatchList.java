@@ -1,7 +1,7 @@
 package com.subject17.jdfs.client.file.monitor.model;
 
-import java.io.File;
 import java.nio.file.FileSystemException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 import org.w3c.dom.Element;
@@ -17,23 +17,32 @@ public class WatchList {
 	private User user;
 	
 	public WatchList(Element watchEle){
-		files = new ArrayList<WatchFile>();
-		directories = new ArrayList<WatchDirectory>();
+		resetFilesAndDirectories();
 		
 		readDirectories(watchEle.getElementsByTagName("directory"));
 		readFiles(watchEle.getElementsByTagName("file"));
 		
 		setUser(watchEle.getAttribute("account"));
+	}		
+	public WatchList(User newUser) {
+		resetFilesAndDirectories();
+		user = newUser;
 	}
-	private void setUser(String account) {
+
+	public final ArrayList<WatchDirectory> getDirectories() {return directories;}
+	public final ArrayList<WatchFile> getFiles() {return files;}
+	public final User getUser() {return user;}
+	
+	private final void setUser(String account) {
 		if (AccountManager.accountExists(account))
 			user = AccountManager.getUserByAccount(account);
 	}
-	public ArrayList<WatchDirectory> getDirectories() {return directories;}
-	public ArrayList<WatchFile> getFiles() {return files;}
-	public User getUser(){return user;}
 	
-	private void readDirectories(NodeList directoryNodes){
+	private final void resetFilesAndDirectories(){
+		files = new ArrayList<WatchFile>();
+		directories = new ArrayList<WatchDirectory>();
+	}
+	private final void readDirectories(NodeList directoryNodes){
 		for (int i = 0; i < directoryNodes.getLength(); ++i) {
 			try {
 				Element directoryTag = (Element)directoryNodes.item(i);
@@ -46,8 +55,7 @@ public class WatchList {
 			}
 		}
 	}
-	
-	private void readFiles(NodeList fileNodes){
+	private final void readFiles(NodeList fileNodes){
 		for (int i = 0; i < fileNodes.getLength(); ++i) {
 			try {
 				Element fileTag = (Element)fileNodes.item(i);
@@ -61,22 +69,26 @@ public class WatchList {
 		}
 	}
 	
-	public boolean AddDirectory(File directory, boolean trackSubdirectories) throws FileSystemException {
+	public final boolean AddDirectory(Path directory, boolean trackSubdirectories) throws FileSystemException {
 		return directories.add(new WatchDirectory(directory, trackSubdirectories));		
 	}
-	public boolean AddFile(File file){
-		return files.add(new WatchFile(file));
+	public final boolean AddFile(Path path) {
+		try {
+			return files.add(new WatchFile(path));
+		} catch(Exception e){
+			Printer.logErr("File not added");
+			Printer.logErr(e);
+			return false;
+		}
 	}
 	
-	public boolean isEmpty(){
+	public final boolean isEmpty(){
 		return !(hasWatchDirectories() || hasWatchFiles()); 
 	}
-	
-	public boolean hasWatchDirectories() {
+	public final boolean hasWatchDirectories() {
 		return !(directories == null || directories.isEmpty()); 
 	}
-	
-	public boolean hasWatchFiles() {
+	public final boolean hasWatchFiles() {
 		return !(files == null || files.isEmpty());
 	}
 }

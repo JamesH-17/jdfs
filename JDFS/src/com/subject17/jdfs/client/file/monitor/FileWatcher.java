@@ -5,10 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
-import java.nio.file.StandardWatchEventKinds;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,45 +16,60 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
-import com.subject17.jdfs.client.file.handler.FileUtils;
 import com.subject17.jdfs.client.file.monitor.model.WatchDirectory;
+import com.subject17.jdfs.client.file.monitor.model.WatchFile;
 import com.subject17.jdfs.client.file.monitor.model.WatchList;
 import com.subject17.jdfs.client.settings.reader.WatchSettingsReader;
 import com.subject17.jdfs.client.user.User;
+import com.subject17.jdfs.client.user.UserUtil;
+
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 public class FileWatcher {
 
-	private static File watchSettingsFile;
+	private static Path watchSettingsFile;
 	private static WatchSettingsReader watchSettingsReader;
 	
 	private static User activeUser;
 	private static WatchList activeWatchList;
 	
-	private static HashMap<User,WatchList> watchLists;
-	private static ConcurrentHashMap<Path, WatchKey> watchKeys;
+	private static HashMap<User,WatchList> watchLists; //I'm considering making a superclass that handles what to do with switching watchlists
+														//Actually, it would be pretty easy to just put a watch file location for each user, and pass in the list here
+	private static ConcurrentHashMap<WatchKey,Path> watchKeys; //The event we get back is a watchkey, so we index by that
 	
 	private static WatchService watcher;
 	
 	
-	public static void setWatchSettingsFile(File target) throws FileNotFoundException, IOException, ParserConfigurationException, SAXException {
-		FileUtils.checkIfFileReadable(target);
+	public final static void setWatchSettingsFile(Path target) throws FileNotFoundException, IOException, ParserConfigurationException, SAXException {
+		if (!Files.isReadable(target))
+			throw new IOException("Path ["+target+"] is not readable");
 		watchSettingsFile = target;
 		watchSettingsReader = new WatchSettingsReader(watchSettingsFile);
-		watchLists = watchSettingsReader.getAllWatchLists();
+		watchLists = watchSettingsReader.getAllWatchLists();		
 	}
 	
-	public static WatchList getWatchListByUser(User user){
+	public final static WatchList getWatchListByUser(User user){
 		return getWatchListByUser(watchLists,user);
 	}
-	public static WatchList getWatchListByUser(HashMap<User,WatchList> haystack,User key){
+	public final static WatchList getWatchListByUser(HashMap<User,WatchList> haystack,User key){
 		return haystack.get(key);
 	}
 	
-	public static WatchList setActiveWatchList(User user){
-		return activeWatchList = watchLists.get(activeUser = user);
+	public final static boolean setActiveWatchList(User user){ /* ----------------This is the magic function that inits everything else--------------------*/
+		if (!UserUtil.isEmptyUser(user)){
+			activeWatchList = watchLists.get(activeUser = user); //could be set to null here
+			if (activeWatchList == null) { //This user doesn't have a watchlist!  Make a default!
+				activeWatchList = new WatchList(user);
+				watchLists.put(activeUser,activeWatchList);
+			}
+			return true;
+		}
+		else return false;
 	}
 	
-	public static boolean addWatchList(WatchList lst, User usr){
+	public final static boolean addWatchList(WatchList lst, User usr){
 		if (!(lst == null || lst.isEmpty() || usr == null || usr.isEmpty())){
 			watchLists.put(usr, lst);
 			return true;
@@ -62,45 +77,66 @@ public class FileWatcher {
 	}
 	
 	//Add files to active watch list
-	public static boolean addFileToWatchList(File file) {
+	public final static boolean addFileToWatchList(Path file) {
 		return addFileToWatchList(watchLists, activeUser, file);
 	}
-	public static boolean addFileToWatchList(User user, File file) {
+	public final static boolean addFileToWatchList(User user, Path file) {
 		return addFileToWatchList(watchLists, user, file);
 	}
 	
-	public static boolean addFileToWatchList(HashMap<User,WatchList> haystack,User user, File file){
+	public final static boolean addFileToWatchList(HashMap<User,WatchList> haystack,User user, Path file){
 		if 	(haystack==null || haystack.isEmpty() || user==null || user.isEmpty() || !haystack.containsKey(user))
 			return false;
 		else return haystack.get(user).AddFile(file); //TODO check out the reference tracking here
 	}
 	
 	//Add files to active watch list
-	public static boolean addDirectoryToWatchList(File directory) throws FileSystemException {
+	public final static boolean addDirectoryToWatchList(Path directory) throws FileSystemException {
 		return addDirectoryToWatchList(directory, false);
 	}
-	public static boolean addDirectoryToWatchList(File directory, boolean trackSubdirectories) throws FileSystemException { 
+	public final static boolean addDirectoryToWatchList(Path directory, boolean trackSubdirectories) throws FileSystemException { 
 		return addDirectoryToWatchList(activeUser, directory, trackSubdirectories);
 	}
-	private static boolean addDirectoryToWatchList(User user, File directory, boolean trackSubdirectories) throws FileSystemException {
+	private final static boolean addDirectoryToWatchList(User user, Path directory, boolean trackSubdirectories) throws FileSystemException {
 		return addDirectoryToWatchList(watchLists, user, directory, trackSubdirectories);
 	}
 	
-	private static boolean addDirectoryToWatchList(HashMap<User,WatchList> haystack, User user, File directory, boolean trackSubdirectories) throws FileSystemException{
+	private final static boolean addDirectoryToWatchList(HashMap<User,WatchList> haystack, User user, Path directory, boolean trackSubdirectories) throws FileSystemException{
 		if 	(haystack==null || haystack.isEmpty() || user==null || user.isEmpty() || !haystack.containsKey(user))
 			return false;
 		else return haystack.get(user).AddDirectory(directory, trackSubdirectories); //TODO check out the reference tracking here
 	}
 	
-	private void initWatchService() throws IOException{
+	private final void initWatchService() throws IOException {
 		watcher = FileSystems.getDefault().newWatchService();
 	}
 		
-	private void registerAllFilesToWatchService() {
+	private final void registerAllFilesToWatchService() throws IOException {
 		assert(activeWatchList != null);
+		
+		//This function only handles the current watchlist
+		
+		//Register directories
 		for(WatchDirectory directory : activeWatchList.getDirectories()){
-			Path p = FileSystems.getDefault().getPath(directory.getDirectory().getPath()); //TODO make directory take in a path
-			p.register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY);
+			//First, put the directory on. (Keep in mind, we need to handle if new files are added to the directory, if the directory is deleted, or if it is moved)
+			watchKeys.put(
+					directory.getDirectory().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
+					directory.getDirectory()
+			);
+			for (Path path : directory.getFilesToWatch()){
+				watchKeys.put(
+						path.register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
+						path
+				);
+			}
+		}
+		
+		//Register files
+		for(WatchFile file : activeWatchList.getFiles()){
+			watchKeys.put(
+					file.getFile().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
+					file.getFile()
+			);
 		}
 	}
 	

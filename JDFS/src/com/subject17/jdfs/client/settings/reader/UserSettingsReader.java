@@ -1,8 +1,9 @@
 package com.subject17.jdfs.client.settings.reader;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -12,30 +13,27 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.subject17.jdfs.client.file.handler.FileUtils;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.settings.writer.UserSettingsWriter;
 import com.subject17.jdfs.client.user.User;
 
 public class UserSettingsReader extends SettingsReader {
-	private File usersFile;
-	
 	private Document usersDoc;
 	
 	private User activeUser;
 	private ArrayList<User> users = new ArrayList<User>();
 	
 	public UserSettingsReader(String pathloc, String fname) throws FileNotFoundException, IOException, SAXException, ParserConfigurationException {
-		usersFile = new File(pathloc, fname);
+		userSettingsPath = Paths.get(pathloc, fname);
 		Init();
 	}
 	
-	public UserSettingsReader(File src) throws IOException, SAXException, ParserConfigurationException {
-		usersFile = src;
+	public UserSettingsReader(Path src) throws IOException, SAXException, ParserConfigurationException {
+		userSettingsPath = src;
 		try {
 			Init();
 		} catch(FileNotFoundException e){
-			Printer.logErr("File not found -- "+usersFile.getPath());
+			Printer.logErr("File not found -- "+userSettingsPath.toString());
 			Printer.logErr(e);
 			Printer.logErr("Attempting to create a default user settings file");
 			
@@ -45,7 +43,6 @@ public class UserSettingsReader extends SettingsReader {
 	}
 	
 	private void Init() throws IOException, FileNotFoundException, SAXException, ParserConfigurationException  {
-		FileUtils.checkIfFileReadable(usersFile);
 		usersDoc = getUsersDocument();
 		readUsers();
 	}
@@ -77,7 +74,7 @@ public class UserSettingsReader extends SettingsReader {
 	
 	//Utilities
 	private Document getUsersDocument() throws ParserConfigurationException, SAXException, IOException {
-		return GetDocument(usersFile);
+		return GetDocument(userSettingsPath);
 	}
 	
 	private static boolean isActive(Element e) { //Where should this go!

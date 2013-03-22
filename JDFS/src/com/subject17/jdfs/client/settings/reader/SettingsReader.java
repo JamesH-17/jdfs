@@ -3,6 +3,8 @@ package com.subject17.jdfs.client.settings.reader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -18,8 +20,13 @@ import com.subject17.jdfs.client.settings.writer.SettingsWriter;
 
 public class SettingsReader extends Settings {
 
+	public class SettingsReaderException extends Exception {
+		SettingsReaderException(String msg){super(msg);}
+		SettingsReaderException(String msg, Throwable thrw){super(msg, thrw);}
+	}
+	
 	public SettingsReader() throws ParserConfigurationException, SAXException, IOException {
-		settingsFile = new File(defaultSettingsFilePath,defaultSettingsFileName);
+		settingsPath = Paths.get(defaultSettingsDirectory,defaultSettingsPathName);
 		try {
 			parseAndReadXMLDocument();
 		} catch(FileNotFoundException e) {
@@ -31,27 +38,23 @@ public class SettingsReader extends Settings {
 	}
 	
 	public SettingsReader(String nameOfSettingsFileToUse) throws ParserConfigurationException, SAXException, IOException {
-		settingsFile = new File(nameOfSettingsFileToUse);
+		settingsPath = Paths.get(nameOfSettingsFileToUse);
 		parseAndReadXMLDocument();
 	}
 	public SettingsReader(String pathOfFile, String nameOfFile) throws ParserConfigurationException, SAXException, IOException {
-		settingsFile = new File(pathOfFile, nameOfFile);
+		settingsPath = Paths.get(pathOfFile, nameOfFile);
 		parseAndReadXMLDocument();
-	}
-	
-	public File getSettingsFile() {
-		return settingsFile;
 	}
 
 	private void createDefaultSettingsFile() throws IOException {
 		SettingsWriter sw = new SettingsWriter();
-		sw.setDefaultFileLocations();
+		sw.setDefaultPathLocations();
 		sw.writeXMLSettings();
 	}
 	
 	private void parseAndReadXMLDocument() throws ParserConfigurationException, SAXException, IOException {
-		setDefaultFileLocations();
-			Document settingsXML = GetDocument(settingsFile);
+		setDefaultPathLocations();
+			Document settingsXML = GetDocument(settingsPath);
 
 		if (settingsXML != null) {
 			Element configNode = GetConfigNode(settingsXML);
@@ -80,10 +83,10 @@ public class SettingsReader extends Settings {
 		String watchFileName = extractNodeValue(configNode, "watchFilesName");
 
 		if ((watchFilePath == null || watchFilePath.trim().isEmpty() ))
-			watchFilePath = defaultSettingsFilePath;
+			watchFilePath = defaultSettingsDirectory;
 		if ((watchFileName == null || watchFileName.trim().isEmpty()))
-			watchFileName = defaultWatchFileName;
-		setWatchFile(new File(watchFilePath,watchFileName));
+			watchFileName = defaultWatchPathName;
+		setWatchPath(Paths.get(watchFilePath,watchFileName));
 	}
 	
 	private final void readAndSetUsersFile(Element configNode) throws IOException {
@@ -91,10 +94,10 @@ public class SettingsReader extends Settings {
 		String userFileName = extractNodeValue(configNode, "userFileName");
 
 		if ((userFilePath == null || userFilePath.trim().isEmpty() ))
-			userFilePath = defaultSettingsFilePath;
+			userFilePath = defaultSettingsDirectory;
 		if ((userFileName == null || userFileName.trim().isEmpty()))
-			userFileName = defaultUserFileName;
-		setUsersFile(new File(userFilePath,userFileName));
+			userFileName = defaultUserPathName;
+		setUsersPath(Paths.get(userFilePath,userFileName));
 		
 	}
 	private final void readAndSetPeersFile(Element configNode) throws IOException {
@@ -102,10 +105,10 @@ public class SettingsReader extends Settings {
 		String peersFileName = extractNodeValue(configNode, "peersFileName");
 		
 		if ((peersFilePath == null || peersFilePath.trim().isEmpty() ))
-			peersFilePath = defaultSettingsFilePath;
+			peersFilePath = defaultSettingsDirectory;
 		if ((peersFileName == null || peersFileName.trim().isEmpty()))
-			peersFileName = defaultPeersFileName;
-		setPeersFile(new File(peersFilePath,peersFileName));
+			peersFileName = defaultPeersPathName;
+		setPeersPath(Paths.get(peersFilePath,peersFileName));
 	}
 	
 	private static final String extractNodeValue(Element srcNode, String tagName){
@@ -113,17 +116,18 @@ public class SettingsReader extends Settings {
 		return tag == null || tag.getTextContent() == null ? "" : tag.getTextContent().trim();
 	}
 	
+	/*  Removing these for clarity
 	protected Document GetDocument(String filePath, String fileName) throws ParserConfigurationException, SAXException, IOException {
-		return GetDocument(new File(filePath, fileName));
+		return GetDocument(Paths.get(filePath, fileName));
 	}
 	
 	protected Document GetDocument(String fileName) throws ParserConfigurationException, SAXException, IOException {
-		return GetDocument(new File(fileName));
-	}
+		return GetDocument(Paths.get(fileName));
+	}*/
 	
-	protected Document GetDocument(File file) throws ParserConfigurationException, SAXException, IOException {
-		Printer.log("Parsing file "+file.getPath(),Printer.Level.VeryLow);
-		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file);
+	protected Document GetDocument(Path path) throws ParserConfigurationException, SAXException, IOException {
+		Printer.log("Parsing file "+path,Printer.Level.VeryLow);
+		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(path.toFile());
 	}
 	
 	public static Element GetFirstNode(Document Doc, String tagName) {

@@ -60,13 +60,13 @@ public class UserNode {
 		Printer.log("Reader initialized.  Starting Services...");
 		
 		Printer.log("Starting Peers Handler");
-		PeersHandler.setPeersSettingsFile(settingsReader.getPeerSettingsFile());
+		PeersHandler.setPeersSettingsFile(settingsReader.getPeerSettingsPath());
 		
 		Printer.log("Starting Account Manager");
-		AccountManager.setUsersSettingsFile(settingsReader.getUserSettingsFile());
+		AccountManager.setUsersSettingsFile(settingsReader.getUserSettingsPath());
 		
 		Printer.log("Starting Watch Service");
-		FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsFile());
+		FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsPath());
 		
 		//Next, add in code for watch service monitor
 		

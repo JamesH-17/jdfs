@@ -1,121 +1,95 @@
 package com.subject17.jdfs.client.settings;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.util.HashMap;
 
 public abstract class Settings {
-	protected static final String defaultSettingsFileName = "settings.conf";
-	protected static final String defaultSettingsFilePath = System.getProperty("user.dir"); //Gets current directory
-	protected static final String defaultPeersFileName = "Peers.xml";
-	protected static final String defaultUserFileName = "Users.xml";
-	protected static final String defaultWatchFileName = "FileWatch.xml";
-	protected static final String defaultStorageDirectory = new File(System.getProperty("user.dir"),"storage/").getPath();
+	protected static final String defaultSettingsPathName = "settings.conf";
+	protected static final String defaultSettingsDirectory = System.getProperty("user.dir"); //Gets current directory
+	protected static final String defaultPeersPathName = "Peers.xml";
+	protected static final String defaultUserPathName = "Users.xml";
+	protected static final String defaultWatchPathName = "FileWatch.xml";
+	protected static final String defaultStorageDirectory = Paths.get(System.getProperty("user.dir"),"storage/").toString();
 	
-	protected File settingsFile = new File(defaultSettingsFilePath, defaultSettingsFileName);
-	protected File peerSettingsFile = new File(defaultSettingsFilePath, defaultPeersFileName);
-	protected File userSettingsFile = new File(defaultSettingsFilePath, defaultUserFileName);
-	protected File watchSettingsFile = new File(defaultSettingsFilePath, defaultWatchFileName);
-	protected File storageDirectory = new File(defaultStorageDirectory);
+	protected Path settingsPath = Paths.get(defaultSettingsDirectory, defaultSettingsPathName);
+	protected Path peerSettingsPath = Paths.get(defaultSettingsDirectory, defaultPeersPathName);
+	protected Path userSettingsPath = Paths.get(defaultSettingsDirectory, defaultUserPathName);
+	protected Path watchSettingsPath = Paths.get(defaultSettingsDirectory, defaultWatchPathName);
+	protected Path storageDirectory = Paths.get(defaultStorageDirectory);
 	
 	
-	public void setAllFiles(HashMap<String,File> mapping) throws IOException {
-		settingsFile = (mapping.get("settingsFile") != null) ?
-			 mapping.get("settingsFile") : new File(defaultSettingsFilePath, defaultSettingsFileName);
+	public final void setAllPaths(HashMap<String,Path> mapping) throws IOException {
+		settingsPath = (mapping.get("settingsPath") != null) ?
+			 mapping.get("settingsPath") : Paths.get(defaultSettingsDirectory, defaultSettingsPathName);
 			 
-		setDefaultFileLocations();
-		if (mapping.get("peerSettingsFile")!=null)
-			peerSettingsFile = mapping.get("peerSettingsFile");
-		if (mapping.get("userSettingsFile")!=null)
-			userSettingsFile = mapping.get("userSettingsFile");
-		if (mapping.get("watchSettingsFile")!=null)
-			watchSettingsFile = mapping.get("watchSettingsFile");
+		setDefaultPathLocations();
+		if (mapping.get("peerSettingsPath")!=null)
+			peerSettingsPath = mapping.get("peerSettingsPath");
+		if (mapping.get("userSettingsPath")!=null)
+			userSettingsPath = mapping.get("userSettingsPath");
+		if (mapping.get("watchSettingsPath")!=null)
+			watchSettingsPath = mapping.get("watchSettingsPath");
 		if (mapping.get("storageDirectory")!=null)
 			storageDirectory = mapping.get("storageDirectory");
-		setFiles(mapping);
+		setPaths(mapping);
 	}
 	
-	public void setDefaultFileLocations() throws IOException {
-		String settingsPath = settingsFile.getParent();
-		setPeersFile(new File(settingsPath, defaultPeersFileName));
-		setUsersFile(new File(settingsPath, defaultUserFileName));
-		setWatchFile(new File(settingsPath, defaultWatchFileName));
+	public final void setDefaultPathLocations() throws IOException {
+		String settingsPath = this.settingsPath.getParent().toString();
+		setPeersPath(Paths.get(settingsPath, defaultPeersPathName));
+		setUsersPath(Paths.get(settingsPath, defaultUserPathName));
+		setWatchPath(Paths.get(settingsPath, defaultWatchPathName));
 		setStorageDirectory(defaultStorageDirectory);
 	}
 	
-	public void setFiles(HashMap<String,File> mapping) {
-		if (mapping.get("peerSettingsFile")!=null)
-			peerSettingsFile = mapping.get("peerSettingsFile");
-		if (mapping.get("userSettingsFile")!=null)
-			userSettingsFile = mapping.get("userSettingsFile");
-		if (mapping.get("watchSettingsFile")!=null)
-			watchSettingsFile = mapping.get("watchSettingsFile");
+	public final void setPaths(HashMap<String,Path> mapping) {
+		if (mapping.get("peerSettingsPath")!=null)
+			peerSettingsPath = mapping.get("peerSettingsPath");
+		if (mapping.get("userSettingsPath")!=null)
+			userSettingsPath = mapping.get("userSettingsPath");
+		if (mapping.get("watchSettingsPath")!=null)
+			watchSettingsPath = mapping.get("watchSettingsPath");
 		if (mapping.get("storageDirectory") != null)
 			storageDirectory = mapping.get("storageDirectory");
 	}
 	
 	//Setters	
-	//Set File Names
-	public void setSettingFilename(String fname) throws IOException {
-		settingsFile = setFileName(settingsFile, fname);
-	}
-	protected void setPeersFilename(String fname) throws IOException {
-		peerSettingsFile = setFileName(peerSettingsFile, fname);
-	}
+	//Set Path Names
 
-	public void setSettingsFile(File f) { settingsFile = f; }
-	public void setPeersFile(File f) { peerSettingsFile = f; }
-	public void setWatchFile(File f) { watchSettingsFile = f; }
-	public void setUsersFile(File f) { userSettingsFile = f; }	
+	protected final void setSettingsPath(Path f) { settingsPath = f; }
+	protected final void setPeersPath(Path f) { peerSettingsPath = f; }
+	protected final void setWatchPath(Path f) { watchSettingsPath = f; }
+	protected final void setUsersPath(Path f) { userSettingsPath = f; }	
 	
-	public void setSettingsFileName(String fname) throws IOException {settingsFile = setFileName(settingsFile,fname);}
-	public void setUsersFileName(String fname) throws IOException {userSettingsFile = setFileName(userSettingsFile,fname);}
-	public void setPeersFileName(String fname) throws IOException {peerSettingsFile = setFileName(peerSettingsFile,fname);}
-	public void setWatchFileName(String fname) throws IOException {watchSettingsFile = setFileName(watchSettingsFile,fname);}
+	protected final void setSettingsFileName(String fname) throws IOException {settingsPath = setFileName(settingsPath,fname);}
+	protected final void setUsersFileName(String fname) throws IOException {userSettingsPath = setFileName(userSettingsPath,fname);}
+	protected final void setPeersFileName(String fname) throws IOException {peerSettingsPath = setFileName(peerSettingsPath,fname);}
+	protected final void setWatchFileName(String fname) throws IOException {watchSettingsPath = setFileName(watchSettingsPath,fname);}
 	
-	public void setSettingsDirectory(String loc) throws IOException {settingsFile = setFilePath(settingsFile, loc);}
-	public void setPeersDirectory(String loc) throws IOException {peerSettingsFile = setFilePath(peerSettingsFile, loc);}
-	public void setUsersDirectory(String loc) throws IOException {userSettingsFile = setFilePath(userSettingsFile, loc);}
-	public void setWatchDirectory(String loc) throws IOException {watchSettingsFile = setFilePath(watchSettingsFile, loc);}
-	public void setStorageDirectory(String path) throws IOException {storageDirectory = new File(path);}
+	protected final void setSettingsDirectory(String loc) throws IOException {settingsPath = setDirectory(settingsPath, loc);}
+	protected final void setPeersDirectory(String loc) throws IOException {peerSettingsPath = setDirectory(peerSettingsPath, loc);}
+	protected final void setUsersDirectory(String loc) throws IOException {userSettingsPath = setDirectory(userSettingsPath, loc);}
+	protected final void setWatchDirectory(String loc) throws IOException {watchSettingsPath = setDirectory(watchSettingsPath, loc);}
+	protected final void setStorageDirectory(String path) throws IOException {storageDirectory = Paths.get(path);}
 	
 	//Utilities
-	public File setFileName(File file, String newName) {
-		file = file.getParentFile();
-		return new File(file, newName);
+	private final Path setFileName(Path currFile, String newName) {
+		return currFile.resolveSibling(newName);
 	}
-	
-	public File setFilePath(File file, String newPath) {
-		return new File(newPath,file.getName());
+	private final Path setDirectory(Path file, String newPath) {
+		return Paths.get(newPath).resolve(file.getFileName());
 	}
-	
-	public File setFileNameDefunct(File file, String newName) throws IOException {
-		if (!file.isDirectory())
-			file = file.getParentFile();
-		if (!file.isDirectory())
-			throw new IOException("Error:  no directory parent for file");
-		return new File(file, newName);
-	}
-		
-	public File setFilePathDefunct(File file, String newPath) throws IOException {
-		String fname = (file == null || file.isDirectory()) ? "" : file.getName(); 
-		file = new File(newPath);
-		if (file.isDirectory())
-			file = new File(file.getParent());
-		if(!fname.equals(""))
-			file = new File(file, fname);
-		return file;
-	}
-	
-	public File setDirectoryPath(File oldPath, File newPath) throws IOException {
-		return new File(oldPath.getParentFile(),newPath.getPath());
+	private final Path changeDirectory(Path oldPath, Path newPath) throws IOException {
+		return oldPath.resolveSibling(newPath);
 	}
 	
 	//Getters
-	public File getSettingsFile() { return settingsFile; }
-	public File getPeerSettingsFile() { return peerSettingsFile; }
-	public File getUserSettingsFile() { return userSettingsFile; }
-	public File getWatchSettingsFile() { return watchSettingsFile; }
-	public File getStorageDirectory() { return storageDirectory; }
+	public final Path getSettingsPath() { return settingsPath; }
+	public final Path getPeerSettingsPath() { return peerSettingsPath; }
+	public final Path getUserSettingsPath() { return userSettingsPath; }
+	public final Path getWatchSettingsPath() { return watchSettingsPath; }
+	public final Path getStorageDirectory() { return storageDirectory; }
 	
 }

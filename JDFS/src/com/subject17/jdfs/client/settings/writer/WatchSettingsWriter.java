@@ -1,6 +1,6 @@
 package com.subject17.jdfs.client.settings.writer;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.ArrayList;
 
 import javax.xml.transform.TransformerException;
@@ -14,9 +14,9 @@ import com.subject17.jdfs.client.peers.Peer;
 
 public class WatchSettingsWriter extends SettingsWriter {
 	public void writeWatchSettings(ArrayList<Peer> peers) {
-		writePeerSettings(userSettingsFile, peers);
+		writePeerSettings(userSettingsPath, peers);
 	}
-	public void writePeerSettings(File loc, ArrayList<Peer> peers) {
+	public void writePeerSettings(Path loc, ArrayList<Peer> peers) {
 		try {
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc, peers);

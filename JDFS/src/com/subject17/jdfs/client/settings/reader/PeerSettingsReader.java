@@ -3,6 +3,8 @@ package com.subject17.jdfs.client.settings.reader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -12,37 +14,31 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.subject17.jdfs.client.file.handler.FileUtils;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.peers.Peer;
 import com.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 
 public class PeerSettingsReader extends SettingsReader {
-	private File sourceFile;
+	private Path sourceFile;
 	private HashSet<Peer> peers;
 	
 	private Document peerDoc;
 	
-	public PeerSettingsReader(String fileName, String pathName) throws Exception {
-		sourceFile = new File(pathName, fileName);
-		Init();
-	}
-	
-	public PeerSettingsReader(File fileToUse) throws Exception {
-
-		sourceFile = fileToUse;
+	public PeerSettingsReader(Path pathToUse) throws Exception {
+		sourceFile = pathToUse;
 		Init();
 	}
 	private void Init() throws IOException, ParserConfigurationException, SAXException {
 		try {
-			FileUtils.checkIfFileReadable(sourceFile);
+			Files.isReadable(sourceFile);
 			peerDoc = GetDocument(sourceFile);
 			peers = ReadInPeers(peerDoc);
 			
 		} catch (FileNotFoundException e){
-			Printer.logErr("File not found -- "+sourceFile.getPath());
+			
+			Printer.logErr("File not found -- "+sourceFile);
 			Printer.logErr(e);
-			Printer.logErr("Attempting to create a default peer settings file");
+			Printer.logErr("Attempting to create a default peer settings file at provided location");
 			
 			InitDefault();
 		}
