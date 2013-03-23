@@ -25,7 +25,7 @@ public class FileSender {
 	public void sendFile() {
 		 try( Socket socket = new Socket(ipAddr, port);
 		      OutputStream os = socket.getOutputStream()
-		 ){
+		 ) {
 		 	//TODO put in a guid
 			Printer.log("Seriously, using connection "+ipAddr+":"+port);
 			FileChannel fc = FileChannel.open(path);
