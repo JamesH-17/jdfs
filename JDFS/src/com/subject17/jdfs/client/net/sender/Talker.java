@@ -63,7 +63,7 @@ public class Talker {
 			
 			String msg="", recieved="";
 			do {
-				if (!msg.contains("send-file")) {
+				if (!msg.equals(LanguageProtocol.INIT_FILE_TRANS)) {
 					msg = userInput.next();
 					Printer.log("Message to post:"+msg);
 					
@@ -71,13 +71,13 @@ public class Talker {
 						
 						if(msg.contains("send-file")) {
 							msg=LanguageProtocol.INIT_FILE_TRANS;
-							output.println(msg); //TODO do this in a much cleaner, more modular way
 						}
-						else {
-							output.println(msg);
-							recieved = in.readLine();
-							Printer.log("Messsage from server:"+recieved);
-						}
+						
+						output.println(msg); //TODO do this in a much cleaner, more modular way
+
+						Printer.log("Messsage from server:"+recieved);
+						recieved = in.readLine();
+						Printer.log("Messsage from server:"+recieved);
 					}
 				}
 				else {
@@ -97,23 +97,28 @@ public class Talker {
 	}
 	
 	private void handleFileInput(BufferedReader in, PrintWriter out) throws IOException {
+		Scanner temp = new Scanner(System.in);
 		
 		Printer.println("Enter the path of a file to send, or enter . to send the default");
-		String msg = in.readLine();
+		String msg = temp.next();
+		
+		temp.close();
 		
 		Path pathToUse = Paths.get(System.getProperty("user.dir"),"test.txt");
 		
 		if (!msg.trim().equals("."))
 			pathToUse = Paths.get(msg);
-		Printer.log("using file");
+		Printer.log("using file "+pathToUse.toString());
 		
 		int fSize = (int) Files.size(pathToUse);
-		out.write(fSize);
+		out.write(fSize+"\n");
+		Printer.log("fSize:"+fSize);
+		
 		
 		int fPort = Integer.parseInt(in.readLine());
 		Printer.log("Sending file on port "+fPort);
 		
-		FileSender f = new FileSender(serverName, port, pathToUse);
+		FileSender f = new FileSender(serverName, fPort, pathToUse);
 		f.sendFile();
 	}
 }
