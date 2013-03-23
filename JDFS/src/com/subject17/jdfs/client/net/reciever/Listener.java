@@ -28,10 +28,11 @@ public class Listener {
 	public void createListener() throws IOException {
 		try (ServerSocket servSock = new ServerSocket(port)){
 			Printer.log("Listener started");
+			ListenConnectionHandler connHandler;
 			while(true) {
-				ListenConnectionHandler connHandler;
 				try {
 					connHandler = new ListenConnectionHandler(servSock.accept());
+					Printer.log("New connection!");
 					Thread t = new Thread(connHandler);
 					t.start();
 				} catch(Exception e) {

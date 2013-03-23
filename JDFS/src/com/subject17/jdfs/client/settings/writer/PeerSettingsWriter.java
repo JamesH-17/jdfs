@@ -26,7 +26,7 @@ public class PeerSettingsWriter extends SettingsWriter {
 			writeDocument(doc, loc);
 			
 		} catch (TransformerException e) {
-			Printer.logErr("Could not instatiate transformer to write settings file", Printer.Level.Medium);
+			Printer.logErr("Could not instatiate transformer to write settings file "+loc.toString(), Printer.Level.Medium);
 		} catch (Exception e) {
 			Printer.logErr("An unexpected error occured in PeerSettingsWriter.writePeerSettings.  Bad filepath?");
 		}
