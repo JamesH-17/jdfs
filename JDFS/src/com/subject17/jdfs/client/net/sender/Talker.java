@@ -68,6 +68,7 @@ public class Talker {
 
 		} catch(IOException e){
 			Printer.logErr("Could not listen on port "+port);
+			Printer.logErr("Reason:"+e.getMessage());
 		} catch (Exception e) {
 			Printer.logErr(e.getMessage());
 		}
