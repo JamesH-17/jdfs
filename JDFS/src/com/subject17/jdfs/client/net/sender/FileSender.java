@@ -7,10 +7,15 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import com.subject17.jdfs.client.io.Printer;
+
 public class FileSender {
+	private static final int numBytesInInt = 4;
+	
 	String ipAddr;
 	int port;
 	Path path;
+	
 	public FileSender(String ip, int port, Path pathToUse){
 		ipAddr = ip;
 		this.port = port;
@@ -22,10 +27,13 @@ public class FileSender {
 		      OutputStream os = socket.getOutputStream()
 		 ){
 		 	//TODO put in a guid
+			Printer.log("Seriously, using connection "+ipAddr+":"+port);
 			FileChannel fc = FileChannel.open(path);
 			
-			int size =(int)  Files.size(path) ;
-			os.write(size);
+			int size = (int)  Files.size(path);
+			ByteBuffer sizeBuff = ByteBuffer.allocate(numBytesInInt);
+			sizeBuff.putInt(size);
+			os.write(sizeBuff.array());
 			
 			byte[] bytes = new byte[size];
 			ByteBuffer bf = ByteBuffer.wrap(bytes);
@@ -33,9 +41,11 @@ public class FileSender {
 			
 			os.write(bf.array());
 			os.flush();
+			Printer.log("Done writing");
 	    }
 	    catch (Exception ex) {
-	      ex.printStackTrace();
+	    	Printer.logErr("Exception encountered in sending file to server "+ipAddr);
+	    	ex.printStackTrace();
 	    }
 	}
 }
