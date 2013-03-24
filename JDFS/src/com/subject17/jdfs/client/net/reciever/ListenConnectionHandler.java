@@ -10,22 +10,29 @@ import java.net.Socket;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.LanguageProtocol;
 import com.subject17.jdfs.client.net.PortMgr;
+import com.subject17.jdfs.client.net.PortMgrException;
 import com.subject17.jdfs.client.net.reciever.FileReciever;
 import com.subject17.jdfs.client.peers.PeersHandler;
 
-public class ListenConnectionHandler implements Runnable {
+public final class ListenConnectionHandler implements Runnable {
 	final protected Socket handlingSock; //<3 final, much more useful than const in many situations
+	
+	private final static int MAX_CONNECTION_ATTEMPTS = 3;
+	
+	private PrintWriter toClient;
+	private BufferedReader fromClient;
 	
 	public ListenConnectionHandler(Socket accept) {
 		handlingSock = accept;
 	}
 	
-	public void run(){
+	public void run() {
 		try {			
 			handleSocket();
 			handlingSock.close();
 		} catch(IOException e) {
-			Printer.logErr(e.getMessage());
+			Printer.logErr("An error occured in setting up the socket to ");
+			Printer.logErr(e);
 			e.printStackTrace();
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -37,30 +44,41 @@ public class ListenConnectionHandler implements Runnable {
 	 * This function initializes the input/output streams for the client
 	 * @throws IOException
 	 */
-	private void handleSocket() throws IOException, Exception {
-		try (
-				PrintWriter toClient = new PrintWriter(handlingSock.getOutputStream(), true);
-				BufferedReader fromClient = new BufferedReader(new InputStreamReader(handlingSock.getInputStream()))
-		)
-		{
+	private void handleSocket() throws IOException {
+		try {
+			
+			toClient = new PrintWriter(handlingSock.getOutputStream(), true);
+			fromClient = new BufferedReader(new InputStreamReader(handlingSock.getInputStream()));
+			
 			Printer.log("Connected to client,"+handlingSock.getInetAddress()+" awaiting SYN");
 			
-			if (handleInitialConnection(fromClient, toClient)) {
+			if (handleInitialConnection(fromClient, toClient))
 				handleConnection(fromClient,toClient);
-			}
+			else
+				Printer.log("Client does not appear to be another jdfs program");
 			
 			Printer.log("Closed connection to client "+handlingSock.getInetAddress());
-		} catch (IOException e) {
+			
+		} catch (IOException e) {			
 			Printer.logErr("Exception encountered with client "+handlingSock.getInetAddress()+" on port "+handlingSock.getPort());
-			throw e;
+		}
+		finally {
+			cleanUpStreams();
 		}
 	}
 	
+	private void cleanUpStreams() throws IOException {
+		if (toClient != null)
+			toClient.close();
+		if (fromClient != null)
+			fromClient.close();
+	}
+
 	public boolean handleInitialConnection(BufferedReader fromClient, PrintWriter toClient) throws IOException {
 		String clientResponse = "", serverResponse = "";
 		Printer.log("here");
 		
-		for (int attempt = 0; attempt < 3 ; ++attempt) {
+		for (int attempt = 0; attempt < MAX_CONNECTION_ATTEMPTS ; ++attempt) { //Give them a few tries to send the correct signal
 
 			clientResponse = fromClient.readLine();
 			Printer.log("Client Says:"+clientResponse);
@@ -77,7 +95,7 @@ public class ListenConnectionHandler implements Runnable {
 		return false;
 	}
 	
-	public void handleConnection(BufferedReader fromClient, PrintWriter output) throws Exception{
+	public void handleConnection(BufferedReader fromClient, PrintWriter output) throws IOException {
 		PeersHandler.addIncomingPeer(handlingSock.getInetAddress(), handlingSock.getPort());
 		String incomingMessage=null, serverMessage="";
 
@@ -94,7 +112,7 @@ public class ListenConnectionHandler implements Runnable {
 		} while(!(incomingMessage.equals(LanguageProtocol.CLOSE)));
 	}
 	
-	public String handleClientResponse(String resp) throws Exception {
+	public String handleClientResponse(String resp) {
 		if (resp == null)
 			return "";
 		switch(resp) {
@@ -103,21 +121,24 @@ public class ListenConnectionHandler implements Runnable {
 		}
 	}
 	
-	private String handleFileTrans() throws Exception{
-		
-		int Port = PortMgr.getRandomPort();
-		Printer.log("Using port "+Port);
-		
-		Printer.log("Starting new file reciever");
-		Thread t = new Thread(new FileReciever(Port));
-		t.start();
-		
-		Printer.log("Returning");
-		return Port + "";
+	private String handleFileTrans() {
+		try {
+			int Port = PortMgr.getRandomPort();
+			Printer.log("Using port "+Port);
+			
+			Printer.log("Starting new file reciever");
+			FileReciever reciever = new FileReciever(Port,fromClient, toClient);
+			return reciever.run();
+		} catch (PortMgrException e) {
+			return LanguageProtocol.FILE_RECV_FAIL;
+		}
 	}
 	
 	protected void finalize() {
-		try {handlingSock.close();}
+		try {
+			cleanUpStreams();
+			handlingSock.close();
+		}
 		catch(IOException e) {
 			Printer.logErr("Error closing incoming socket connection:"+e.getMessage());
 			e.printStackTrace();

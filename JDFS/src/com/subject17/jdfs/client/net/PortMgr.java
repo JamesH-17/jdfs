@@ -6,10 +6,10 @@ import java.util.ArrayList;
 
 import com.subject17.jdfs.client.io.Printer;
 
-public class PortMgr {
-	
+public final class PortMgr {
 	public final static int defaultStartingPort = 1000;
 	public final static int defaultLastPort = 65534;
+	private final static int serverPort = 42419; //(First five digits of e+pi-phi)+1
 	
 	/**
 	 * @author <a href="http://stackoverflow.com/users/92937/twentymiles">TwentyMiles</a>
@@ -32,28 +32,28 @@ public class PortMgr {
 	    }
 	}
 	
-	public static int getNextAvailablePort() throws Exception {
+	public static int getNextAvailablePort() throws PortMgrException {
 		return getNextAvailablePort(defaultStartingPort, defaultLastPort);
 	}
 	
-	public static int getNextAvailablePort(int firstPortToTry, int lastPortToTry) throws Exception {
-		for (int port=firstPortToTry; port<=lastPortToTry; ++port) {
+	public static int getNextAvailablePort(int firstPortToTry, int lastPortToTry) throws PortMgrException {
+		for (int port = firstPortToTry; port <= lastPortToTry; ++port) {
 			if (portIsAvailable(port))
 				return port;
 		}
-		throw new Exception("Could not find port in range ["+firstPortToTry+"-"+lastPortToTry+"]");
+		throw new PortMgrException("Could not find port in range ["+firstPortToTry+"-"+lastPortToTry+"]");
 	}
 	
-	public static int getNextAvailablePort(ArrayList<Integer> canidates) throws Exception {
+	public static int getNextAvailablePort(ArrayList<Integer> canidates) throws PortMgrException {
 		
 		for(Integer canidate : canidates) {
 			if (portIsAvailable(canidate))
 				return canidate;
 		}
-		throw new Exception("Could not find port in list");
+		throw new PortMgrException("Could not find port in list");
 	}
 	
-	public static int getRandomPort() throws Exception {
+	public static int getRandomPort() throws PortMgrException {
 		ArrayList<Integer> lst = new ArrayList<Integer>();
 		for (int i = defaultStartingPort; i < defaultLastPort; ++i){
 			lst.add(i); //I miss functional programming =[
@@ -62,4 +62,9 @@ public class PortMgr {
 		
 		return getNextAvailablePort(lst);
 	}
+	
+	public static int getServerPort() {
+		return serverPort;
+	}
+	
 }

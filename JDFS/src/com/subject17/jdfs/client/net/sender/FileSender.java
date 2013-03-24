@@ -8,13 +8,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.net.NetworkUtil;
 
 public class FileSender {
-	private static final int numBytesInInt = 4;
 	
-	String ipAddr;
-	int port;
-	Path path;
+	private final String ipAddr;
+	private final int port;
+	private final Path path;
 	
 	public FileSender(String ip, int port, Path pathToUse){
 		ipAddr = ip;
@@ -22,30 +22,37 @@ public class FileSender {
 		path = pathToUse;
 	}
 
-	public void sendFile() {
+	public boolean sendFile() {
 		 try( Socket socket = new Socket(ipAddr, port);
-		      OutputStream os = socket.getOutputStream()
+		      OutputStream toServer = socket.getOutputStream()
 		 ) {
 		 	//TODO put in a guid
-			Printer.log("Seriously, using connection "+ipAddr+":"+port);
-			FileChannel fc = FileChannel.open(path);
+			Printer.log("Sending file "+path.getFileName()+"on connection "+ipAddr+":"+port);
 			
-			int size = (int)  Files.size(path);
-			ByteBuffer sizeBuff = ByteBuffer.allocate(numBytesInInt);
-			sizeBuff.putInt(size);
-			os.write(sizeBuff.array());
+			FileChannel fileSrc = FileChannel.open(path);
 			
-			byte[] bytes = new byte[size];
-			ByteBuffer bf = ByteBuffer.wrap(bytes);
-			fc.read(bf);
+			//Send over the file size first; they're waiting on this
+			int fileSize = (int)  Files.size(path);
+			ByteBuffer fileSizeBuff = ByteBuffer.allocate(NetworkUtil.numBytesInInt);
+			fileSizeBuff.putInt(fileSize);
+			toServer.write(fileSizeBuff.array());
 			
-			os.write(bf.array());
-			os.flush();
-			Printer.log("Done writing");
+			//Read in the file
+			byte[] fileBytes = new byte[fileSize];
+			ByteBuffer fileBytesBuff = ByteBuffer.wrap(fileBytes);
+			fileSrc.read(fileBytesBuff);
+			
+			//Send it to the server
+			toServer.write(fileBytesBuff.array());
+			toServer.flush();
+			
+			Printer.log("File sent!");
+			return true;
 	    }
 	    catch (Exception ex) {
 	    	Printer.logErr("Exception encountered in sending file to server "+ipAddr);
 	    	ex.printStackTrace();
+	    	return false;
 	    }
 	}
 }

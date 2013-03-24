@@ -1,40 +1,52 @@
 package com.subject17.jdfs.client.net.reciever;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.LanguageProtocol;
+import com.subject17.jdfs.client.net.NetworkUtil;
 
 /**
  * 
  * @author james
- * @code All meta-data relating to the file should be finalized before this transfer is initiated
+ * @code All meta-data relating to the f
  */
-public class FileReciever implements Runnable {
+public final class FileReciever {
 	
-	protected String serverName;
-	protected int port;
+	protected final int port;
+	//for secure version of transfer
+	private final String secretMessage; 
+	private final String AESHashOfFile; 
 	
-	protected String secretMessage;
-	protected int fileSizeInBytes; 
+	private BufferedReader commIn;
+	private PrintWriter commOut;
 	
-	public FileReciever(int p){
-		port = p;
+	public FileReciever(int port, BufferedReader commIn, PrintWriter commOut) {
+		this.port = port;
+		secretMessage = null;
+		AESHashOfFile = null;
 	}
-	public FileReciever(String server, int prt, String secretMsg, int fileSize, String AESHASH) {
-		serverName=server; 
-		port=prt; 
-		secretMessage=secretMsg;
-		fileSizeInBytes=fileSize;
+	//Secure version
+	public FileReciever(int port, String secretMessage, String AESHashOfFile, BufferedReader commIn, PrintWriter commOut) {
+		this.port = port; 
+		this.secretMessage = secretMessage;
+		this.AESHashOfFile = AESHashOfFile;
+	}
+	public String run() {
+		if (secretMessage == null || secretMessage.equals("") || AESHashOfFile == null || AESHashOfFile.equals(""))
+			return receiveFile();
+		else
+			return recieveFileSecure();
 	}
 	
 	public String receiveFile() {
@@ -45,35 +57,35 @@ public class FileReciever implements Runnable {
 			Socket sock = servSock.accept();
 			InputStream inStrm = sock.getInputStream();
 		) {
-			Printer.log("Oh yeah, we're in!");
+			Printer.log("Ready to recieve file -- Connection established");
 			
 			//Get filesize
-			byte[] numConv = new byte[4];
-			inStrm.read(numConv, 0, 4);
-			
-			fileSizeInBytes = convertBytesToInt(numConv); 
+			byte[] fileSizeBuff = new byte[4];
+			inStrm.read(fileSizeBuff, 0, 4);
+
+			final int fileSizeInBytes = NetworkUtil.convertBytesToInt(fileSizeBuff); 
 			Printer.log("fileSize:"+fileSizeInBytes);
 			
-			byte[] bytes = new byte[fileSizeInBytes];
-			int bytesRead = inStrm.read(bytes, 0, bytes.length);
+			//Read in the File
+			byte[] bytesRead = new byte[fileSizeInBytes];
+			int numBytesRead = inStrm.read(bytesRead, 0, bytesRead.length);
 			
-			assert(bytesRead == fileSizeInBytes);
-			
-			writeFile(filename,bytes);
-			
-			Printer.log("Returning");
-			
-			return LanguageProtocol.FILE_RECV_SUCC;
+			if (numBytesRead == fileSizeInBytes) {
+				//Write the received file to disk
+				return writeFile(filename, bytesRead);
+			} else {
+				Printer.log("Error in receiving file -- Bytes read differs from expected by "+bytesRead+" bytes");
+				return LanguageProtocol.FILE_RECV_FAIL;
+			}
 			
 		} catch(Exception e){
 			Printer.logErr("Exception encountered in reciving file on port "+port);
-			Printer.logErr("fileSizeInBytes"+fileSizeInBytes);
 			Printer.logErr(e.getMessage());
 			return LanguageProtocol.FILE_RECV_FAIL;
 		}
 	}
 		
-	private void writeFile(Path outFile, byte[] bytes) throws IOException {
+	private String writeFile(Path outFile, byte[] bytes) throws IOException {
 		Files.deleteIfExists(outFile);
 		try(
 			FileOutputStream fOut = new FileOutputStream(outFile.toString());
@@ -83,19 +95,20 @@ public class FileReciever implements Runnable {
 			Printer.log("Writing bytes");
 			outStrm.write(bytes);
 			outStrm.flush();
+			
+			Printer.log("File received successfully");
+			return LanguageProtocol.FILE_RECV_SUCC;
 		} catch (IOException e) {
-			Printer.logErr("Exception encountered while writing file in FileReciever from client "+serverName+":"+port);
+			Printer.logErr("Exception encountered while writing file in FileReciever from client on port "+port);
 			Printer.logErr(e);
 			e.printStackTrace();
+			return LanguageProtocol.FILE_RECV_FAIL;
 		}
 	}
 	
-	public void run() {
-		receiveFile();
+	private String recieveFileSecure() {
+		
+		return LanguageProtocol.UNSUPPORTED; // TODO Implement this
 	}
-	
-	private final int convertBytesToInt(byte[] bytes){
-		return ByteBuffer.wrap(bytes).getInt();
-	} 
 	
 }

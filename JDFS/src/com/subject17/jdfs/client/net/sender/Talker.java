@@ -14,13 +14,12 @@ import java.util.Scanner;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.LanguageProtocol;
 
-public class Talker {
+public final class Talker {
 	private String defaultServerName = "";
 	private int defaultPort = 0;
 	
 	protected String serverName;
 	protected int port;
-	
 	/**
 	 * @category Constructor
 	 * @param port -- The port Number that this service will listen on
@@ -35,6 +34,11 @@ public class Talker {
 		setPort(p);
 	}
 	
+	public void run(){}; //TODO Implement this bitch since it's definitely gonna need to be threaded.
+						//Mayhaps make multiple constructors that'll do different, predetermined things?
+						//Or have it take in a peer as a paramater, assigning a talker to each peer?
+						//Or make it a super class that's abstract, implementing different functionality for each possible type?
+						//Or make it 
 	
 	public void setServer(String s) {serverName=s;}
 	public void setPort(int p) {port=p;}
@@ -50,8 +54,10 @@ public class Talker {
 			Scanner userInput = new Scanner(System.in);
 			Socket sock = new Socket(serverName, port); 
 			PrintWriter output = new PrintWriter(sock.getOutputStream(), true);
-			BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()))
+			BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 		){
+			TalkerResponder responder = new TalkerResponder(serverName, in, output);
+			
 			Printer.log("Connected to server "+sock.getInetAddress());
 			Printer.log("IsInputShutDown"+sock.isInputShutdown());
 			Printer.log("IsOutputShutDown"+sock.isOutputShutdown());
@@ -82,7 +88,7 @@ public class Talker {
 				}
 				else {
 					Printer.log("Calling handle");
-					handleFileInput(in,output);
+					responder.HandleFileSender(path); //TODO figure out how to get the path as input
 					msg = "asd";
 				}
 			}

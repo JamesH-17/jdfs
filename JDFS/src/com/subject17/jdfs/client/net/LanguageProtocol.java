@@ -5,6 +5,7 @@ public class LanguageProtocol {
 	public final static String SYN = "jdfs-Attempt-Connect";
 	public final static String ACK = "jdfs-Acknowledge-Connect";
 	public final static String UNKNOWN = "jdfs-Unknown-Communication";
+	public final static String UNSUPPORTED = "jdfs-Unsupported-Communication";
 	public final static String CLOSE = "jdfs-Close-Connection";
 	public final static String ERROR = "jdfs-Invalid-Response";
 	
@@ -17,6 +18,7 @@ public class LanguageProtocol {
 	public final static String CONFIRM_ADD_ACCOUNT = "jdfs-Confirm-Your-Account-Added";
 	public final static String DENY_ADD_ACCOUNT = "jdfs-Reject-Account-Add-Request";
 	public final static String QUERY_ACCOUNT_EXISTS = "jdfs-Confirm-Account-Exists-On-Server";
+	public final static String LIST_FILES_STORED = "jdfs-Request-Files-Stored";
 	
 	//File Handling
 	public final static String INIT_FILE_TRANS = "jdfs-Initialize-File-Transfer";
