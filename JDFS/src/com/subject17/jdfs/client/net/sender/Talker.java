@@ -13,10 +13,12 @@ import java.util.Scanner;
 
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.LanguageProtocol;
+import com.subject17.jdfs.client.net.PortMgr;
 
 public final class Talker {
+	//DEV VARIABLES for easy access when connecting to the same machine
 	private String defaultServerName = "";
-	private int defaultPort = 0;
+	private int defaultPort = PortMgr.getServerPort(); //TODO Ability to change server port via command line, along with default server port
 	
 	protected String serverName;
 	protected int port;
@@ -46,10 +48,6 @@ public final class Talker {
 	public String getServer() {return serverName;}
 	
 	public void createTalker() {
-		//TODO switch from user input to the config file
-		
-		//BufferedReader userInput2 = new BufferedReader(new InputStreamReader(System.in));
-		
 		try (
 			Scanner userInput = new Scanner(System.in);
 			Socket sock = new Socket(serverName, port); 
@@ -67,7 +65,7 @@ public final class Talker {
 			output.println(LanguageProtocol.SYN);
 			Printer.log("output done");
 			
-			String msg="", recieved="";
+			String msg = "", recieved = "";
 			do {
 				if (!msg.equals(LanguageProtocol.INIT_FILE_TRANS)) {
 					msg = userInput.next();
@@ -103,29 +101,5 @@ public final class Talker {
 		}
 	}
 	
-	private void handleFileInput(BufferedReader in, PrintWriter out) throws IOException {
-		Scanner temp = new Scanner(System.in);
-		
-		Printer.println("Enter the path of a file to send, or enter . to send the default");
-		String msg = temp.next();
-		
-		temp.close();
-		
-		Path pathToUse = Paths.get(System.getProperty("user.dir"),"test.txt");
-		
-		if (!msg.trim().equals("."))
-			pathToUse = Paths.get(msg);
-		Printer.log("using file "+pathToUse.toString());
-		
-		int fSize = (int) Files.size(pathToUse);
-		out.write(fSize+"\n");
-		Printer.log("fSize:"+fSize);
-		
-		
-		int fPort = Integer.parseInt(in.readLine());
-		Printer.log("Sending file on port "+fPort);
-		
-		FileSender f = new FileSender(serverName, fPort, pathToUse);
-		f.sendFile();
-	}
+	public HashSet<Path> 
 }

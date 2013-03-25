@@ -3,9 +3,10 @@ package com.subject17.jdfs.client.net.reciever;
 import java.io.IOException;
 import java.net.ServerSocket;
 import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.net.PortMgr;
 
 public class Listener {
-	private static int defaultPort = 2718;
+	private static int defaultPort = PortMgr.getServerPort();
 	
 	protected int port;
 	
@@ -30,7 +31,7 @@ public class Listener {
 			Printer.log("Listener started");
 			ListenConnectionHandler connHandler;
 			while(true) {
-				try {
+				try { //TODO in listen connection handler, 
 					connHandler = new ListenConnectionHandler(servSock.accept());
 					Printer.log("New connection!");
 					Thread t = new Thread(connHandler);

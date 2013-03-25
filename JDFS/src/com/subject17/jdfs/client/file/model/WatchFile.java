@@ -1,4 +1,4 @@
-package com.subject17.jdfs.client.file.monitor.model;
+package com.subject17.jdfs.client.file.model;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Files;
@@ -8,7 +8,8 @@ import java.nio.file.Paths;
 import org.w3c.dom.Element;
 
 public class WatchFile {
-	Path file;
+	private Path file;
+	private String UNIQUE_IDENTIFIER = "";
 	
 	public WatchFile(Element e){
 		file = Paths.get(e.getTextContent());
@@ -23,5 +24,5 @@ public class WatchFile {
 	
 	public boolean isEmptyFile(){ return file == null || !Files.isRegularFile(file); }
 	
-	public final int hashCode() { return file.hashCode(); }
+	public final int hashCode() { return (file+UNIQUE_IDENTIFIER).hashCode(); } //eventually, just make it Uniqe_identifier.hashCode()
 }

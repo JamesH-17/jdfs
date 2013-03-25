@@ -8,7 +8,7 @@ import javax.xml.transform.TransformerException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import com.subject17.jdfs.client.file.monitor.model.WatchList;
+import com.subject17.jdfs.client.file.model.WatchList;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.IPUtil;
 import com.subject17.jdfs.client.peers.Peer;

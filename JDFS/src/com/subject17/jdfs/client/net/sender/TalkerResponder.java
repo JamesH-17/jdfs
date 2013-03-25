@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.subject17.jdfs.client.io.Printer;
+import com.subject17.jdfs.client.user.User;
 
 /**
  * 
@@ -38,9 +39,9 @@ public class TalkerResponder {
 			int fPort = Integer.parseInt(input.readLine());
 			Printer.log("Sending file on port "+fPort);
 			
-			FileSender f = new FileSender(serverName, fPort, fileToSend);
+			FileSender fileSender = new FileSender(serverName, fPort, fileToSend);
 			
-			return f.sendFile();
+			return fileSender.sendFile();
 			
 		} catch (IOException e){
 			Printer.logErr("Failed to send file (client issue");
@@ -48,6 +49,9 @@ public class TalkerResponder {
 			
 			return false;
 		}
-		
+	}
+	
+	public boolean handleAccountQuery(User user){
+		return false;
 	}
 }

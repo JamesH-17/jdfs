@@ -1,4 +1,4 @@
-package com.subject17.jdfs.client.file.monitor.model;
+package com.subject17.jdfs.client.file.model;
 
 import java.io.IOException;
 import java.nio.file.DirectoryIteratorException;

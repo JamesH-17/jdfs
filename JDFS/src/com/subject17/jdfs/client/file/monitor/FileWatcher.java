@@ -15,9 +15,9 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import org.xml.sax.SAXException;
 
-import com.subject17.jdfs.client.file.monitor.model.WatchDirectory;
-import com.subject17.jdfs.client.file.monitor.model.WatchFile;
-import com.subject17.jdfs.client.file.monitor.model.WatchList;
+import com.subject17.jdfs.client.file.model.WatchDirectory;
+import com.subject17.jdfs.client.file.model.WatchFile;
+import com.subject17.jdfs.client.file.model.WatchList;
 import com.subject17.jdfs.client.settings.reader.WatchSettingsReader;
 import com.subject17.jdfs.client.settings.writer.WatchSettingsWriter;
 import com.subject17.jdfs.client.user.User;

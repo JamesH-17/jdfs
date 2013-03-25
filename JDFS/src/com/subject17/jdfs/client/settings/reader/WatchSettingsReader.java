@@ -13,7 +13,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import com.subject17.jdfs.client.file.monitor.model.WatchList;
+import com.subject17.jdfs.client.file.model.WatchList;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.user.User;
 

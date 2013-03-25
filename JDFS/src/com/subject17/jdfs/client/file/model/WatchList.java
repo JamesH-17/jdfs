@@ -1,4 +1,4 @@
-package com.subject17.jdfs.client.file.monitor.model;
+package com.subject17.jdfs.client.file.model;
 
 import java.nio.file.FileSystemException;
 import java.nio.file.Path;
