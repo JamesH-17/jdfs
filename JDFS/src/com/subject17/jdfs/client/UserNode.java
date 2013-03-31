@@ -3,10 +3,13 @@
  */
 package com.subject17.jdfs.client;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Scanner;
 
 import com.subject17.jdfs.client.account.AccountManager;
-import com.subject17.jdfs.client.file.monitor.FileWatcher;
 import com.subject17.jdfs.client.io.Printer;
 import com.subject17.jdfs.client.net.PortMgr;
 import com.subject17.jdfs.client.net.reciever.Listener;
@@ -16,6 +19,8 @@ import com.subject17.jdfs.client.settings.reader.SettingsReader;
 
 public class UserNode {	
 	public static Listener serv;
+	
+	
 	/**
 	 * @param args  There will be a "nogui" flag here, or maybe a "gui" flag, which will affect
 	 * whether or not a graphical interface appears to edit settings.
@@ -25,10 +30,13 @@ public class UserNode {
 	 * 
 	 */
 	public static void main(String[] args) {
+		Printer.log("Program started");
+		
 		try {
 			Scanner inScan = new Scanner(System.in);
-			// TODO Auto-generated method stub
-			initializeSettingsAndHandlers();
+			
+			makeEnvironment();
+			//initializeSettingsAndHandlers();
 			//dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
 			
 			//dispatchWatchService(); //Will get the directories and files to watch from configuration.
@@ -36,19 +44,28 @@ public class UserNode {
 									//and send the modified files over.
 			//Now, how to close program?
 			
-			
+			System.exit(0);
 			Printer.println("Do you wish to start a server or client?");
 			Printer.println("1) [S]erver");
 			Printer.println("2) [C]lient");
+			
 			switch(inScan.next().toLowerCase().charAt(0)) {
 				case 's': case '1': dispatchServer(); break;
 				case 'c': case '2': dispatchClient(); break;
 			}
+			
 			inScan.close();
 		} catch (Exception e) {
 			Printer.logErr("An exception was encountered running the program:  Terminating application", Printer.Level.Extreme);
 			Printer.logErr(e);
 			e.printStackTrace();
+		}
+	}
+	
+	private static void makeEnvironment() throws IOException {
+		Path tempDirectory = Paths.get(System.getProperty("user.dir")).resolve("temp");
+		if (!Files.exists(tempDirectory)) {
+			Files.createDirectory(tempDirectory);
 		}
 	}
 	

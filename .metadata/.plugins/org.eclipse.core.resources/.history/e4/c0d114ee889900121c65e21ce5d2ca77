@@ -1,0 +1,11 @@
+package com.subject17.jdfs.client.net;
+
+import com.subject17.jdfs.client.user.User;
+
+
+
+public class LanaguageProtocolJSON {
+		public String jsonifyUser(User user){
+			
+		}
+}

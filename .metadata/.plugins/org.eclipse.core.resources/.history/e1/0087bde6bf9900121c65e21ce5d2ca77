@@ -1,0 +1,19 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+
+public final class WriteOut {
+	public static void main(String args[]) throws IOException{
+		Path path = Paths.get(System.getProperty("user.dir")).resolve("Repeated512MIB.txt");
+		try (BufferedWriter buffWrit = new BufferedWriter(new FileWriter(path.toFile())))
+		
+		for (int i = 0; i < 1<<28; ++i) {
+			buffWrit.write("TEST_");
+		}
+		buffWrit.flush();
+	}
+	}
+}

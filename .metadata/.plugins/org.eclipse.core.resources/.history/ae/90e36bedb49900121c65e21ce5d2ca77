@@ -1,0 +1,40 @@
+package com.subject17.jdfs.test.client.file;
+
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import com.subject17.jdfs.client.file.FileUtil;
+import com.subject17.jdfs.client.io.Printer;
+
+public class FileUtilTest {
+	FileUtil fUtil;
+	
+	@BeforeClass
+	public void setUpFutil(){
+		try {
+			fUtil = FileUtil.getInstance();;
+		} catch (Exception e) {
+			Printer.log(e);
+			fail("Exception encountered setting up class.  Cannot continue with testing.");
+		}
+	}
+	
+	@Test
+	public void testCompression() {
+		try {
+			Path inPath = Paths.get("test");
+			fUtil.compressFile(inPath);
+			
+		} catch (Exception e){
+			Printer.log(e);
+			fail("Exception encountered in compressing file");
+		}
+	}
+
+}

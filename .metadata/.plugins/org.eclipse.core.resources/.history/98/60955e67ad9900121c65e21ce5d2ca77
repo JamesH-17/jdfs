@@ -1,0 +1,122 @@
+package com.subject17.jdfs.client.file.handler;
+
+import java.io.BufferedOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+import org.tukaani.xz.LZMA2Options;
+import org.tukaani.xz.XZInputStream;
+import org.tukaani.xz.XZOutputStream;
+
+import com.subject17.jdfs.client.io.Printer;
+
+public class FileUtils {
+	private final static String tempCompressDirectory = "temp/compress";
+	public final static Path compressDirectory = Paths.get(System.getProperty("user.dir"),tempCompressDirectory);
+
+	/*
+	public static void checkIfFileReadable(File toCheck) throws FileNotFoundException, IOException {
+		if (!toCheck.isFile() || !toCheck.exists() || toCheck.isDirectory())
+			throw new FileNotFoundException("Provided paramater is not a valid file");
+		if (!toCheck.canRead())
+			throw new IOException("Cannot read from file "+toCheck.getAbsolutePath()+" for some reason");
+	}
+	
+	public static boolean isValidDirectory(File loc){
+		return (loc.isDirectory());
+	}
+	
+	public static boolean isValidDirectory(String loc){
+		return isValidDirectory(new File(loc));
+	}*/
+	
+	
+	public static Path compressFile(Path inPath) throws IOException {
+		
+		
+		Path outPath = compressDirectory.resolve(inPath.getFileName()+".xz");
+        LZMA2Options options;
+        
+		try {
+			final int blockSize = 1 << 28;
+			
+			options = new LZMA2Options(
+					blockSize,					//How bug of a dictionary you wish to use
+					LZMA2Options.LC_DEFAULT,	//No clue
+					LZMA2Options.LP_DEFAULT,	//No Clue
+					4,							//Word Boundary
+					LZMA2Options.MODE_NORMAL,	//Normal/fast/uncompressed mode, we want normal
+					LZMA2Options.NICE_LEN_MAX,	//Max length of a run (Wiki LZMA if you don't know what a run is)
+					LZMA2Options.MF_BT4,		//Basically, tree or hashcode.  The description in his source is conflicting, but I believe the tree gives better compression
+					700							//Max depth of the tree
+				);
+			
+		} catch (Exception e) {
+			Printer.logErr("Error in setting our custom options for LZMA compression, using default");
+			Printer.logErr(e);
+			options = new LZMA2Options();
+		}
+		try (
+	        BufferedOutputStream outFStream = new BufferedOutputStream(new FileOutputStream(outPath.toFile()));
+	        XZOutputStream compressedOut = new XZOutputStream(outFStream, options)
+        ){
+        
+	        //Read in the file        
+	        ByteBuffer uncompFileBytes = readInFile(inPath);
+	        
+	        //Compress and write it out
+	        compressedOut.write(uncompFileBytes.array(), 0, (int)Files.size(inPath));
+	        compressedOut.finish();
+		}
+        
+		return outPath;
+	}
+	
+	public static Path decompressFile(Path inPath, Path targetPath) throws IOException {
+		try (
+	        InputStream fInStream = new FileInputStream(inPath.toFile());
+			XZInputStream decompStream = new XZInputStream(fInStream);
+	        BufferedOutputStream fOutStream = new BufferedOutputStream(new FileOutputStream(targetPath.toFile())) )
+	    {
+		
+			//I feel like doing a bit of math for once in my code.
+			//This is unneeded, you could easily just hardcode the buff size
+			//-----
+			final int buffSize = 1 << Math.min( Math.max(Long.highestOneBit(Files.size(inPath)) - 1,13), 28); 
+			//-----
+			
+			//<pun>Back to your regularly scheduled programming </pun>
+			int size;
+			byte[] bytesToWrite = new byte[buffSize];
+			
+			while ((size = decompStream.read(bytesToWrite)) != -1) {
+				fOutStream.write(bytesToWrite, 0, size);
+			}
+			
+			fOutStream.flush();
+			
+		} //Streams are auto closed
+        
+		return targetPath;
+	}
+	
+	public static ByteBuffer readInFile(Path path) throws IOException{
+		
+		//Set up the buffer that we'll read into
+		int fileSize = (int)  Files.size(path);
+		byte[] fileBytes = new byte[fileSize];
+		ByteBuffer fileBytesBuff = ByteBuffer.wrap(fileBytes);
+		
+		//Now, read the file into said buffer
+		FileChannel.open(path).read(fileBytesBuff);
+		
+		return fileBytesBuff;
+	}
+}

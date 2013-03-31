@@ -86,7 +86,7 @@ public final class Talker {
 				}
 				else {
 					Printer.log("Calling handle");
-					responder.HandleFileSender(path); //TODO figure out how to get the path as input
+					//responder.HandleFileSender(path); //TODO figure out how to get the path as input
 					msg = "asd";
 				}
 			}
@@ -101,5 +101,4 @@ public final class Talker {
 		}
 	}
 	
-	public HashSet<Path> 
 }

@@ -21,4 +21,6 @@
 		<item value="true" key="internalFilter"/>
 		<item value="true" key="actionSetFilter"/>
 	</section>
+	<section name="ImportExportAction">
+	</section>
 </section>
