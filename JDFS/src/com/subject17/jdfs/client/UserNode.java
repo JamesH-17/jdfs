@@ -7,7 +7,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.util.Scanner;
+
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
 
 import com.subject17.jdfs.client.account.AccountManager;
 import com.subject17.jdfs.client.io.Printer;
@@ -34,6 +38,63 @@ public class UserNode {
 		
 		try {
 			Scanner inScan = new Scanner(System.in);
+			
+			String hashTest = "hello world";
+			String saltsies = "JDFS-ElizabethtownCollege-JamesHughes-Subject17-BarryWittman";
+			
+			System.out.println("HashTest length:"+hashTest.length());
+			System.out.println("Salt length:"+saltsies.length());
+			
+			SHA3Digest sha3Dig = new SHA3Digest();
+			System.out.println("sha3dig len"+sha3Dig.getDigestSize());
+			System.out.println("sha3dig byteLen"+sha3Dig.getByteLength());
+			sha3Dig.update(hashTest.getBytes(), 0, hashTest.length());
+			
+
+			System.out.println("sha3dig len"+sha3Dig.getDigestSize());
+			System.out.println("sha3dig byteLen"+sha3Dig.getByteLength());
+			sha3Dig.update(saltsies.getBytes(),0,saltsies.length());
+
+			System.out.println("sha3dig len"+sha3Dig.getDigestSize());
+			System.out.println("sha3dig byteLen"+sha3Dig.getByteLength());
+			
+			SHA256Digest sha2Dig = new SHA256Digest();
+			sha2Dig.update(hashTest.getBytes(), 0, hashTest.length());
+			sha2Dig.update(saltsies.getBytes(),0,saltsies.length());
+			System.out.println(sha2Dig.getByteLength());
+			System.out.println(sha2Dig.getDigestSize());
+			
+			//I have no clue why this returns 36 instead of 32 bytes.  They're not using 7-bit bytes since there are a lot of negatives.
+			byte[] bytes = new byte[36];
+			sha3Dig.doFinal(bytes, 0);
+			for (int i = 0; i < bytes.length; ++i){
+				System.out.println("Byte #"+i+":"+bytes[i]);
+			}
+			
+			byte[] bytesSHA2 = new byte[32];
+			sha2Dig.doFinal(bytesSHA2, 0);
+			for (int i = 0; i < bytesSHA2.length; ++i){
+				System.out.println("Byte #"+i+":"+bytesSHA2[i]);
+			}
+			
+			
+			MessageDigest dig = MessageDigest.getInstance("SHA-256");
+			dig.update(saltsies.getBytes());
+			dig.update(hashTest.getBytes());
+			byte[] bites = dig.digest();
+			for (int i = 0; i < bites.length; ++i){
+				System.out.println("Byte #"+i+":"+bites[i]);
+			}
+			
+			String s = new String(bites);
+			String s2 = new String(bytesSHA2);
+			System.out.println("sha2 built in");
+			System.out.println(s);
+			System.out.println("sha2 bouncy");
+			System.out.println(s2);
+			
+			
+			
 			
 			makeEnvironment();
 			//initializeSettingsAndHandlers();

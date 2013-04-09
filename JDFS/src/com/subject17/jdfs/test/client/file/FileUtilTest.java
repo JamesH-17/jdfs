@@ -6,6 +6,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.NoSuchPaddingException;
 
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -16,6 +20,7 @@ import com.subject17.jdfs.client.io.Printer;
 
 public class FileUtilTest {
 	static FileUtil fUtil = null;
+	private Path encOut = null;
 	
 	@BeforeClass
 	public static void setUpFutil(){
@@ -91,6 +96,7 @@ public class FileUtilTest {
 			fail("Exception encountered in compressing file");
 		}
 	}
+	@Ignore
 	@Test
 	public void testGIGANTICCompression() {
 		try {
@@ -104,6 +110,47 @@ public class FileUtilTest {
 		} catch (Exception e){
 			Printer.log(e);
 			fail("Exception encountered in compressing file");
+		}
+	}
+	
+	@Test
+	public void testEncryption() throws InterruptedException{
+		String key = "JAMES";
+		Path inPath = Paths.get(System.getProperty("user.dir")).resolve("TEST").resolve("loremIpsum.txt");
+		
+		try {
+			encOut = FileUtil.getInstance().encryptFile(inPath, key);
+			Printer.log(encOut);
+		} catch (InvalidKeyException | NoSuchAlgorithmException
+				| NoSuchPaddingException | IOException e) {
+			Printer.logErr("Encountered exception!",Printer.Level.High);
+			
+			Printer.logErr(e);
+			
+			e.printStackTrace();
+			fail();
+		}
+		testDecryption();
+	}
+	
+	public void testDecryption() throws InterruptedException{
+		String key = "JAMES";
+		
+		int t = 0;
+		try {
+			while (encOut == null && t++ < 10){
+				Thread.sleep(1000);
+			}
+			Path decOut = FileUtil.getInstance().decryptFile(encOut, key);
+			Printer.log(decOut);
+		} catch (InvalidKeyException | NoSuchAlgorithmException
+				| NoSuchPaddingException | IOException e) {
+			Printer.logErr("Encountered exception!",Printer.Level.High);
+			
+			Printer.logErr(e);
+			
+			e.printStackTrace();
+			fail();
 		}
 	}
 }
