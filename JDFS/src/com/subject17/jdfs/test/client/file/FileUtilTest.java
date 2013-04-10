@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 
@@ -35,10 +36,6 @@ public class FileUtilTest {
 	@Test
 	public void testCompression() {
 		try {
-			Printer.log(Runtime.getRuntime().maxMemory()/(1024.0*1024) + "mb max");
-			Printer.log((Runtime.getRuntime().totalMemory()-Runtime.getRuntime().freeMemory())/(1024.0*1024) + "mb used");
-			Printer.log(Runtime.getRuntime().freeMemory()/(1024.0*1024) + "mb free");
-			Printer.log(Runtime.getRuntime().totalMemory()/(1024.0*1024) + "mb allocated");
 			Path inPath = Paths.get(System.getProperty("user.dir")).resolve("TEST").resolve("compTest.txt");
 			
 			assertTrue(Files.exists(inPath));
@@ -149,6 +146,10 @@ public class FileUtilTest {
 			
 			Printer.logErr(e);
 			
+			e.printStackTrace();
+			fail();
+		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 			fail();
 		}

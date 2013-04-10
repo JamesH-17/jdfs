@@ -8,11 +8,13 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -22,6 +24,7 @@ import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
 import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.digests.SHA3Digest;
@@ -39,7 +42,6 @@ public class FileUtil {
 	
 	private final static int numRoundsToHash = 10000;
 	private final static String saltsies = "JDFS-AprilLover~Java*Distributed_File.System^";
-	
 	
 	
 	private static FileUtil _instance = null;
@@ -200,11 +202,11 @@ public class FileUtil {
 		return outputLoc;
 	}
 	
-	public Path decryptAndExtractFile(Path pathToRead, Path targetPath, String plaintextPassword) throws FileNotFoundException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+	public Path decryptAndExtractFile(Path pathToRead, Path targetPath, String plaintextPassword) throws FileNotFoundException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
 		Files.deleteIfExists(targetPath);
 		
 		//Get cipher
-		Cipher ciph = getDecryptCipher(plaintextPassword);		
+		Cipher ciph = getDecryptCipher(plaintextPassword, getLaughablyUnsecureDefaultIV());		
 		
 		try (
 	        InputStream fInStream = new FileInputStream(pathToRead.toFile());
@@ -235,12 +237,13 @@ public class FileUtil {
 		return outPath;
 	}
 	
-	public Path decryptFile(Path path, String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, FileNotFoundException, IOException {
+	public Path decryptFile(Path path, String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, FileNotFoundException, IOException, InvalidAlgorithmParameterException {
 		
 		Path outF = path.resolve(path.getParent()).resolve(path.getFileName().toString()+".dec.txt");
 		Files.deleteIfExists(outF);
 		
-		Cipher ciph = getDecryptCipher(plaintextPassword);
+		Cipher ciph = getDecryptCipher(plaintextPassword, getLaughablyUnsecureDefaultIV());
+		
 		Printer.log("CIPH:"+ciph.toString());
 		
 		FileOutputStream fOut = new FileOutputStream(outF.toFile());
@@ -257,23 +260,23 @@ public class FileUtil {
 	private Cipher getEncryptCipher(String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
 		//Generate key given password
 		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
-		SecretKeySpec oKey= new SecretKeySpec(key,"AES");
+		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
 		
 		//instantiate cipher
-		Cipher ciph = Cipher.getInstance("AES");
+		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
 		ciph.init(Cipher.ENCRYPT_MODE,oKey);
 		
 		return ciph;
 	}
 	
-	private Cipher getDecryptCipher(String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+	private Cipher getDecryptCipher(String plaintextPassword, IvParameterSpec iv) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
 		//Generate key given password
 		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
 		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
 		
 		//instantiate cipher
-		Cipher ciph = Cipher.getInstance("AES");
-		ciph.init(Cipher.DECRYPT_MODE,oKey);
+		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		ciph.init(Cipher.DECRYPT_MODE, oKey, iv);
 		
 		return ciph;
 	}
@@ -302,8 +305,6 @@ public class FileUtil {
 	private byte[] getSecureDigest(String plaintextPassword) throws NoSuchAlgorithmException {
 		//We use both Sha3 and Sha2
 		byte[] digest = plaintextPassword.getBytes();
-		byte[] digest2 = new byte[digest.length];
-		digest2 = digest.clone();
 		
 		for (int i = 0; i < numRoundsToHash; ++i) {
 			digest = 0 == (i & 1) ? getSha3Digest(digest) : getSha256Digest(digest);
@@ -410,5 +411,12 @@ public class FileUtil {
 	
 	private int getBuffSize(Path path) throws IOException{
 		return 1 << Math.min( Math.max(Long.SIZE - Long.numberOfLeadingZeros(Files.size(path)),13), 26);
+	}
+	
+	private IvParameterSpec getLaughablyUnsecureDefaultIV() throws UnsupportedEncodingException {
+		byte[] iv = "klj1234@#J42#:$J@#4,.jk23l;'4jk".getBytes("UTF-8");
+		for (int i = 0; i < 10000; ++i)
+			iv = getSha3Digest(iv);
+		return new IvParameterSpec(iv,0,16);
 	}
 }
