@@ -155,8 +155,8 @@ public class FileWatcher {
 		//Register files
 		for(WatchFile file : activeWatchList.getFiles()){
 			watchKeys.put(
-					file.getFile().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
-					file.getFile()
+					file.getPath().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
+					file.getPath()
 			);
 		}
 	}

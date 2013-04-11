@@ -90,13 +90,24 @@ public class SettingsWriter extends Settings {
 		Comment watchComm = doc.createComment("Watch Settings");
 		configLocations.insertBefore(watchComm, watchFilePath);
 		
-		//User settings
+		//Storage settings
 		Element storageDirectoryTag = doc.createElement("storageDirectory");
 		storageDirectoryTag.appendChild(doc.createTextNode(storageDirectory.toString()));
 		root.appendChild(storageDirectoryTag);
 		
 		Comment storageComm = doc.createComment("Locations where other user's files will be stored");
 		root.insertBefore(storageComm, storageDirectoryTag);
+		
+		//Machine GUID settings
+		Element MachineGUIDTag = doc.createElement("MachineGUID");
+		MachineGUIDTag.appendChild(doc.createTextNode(MachineGUID.toString()));
+		root.appendChild(MachineGUIDTag);
+		
+		Comment machineGuidComm = doc.createComment("Unique Identifier for this machine.  DO NOT CHANGE!!!");
+		root.insertBefore(machineGuidComm, MachineGUIDTag);
+		
+		//TODO for future:
+		//Add encryption and compression settings
 		
 		return doc;
 	}

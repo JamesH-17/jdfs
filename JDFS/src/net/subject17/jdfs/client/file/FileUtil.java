@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Files;
@@ -28,6 +27,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.file.model.EncryptedFileInfo;
 
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.tukaani.xz.LZMA2Options;
@@ -35,7 +35,7 @@ import org.tukaani.xz.XZInputStream;
 import org.tukaani.xz.XZOutputStream;
 
 
-public class FileUtil {
+public final class FileUtil {
 	private final static String tempCompressDirectory = "temp/compress";
 	public final static Path compressDirectory = Paths.get(System.getProperty("user.dir"),tempCompressDirectory);
 
@@ -133,7 +133,7 @@ public class FileUtil {
 		return targetPath;
 	}
 	
-	public Path compressAndEncryptFile(Path pathToRead, String plaintextPassword) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+	public EncryptedFileInfo compressAndEncryptFile(Path pathToRead, String plaintextPassword) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
 		
 		//Set output directory
 		Path outputLoc = compressDirectory.resolve(pathToRead.getFileName().toString()+".xz.enc");
@@ -183,15 +183,18 @@ public class FileUtil {
 	        
 		} //Streams auto closed
 		
-		
-		return outputLoc;
+		return new EncryptedFileInfo(outputLoc, ciph.getIV());
 	}
 	
-	public Path decryptAndExtractFile(Path pathToRead, Path targetPath, String plaintextPassword) throws FileNotFoundException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+	public Path decryptAndExtractFile(EncryptedFileInfo efi, Path targetPath, String plaintextPassword) throws InvalidKeyException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IOException{
+		return decryptAndExtractFile(efi.fileLocation, targetPath, plaintextPassword, new IvParameterSpec(efi.IV));
+	}
+	
+	public Path decryptAndExtractFile(Path pathToRead, Path targetPath, String plaintextPassword, IvParameterSpec aesIV) throws FileNotFoundException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
 		Files.deleteIfExists(targetPath);
 		
 		//Get cipher
-		Cipher ciph = getDecryptCipher(plaintextPassword, getLaughablyUnsecureDefaultIV());		
+		Cipher ciph = getDecryptCipher(plaintextPassword, aesIV);		
 		
 		try (
 	        InputStream fInStream = new FileInputStream(pathToRead.toFile());
@@ -209,6 +212,9 @@ public class FileUtil {
         
 		return targetPath;
 	}
+	
+	
+	/////////////////  You shouldn't actually use these two in practice, but they're here if needed.  Also, good for testing.
 	
 	public Path encryptFile(Path path, String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException {
 		
@@ -240,62 +246,6 @@ public class FileUtil {
 		fOut.write("TEST OVER".getBytes());
 		fOut.flush();
 		return outF;
-	}
-	
-	private Cipher getEncryptCipher(String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		//Generate key given password
-		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
-		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
-		
-		//instantiate cipher
-		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		ciph.init(Cipher.ENCRYPT_MODE,oKey);
-		
-		return ciph;
-	}
-	
-	private Cipher getDecryptCipher(String plaintextPassword, IvParameterSpec iv) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
-		//Generate key given password
-		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
-		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
-		
-		//instantiate cipher
-		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		ciph.init(Cipher.DECRYPT_MODE, oKey, iv);
-		
-		return ciph;
-	}
-	
-	private byte[] getSha256Digest(byte toHash[]) throws NoSuchAlgorithmException{
-		//Once Java gets SHA-3 as a standard, I'd like to use it just for the hell of it.  Alternatively, make it a user choice
-		MessageDigest digest = MessageDigest.getInstance("SHA-256"); //SHA2, using keysize of 256 bits
-		digest.update(toHash);
-		
-		return digest.digest();
-	}
-
-	private byte[] getSha3Digest(byte[] toHash) {
-		SHA3Digest sha3 = new SHA3Digest();
-		
-		sha3.update(toHash, 0, toHash.length);
-		
-		byte[] sha3Digest = new byte[sha3.getDigestSize()];
-		sha3.doFinal(sha3Digest, 0);
-
-		sha3.reset();
-		
-		return sha3Digest;
-	}
-	
-	private byte[] getSecureDigest(String plaintextPassword) throws NoSuchAlgorithmException {
-		//We use both Sha3 and Sha2
-		byte[] digest = plaintextPassword.getBytes();
-		
-		for (int i = 0; i < numRoundsToHash; ++i) {
-			digest = 0 == (i & 1) ? getSha3Digest(digest) : getSha256Digest(digest);
-		}
-		digest = getSha256Digest(digest);
-		return digest;
 	}
 	
 	/**
@@ -398,10 +348,88 @@ public class FileUtil {
 		return 1 << Math.min( Math.max(Long.SIZE - Long.numberOfLeadingZeros(Files.size(path)),13), 26);
 	}
 	
-	private IvParameterSpec getLaughablyUnsecureDefaultIV() throws UnsupportedEncodingException {
-		byte[] iv = "klj1234@#J42#:$J@#4,.jk23l;'4jk".getBytes("UTF-8");
+	
+	
+	
+	//////////////////////////////////////////////
+	//			Encryption Utilities			//
+	//////////////////////////////////////////////
+	
+	//////  Ciphers //////
+	
+	private Cipher getEncryptCipher(String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+		//Generate key given password
+		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
+		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
+		
+		//instantiate cipher
+		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		ciph.init(Cipher.ENCRYPT_MODE,oKey);
+		
+		return ciph;
+	}
+	
+	private Cipher getDecryptCipher(String plaintextPassword, IvParameterSpec iv) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
+		//Generate key given password
+		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
+		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
+		
+		//instantiate cipher
+		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
+		ciph.init(Cipher.DECRYPT_MODE, oKey, iv);
+		ciph.getIV();
+		
+		return ciph;
+	}
+	
+	////// Cryptographic Hashes/Digests //////
+	
+	private byte[] getSaltedSha256Digest(byte toHash[]) throws NoSuchAlgorithmException{
+		//Once Java gets SHA-3 as a standard, I'd like to use it just for the hell of it.  Alternatively, make it a user choice
+		MessageDigest digest = MessageDigest.getInstance("SHA-256"); //SHA2, using keysize of 256 bits
+		digest.update(saltsies.getBytes());
+		digest.update(toHash);
+		
+		return digest.digest();
+	}
+
+	private byte[] getSaltedSha3Digest(byte[] toHash) {
+		SHA3Digest sha3 = new SHA3Digest();
+		
+		sha3.update(saltsies.getBytes(), 0, saltsies.getBytes().length);
+		sha3.update(toHash, 0, toHash.length);
+		
+		byte[] sha3Digest = new byte[sha3.getDigestSize()];
+		sha3.doFinal(sha3Digest, 0);
+
+		sha3.reset();
+		
+		return sha3Digest;
+	}
+	
+	private byte[] getSecureDigest(String plaintextPassword) throws NoSuchAlgorithmException {
+		//We use both Sha3 and Sha2
+		byte[] digest = plaintextPassword.getBytes();
+		
+		for (int i = 0; i < numRoundsToHash; ++i) {
+			digest = 0 == (i & 1) ? getSaltedSha3Digest(digest) : getSaltedSha256Digest(digest);
+		}
+		digest = getSaltedSha256Digest(digest);
+		return digest;
+	}
+	
+	/**
+	 * This function returns a unique IV for security.  The program is not fit for production while
+	 * this function remains used for encryption, but it's needed for the program to work.
+	 * 
+	 * Will finish implementation after other, more essential features are implemented
+	 * 
+	 * @return returns a constant IV used for testing purposes.
+	 */
+	private final IvParameterSpec getLaughablyUnsecureDefaultIV() {
+		byte[] iv = "klj1234@#J42#:$J@#4,.jk23l;'4jk".getBytes();
 		for (int i = 0; i < 10000; ++i)
-			iv = getSha3Digest(iv);
+			iv = getSaltedSha3Digest(iv);
 		return new IvParameterSpec(iv,0,16);
 	}
 }

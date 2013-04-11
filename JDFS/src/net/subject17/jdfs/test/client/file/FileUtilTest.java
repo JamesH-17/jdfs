@@ -2,6 +2,7 @@ package net.subject17.jdfs.test.client.file;
 
 import static org.junit.Assert.*;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,6 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.NoSuchPaddingException;
 
 import net.subject17.jdfs.client.file.FileUtil;
+import net.subject17.jdfs.client.file.model.EncryptedFileInfo;
 import net.subject17.jdfs.client.io.Printer;
 
 import org.junit.BeforeClass;
@@ -23,6 +25,9 @@ import org.junit.Test;
 public class FileUtilTest {
 	static FileUtil fUtil = null;
 	private Path encOut = null;
+	
+
+	private String key = "JAMES";
 	
 	@BeforeClass
 	public static void setUpFutil(){
@@ -150,6 +155,54 @@ public class FileUtilTest {
 			e.printStackTrace();
 			fail();
 		} catch (InvalidAlgorithmParameterException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			fail();
+		}
+	}
+	
+	@Test
+	public void testCompressionEncryptionDecryptionExtraction(){
+		EncryptedFileInfo efi = testCompressionEncryption();
+		
+		if (null == efi)
+			fail();
+		
+		testDecryptionExtraction(efi);
+	}
+	
+	public EncryptedFileInfo testCompressionEncryption(){
+		Path inPath = Paths.get(System.getProperty("user.dir")).resolve("TEST").resolve("loremIpsum.txt");
+		try {
+			return FileUtil.getInstance().compressAndEncryptFile(inPath, key);
+		} catch (InvalidKeyException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			fail();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			fail();
+		} catch (NoSuchPaddingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			fail();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			fail();
+		}
+		return null;
+	}
+	
+	public void testDecryptionExtraction(EncryptedFileInfo efi){
+		Path targetPath = efi.fileLocation.getParent().resolve(
+				efi.fileLocation.getFileName().toString().replaceAll(".xz", "").replaceAll(".enc", "")+".dec"
+		);
+		try {
+			FileUtil.getInstance().decryptAndExtractFile(efi, targetPath, key);
+		} catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException
+				| InvalidAlgorithmParameterException | IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			fail();

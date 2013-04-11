@@ -1,12 +1,11 @@
 package net.subject17.jdfs.client.settings.reader;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -22,6 +21,7 @@ import org.xml.sax.SAXException;
 public class SettingsReader extends Settings {
 
 	public class SettingsReaderException extends Exception {
+		private static final long serialVersionUID = -5082082063748172393L;
 		SettingsReaderException(String msg){super(msg);}
 		SettingsReaderException(String msg, Throwable thrw){super(msg, thrw);}
 	}
@@ -65,6 +65,7 @@ public class SettingsReader extends Settings {
 				readAndSetWatchFile(configNode);
 			}
 			readAndSetStorageDirectory(settingsXML);
+			readAndSetMachineGUID(configNode);
 		}
 	}
 	
@@ -112,36 +113,64 @@ public class SettingsReader extends Settings {
 		setPeersPath(Paths.get(peersFilePath,peersFileName));
 	}
 	
+	private final void readAndSetMachineGUID(Element configNode) {
+		String guid = extractNodeValue(configNode, "MachineGUID");
+		
+		if (null == guid || guid.trim().isEmpty()) {
+			Printer.log("Generating new MachineGUID for us");
+			MachineGUID = UUID.randomUUID();
+		} else
+			MachineGUID = UUID.fromString(guid);
+	}
+	
 	private static final String extractNodeValue(Element srcNode, String tagName){
 		Element tag = GetFirstNode(srcNode, tagName);
-		return tag == null || tag.getTextContent() == null ? "" : tag.getTextContent().trim();
+		return null == tag || null == tag.getTextContent() ? "" : tag.getTextContent().trim();
 	}
 	
-	/*  Removing these for clarity
-	protected Document GetDocument(String filePath, String fileName) throws ParserConfigurationException, SAXException, IOException {
-		return GetDocument(Paths.get(filePath, fileName));
-	}
-	
-	protected Document GetDocument(String fileName) throws ParserConfigurationException, SAXException, IOException {
-		return GetDocument(Paths.get(fileName));
-	}*/
-	
+	/**
+	 * 
+	 * @param path Attempts to parse a document from this location
+	 * @return The parsed document (if successful)
+	 * @throws ParserConfigurationException
+	 * @throws SAXException
+	 * @throws IOException
+	 */
 	protected Document GetDocument(Path path) throws ParserConfigurationException, SAXException, IOException {
 		Printer.log("Parsing file "+path,Printer.Level.VeryLow);
 		return DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(path.toFile());
 	}
 	
+	/**
+	 * Grabs the first child node of the document with the provided tagname
+	 * @param parent Document that we're looking in for tagName
+	 * @param tagName name of the tag you want to grab
+	 * @return First element named "tagName", or null if not found in document
+	 */
 	public static Element GetFirstNode(Document Doc, String tagName) {
-		return (Element) Doc.getElementsByTagName(tagName).item(0);
+		return null == Doc ? null : (Element) Doc.getElementsByTagName(tagName).item(0);
 	}
 	
+	/**
+	 * Grabs the first child node of the parent with the provided tagname
+	 * @param parent Element that we're looking in for tagName
+	 * @param tagName name of the tag you want to grab
+	 * @return First element named "tagName", or null if not found under parent
+	 */
 	public static Element GetFirstNode(Element parent, String tagName) {
-		return parent == null ? parent : (Element) parent.getElementsByTagName(tagName).item(0);
+		return null == parent ? null : (Element) parent.getElementsByTagName(tagName).item(0);
 	}
 	
+	/**
+	 * Grabs the textual value of the first child node of parent found with the given tagname,
+	 * or the empty string if anything in the chain came back as null
+	 * @param parent
+	 * @param tagName
+	 * @return Node value, or empty string if not found
+	 */
 	public static String GetFirstNodeValue(Element parent, String tagName) {
 		Element ele = GetFirstNode(parent,tagName);
-		return ele == null ? "" : ele.getTextContent();
+		return null == ele ? "" : ele.getTextContent();
 	}
 	
 	private Element GetConfigNode(Document Doc) {

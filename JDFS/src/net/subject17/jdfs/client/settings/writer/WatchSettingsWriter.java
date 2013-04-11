@@ -5,12 +5,10 @@ import java.util.Collection;
 
 import javax.xml.transform.TransformerException;
 
+import net.subject17.jdfs.client.file.model.WatchDirectory;
+import net.subject17.jdfs.client.file.model.WatchFile;
 import net.subject17.jdfs.client.file.model.WatchList;
 import net.subject17.jdfs.client.io.Printer;
-import net.subject17.jdfs.client.net.IPUtil;
-import net.subject17.jdfs.client.peers.Peer;
-import net.subject17.jdfs.client.user.User;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -34,37 +32,37 @@ public class WatchSettingsWriter extends SettingsWriter {
 	}
 	
 	private Document createDocument(Document doc, Collection<WatchList> watchLists){
-		Element root = doc.createElement("peers");
+		Element root = doc.createElement("watchLists");
 		
 		for (WatchList list : watchLists) { //Note that storing the users is redundant
 			//Peer settings
-			/*
-			Element peerTag = doc.createElement("peer");
-			Element accountTag = doc.createElement("accountEmail");
-			Element userNameTag = doc.createElement("userName");
+			Element watchList = doc.createElement("watchList");
 			
-			accountTag.appendChild(doc.createTextNode(list.getEmail()));
-			userNameTag.appendChild(doc.createTextNode(list.getUsername()));
-
-			for(String ip4 : peer.getIp4s()){
-				if (IPUtil.isValidIP4Address(ip4)) {
-					Element ip4Tag = doc.createElement("ip4");
-					ip4Tag.appendChild(doc.createTextNode(ip4));
-					peerTag.appendChild(ip4Tag);
+			Element watchFiles = doc.createElement("watchFiles");
+			watchList.appendChild(watchFiles);
+			
+			Element watchDirectories = doc.createElement("watchDirectories");
+			watchList.appendChild(watchDirectories);
+			
+			Element userGUID = doc.createElement("userGUID");
+			userGUID.setTextContent(list.getUser().getGUID().toString());
+			watchList.appendChild(userGUID);
+			
+			for(WatchDirectory directory : list.getDirectories()){
+				if (!directory.isEmpty()) {
+					Element directoryTag = directory.toElement(doc);
+					watchDirectories.appendChild(directoryTag);
 				}
 			}
 			
-			for(String ip6 : peer.getIp6s()){
-				if (IPUtil.isValidIP6Address(ip6)) {
-					Element ip6Tag = doc.createElement("ip6");
-					ip6Tag.appendChild(doc.createTextNode(ip6));
-					peerTag.appendChild(ip6Tag);
+			for(WatchFile file : list.getFiles()){
+				if (!file.isEmpty()) {
+					Element fileTag = file.toElement(doc);
+					watchFiles.appendChild(fileTag);
 				}
-			}			
+			}
 			
-			peerTag.appendChild(accountTag);
-			peerTag.appendChild(userNameTag);
-			root.appendChild(peerTag);*/
+			root.appendChild(watchList);
 		}
 		
 		doc.appendChild(root);

@@ -2,6 +2,7 @@ package net.subject17.jdfs.client.settings.writer;
 
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.UUID;
 
 import javax.xml.transform.TransformerException;
 
@@ -41,9 +42,12 @@ public class PeerSettingsWriter extends SettingsWriter {
 			Element peerTag = doc.createElement("peer");
 			Element accountTag = doc.createElement("accountEmail");
 			Element userNameTag = doc.createElement("userName");
+			Element guidTag = doc.createElement("peerGUID");
+			
 			
 			accountTag.appendChild(doc.createTextNode(peer.getEmail()));
 			userNameTag.appendChild(doc.createTextNode(peer.getUsername()));
+			guidTag.appendChild(doc.createTextNode(peer.getGUID().toString()));
 			
 			for(String ip4 : peer.getIp4s()){
 				if (IPUtil.isValidIP4Address(ip4)) {
@@ -59,10 +63,19 @@ public class PeerSettingsWriter extends SettingsWriter {
 					ip6Tag.appendChild(doc.createTextNode(ip6));
 					peerTag.appendChild(ip6Tag);
 				}
-			}			
+			}
+			
+			for(UUID machineGuid : peer.getMachineGUIDs()){
+				if (machineGuid != null){
+					Element machineTag = doc.createElement("machine");
+					machineTag.appendChild(doc.createTextNode(machineGuid.toString()));
+					peerTag.appendChild(machineTag);
+				}
+			}
 			
 			peerTag.appendChild(accountTag);
 			peerTag.appendChild(userNameTag);
+			peerTag.appendChild(guidTag);
 			
 			root.appendChild(peerTag);
 		}

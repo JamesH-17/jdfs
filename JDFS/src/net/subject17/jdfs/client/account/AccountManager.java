@@ -3,6 +3,7 @@ package net.subject17.jdfs.client.account;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import net.subject17.jdfs.client.settings.reader.UserSettingsReader;
 import net.subject17.jdfs.client.settings.writer.UserSettingsWriter;
@@ -55,6 +56,10 @@ public class AccountManager {
 			activeUser = temp;
 			return true;
 		} else return false;
+	}
+	
+	public static User setActiveUserByGUID(String guid){
+		return activeUser = getUserByGUID(guid);		
 	}
 	
 	public static User setActiveUserByAccount(String accountEmail){
@@ -111,6 +116,17 @@ public class AccountManager {
 		return false;
 	}
 	
+	public static User getUserByGUID(String guid) {
+		return getUserByGUID(UUID.fromString(guid));
+	}
+	public static User getUserByGUID(UUID guid) {
+		for (User user : users) {
+			if (user.getGUID().equals(guid))
+				return user;
+		}
+		return null;
+	}
+	
 	public static User getUserByUserName(String userName) {
 		for (User user : users) {
 			if (user.getUserName().equals(userName))
@@ -122,6 +138,17 @@ public class AccountManager {
 	public static boolean userNameExists(String userName) {
 		for (User user : users) {
 			if (user.getUserName().equals(userName))
+				return true;
+		}
+		return false;
+	}
+	
+	public static boolean guidExists(String guid){
+		return guidExists(guid.toString());
+	}
+	public static boolean guidExists(UUID guid) {
+		for (User user : users) {
+			if (user.getGUID().equals(guid))
 				return true;
 		}
 		return false;
