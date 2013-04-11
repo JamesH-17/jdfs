@@ -1,5 +1,9 @@
 package net.subject17.jdfs.client.user;
 
+import java.util.UUID;
+
+import net.subject17.jdfs.client.io.Printer;
+
 import org.w3c.dom.Element;
 public class User {
 	public static class UserException extends Exception {
@@ -9,6 +13,7 @@ public class User {
 	}
 	private String username;
 	private String account;
+	private UUID userGUID;
 	private static final char seperatorChar = '\n';
 	
 	public User(String name, String email) throws UserException {
@@ -26,6 +31,12 @@ public class User {
 			throw new UserException("Invalid data for element " + node == null ? "[null]" : node.toString());
 		username = node.getElementsByTagName("userName").item(0).getTextContent();
 		account = node.getElementsByTagName("email").item(0).getTextContent();
+		try {
+			userGUID = UUID.fromString(node.getElementsByTagName("guid").item(0).getTextContent());	
+		} catch(Exception e){
+			Printer.log("Error grabbing uuid for user "+username+", generating default");
+			userGUID = UUID.randomUUID();
+		}
 	}
 	
 	@Override
@@ -43,6 +54,7 @@ public class User {
 	
 	public String getUserName() {return username;}
 	public String getAccountEmail() {return account;}
+	public UUID getUUID() {return userGUID;}
 	public boolean isEmpty(){ //Really, not needed, but just in case
 		return (username == null || username.isEmpty())||(account == null || account.isEmpty());
 	}
