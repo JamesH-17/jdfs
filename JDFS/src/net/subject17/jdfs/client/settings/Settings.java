@@ -1,11 +1,14 @@
 package net.subject17.jdfs.client.settings;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.IOException;
 import java.util.HashMap;
+import java.util.UUID;
 
 public abstract class Settings {
+	protected static UUID MachineGUID = null;
+	
 	protected static final String defaultSettingsPathName = "settings.conf";
 	protected static final String defaultSettingsDirectory = System.getProperty("user.dir"); //Gets current directory
 	protected static final String defaultPeersPathName = "Peers.xml";
@@ -92,4 +95,10 @@ public abstract class Settings {
 	public final Path getWatchSettingsPath() { return watchSettingsPath; }
 	public final Path getStorageDirectory() { return storageDirectory; }
 	
+	public final UUID setMachineGUID(String guid){
+		return setMachineGUID(UUID.fromString(guid));
+	}
+	public final UUID setMachineGUID(UUID guid){
+		return MachineGUID = guid;
+	}
 }

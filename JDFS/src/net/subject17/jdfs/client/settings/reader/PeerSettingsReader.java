@@ -1,6 +1,5 @@
 package net.subject17.jdfs.client.settings.reader;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -9,6 +8,7 @@ import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.peers.Peer;
 import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
@@ -59,7 +59,7 @@ public class PeerSettingsReader extends SettingsReader {
 		HashSet<Peer> peersFound = new HashSet<Peer>();
 		
 		Printer.log("Found "+peerTags.getLength()+" potential peers");
-		
+
 		for (int i = 0; i < peerTags.getLength(); ++i) {
 			Peer currentNode = new Peer((Element) peerTags.item(0));
 			if (!currentNode.isBlankPeer())

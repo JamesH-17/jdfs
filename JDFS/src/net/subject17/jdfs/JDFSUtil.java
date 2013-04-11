@@ -11,4 +11,27 @@ public class JDFSUtil {
 		else return OS.Unknown;
 		
 	}
+	
+	public static String stringJoin(Object[] Parts) {
+		return stringJoin(Parts,",");
+	}
+	public static String stringJoin(Object[] objs, Object seperator) {
+		StringBuilder builder = new StringBuilder();
+		for(Object part : objs){
+			builder.append(part.toString());
+			builder.append(seperator.toString());
+		}
+		return builder.toString();
+	}
+	public static String stringJoin(Iterable<?> Parts) {
+		return stringJoin(Parts,",");
+	}
+	public static String stringJoin(Iterable<?> Parts, Object seperator){
+		StringBuilder builder = new StringBuilder();
+		for(Object part : Parts){
+			builder.append(part.toString());
+			builder.append(seperator.toString());
+		}
+		return builder.toString();
+	}
 }

@@ -3,9 +3,11 @@ package net.subject17.jdfs.client.file.model;
 import java.nio.file.FileSystemException;
 import java.nio.file.Path;
 import java.util.HashSet;
+import java.util.UUID;
 
 import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.user.User;
 
 import org.w3c.dom.Element;
@@ -23,7 +25,7 @@ public class WatchList {
 		readDirectories(watchEle.getElementsByTagName("directory"));
 		readFiles(watchEle.getElementsByTagName("file"));
 		
-		setUser(watchEle.getAttribute("account"));
+		setUser(UUID.fromString(SettingsReader.GetFirstNodeValue(watchEle,"userGUID")));
 	}		
 	public WatchList(User newUser) {
 		resetFilesAndDirectories();
@@ -34,9 +36,9 @@ public class WatchList {
 	public final HashSet<WatchFile> getFiles() {return files;}
 	public final User getUser() {return user;}
 	
-	private final void setUser(String account) {
-		if (AccountManager.accountExists(account))
-			user = AccountManager.getUserByAccount(account);
+	private final void setUser(UUID userGUID) {
+		if (AccountManager.guidExists(userGUID))
+			user = AccountManager.getUserByGUID(userGUID);
 	}
 	
 	private final void resetFilesAndDirectories(){
@@ -76,7 +78,7 @@ public class WatchList {
 	public final boolean AddFile(Path path) {
 		try {
 			return files.add(new WatchFile(path));
-		} catch(Exception e){
+		} catch(Exception e) {
 			Printer.logErr("File not added");
 			Printer.logErr(e);
 			return false;
