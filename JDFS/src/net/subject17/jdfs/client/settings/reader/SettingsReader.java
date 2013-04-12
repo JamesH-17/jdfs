@@ -120,9 +120,9 @@ public class SettingsReader extends Settings {
 		
 		if (null == guid || guid.trim().isEmpty()) {
 			Printer.log("Generating new MachineGUID for us");
-			MachineGUID = UUID.randomUUID();
+			setMachineGUID(UUID.randomUUID());
 		} else
-			MachineGUID = UUID.fromString(guid);
+			setMachineGUID(UUID.fromString(guid));
 	}
 	
 	private static final String extractNodeValue(Element srcNode, String tagName){

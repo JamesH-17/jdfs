@@ -16,6 +16,8 @@ import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.NetworkUtil;
 
+import org.codehaus.jackson.map.ObjectMapper;
+
 
 /**
  * 
@@ -25,24 +27,18 @@ import net.subject17.jdfs.client.net.NetworkUtil;
 public final class FileReciever {
 	
 	protected final int port;
-	//for secure version of transfer
-	private final String secretMessage; 
-	private final String AESHashOfFile; 
+	private String secretMessage; 
+	private String AESHashOfFile; 
 	
 	private BufferedReader commIn;
 	private PrintWriter commOut;
 	
-	public FileReciever(int port, BufferedReader commIn, PrintWriter commOut) {
+	public FileReciever(int port, String json) {
 		this.port = port;
-		secretMessage = null;
-		AESHashOfFile = null;
+		ObjectMapper mapper = new ObjectMapper();
+		
 	}
-	//Secure version
-	public FileReciever(int port, String secretMessage, String AESHashOfFile, BufferedReader commIn, PrintWriter commOut) {
-		this.port = port; 
-		this.secretMessage = secretMessage;
-		this.AESHashOfFile = AESHashOfFile;
-	}
+
 	public String run() {
 		if (secretMessage == null || secretMessage.equals("") || AESHashOfFile == null || AESHashOfFile.equals(""))
 			return receiveFile();

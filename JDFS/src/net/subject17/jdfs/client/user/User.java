@@ -21,7 +21,9 @@ public final class User {
 	private UUID GUID;
 	private HashSet<UUID> MachineGUIDs;
 	//private static final char seperatorChar = '\n';
-	
+	public User(String name, String email) throws UserException {
+		this(name, email, UUID.randomUUID());
+	}
 	public User(String name, String email, UUID guid) throws UserException {
 		if (UserUtil.isValidEmail(email) && UserUtil.isValidUsername(email)) {
 			username = name;
@@ -29,7 +31,7 @@ public final class User {
 			GUID = guid;
 			
 			MachineGUIDs = new HashSet<UUID>();
-			MachineGUIDs.add(Settings.getMachineGUID());
+			MachineGUIDs.add(Settings.getMachineGUIDSafe());
 			
 		} else {
 			if (email == null) email = new String("null");

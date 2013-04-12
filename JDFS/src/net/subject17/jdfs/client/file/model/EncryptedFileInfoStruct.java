@@ -4,16 +4,16 @@ import java.nio.file.Path;
 
 import javax.crypto.spec.IvParameterSpec;
 
-public class EncryptedFileInfo {
+public class EncryptedFileInfoStruct {
 	
 	public Path fileLocation;
 	public byte[] IV;
 	
-	public EncryptedFileInfo(Path fileLocation, byte[] IV){
+	public EncryptedFileInfoStruct(Path fileLocation, byte[] IV){
 		this.fileLocation = fileLocation;
 		this.IV = IV;
 	}
-	public EncryptedFileInfo(Path fileLocation, IvParameterSpec iv){
+	public EncryptedFileInfoStruct(Path fileLocation, IvParameterSpec iv){
 		this(fileLocation, iv.getIV());
 	}
 	

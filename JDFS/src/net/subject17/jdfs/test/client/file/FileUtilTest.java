@@ -14,7 +14,7 @@ import java.security.NoSuchAlgorithmException;
 import javax.crypto.NoSuchPaddingException;
 
 import net.subject17.jdfs.client.file.FileUtil;
-import net.subject17.jdfs.client.file.model.EncryptedFileInfo;
+import net.subject17.jdfs.client.file.model.EncryptedFileInfoStruct;
 import net.subject17.jdfs.client.io.Printer;
 
 import org.junit.BeforeClass;
@@ -163,7 +163,7 @@ public class FileUtilTest {
 	
 	@Test
 	public void testCompressionEncryptionDecryptionExtraction(){
-		EncryptedFileInfo efi = testCompressionEncryption();
+		EncryptedFileInfoStruct efi = testCompressionEncryption();
 		
 		if (null == efi)
 			fail();
@@ -171,7 +171,7 @@ public class FileUtilTest {
 		testDecryptionExtraction(efi);
 	}
 	
-	public EncryptedFileInfo testCompressionEncryption(){
+	public EncryptedFileInfoStruct testCompressionEncryption(){
 		Path inPath = Paths.get(System.getProperty("user.dir")).resolve("TEST").resolve("loremIpsum.txt");
 		try {
 			return FileUtil.getInstance().compressAndEncryptFile(inPath, key);
@@ -195,7 +195,7 @@ public class FileUtilTest {
 		return null;
 	}
 	
-	public void testDecryptionExtraction(EncryptedFileInfo efi){
+	public void testDecryptionExtraction(EncryptedFileInfoStruct efi){
 		Path targetPath = efi.fileLocation.getParent().resolve(
 				efi.fileLocation.getFileName().toString().replaceAll(".xz", "").replaceAll(".enc", "")+".dec"
 		);

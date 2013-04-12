@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.xml.parsers.ParserConfigurationException;
 
 import net.subject17.jdfs.JDFSUtil;
+import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.file.model.WatchDirectory;
 import net.subject17.jdfs.client.file.model.WatchFile;
 import net.subject17.jdfs.client.file.model.WatchList;
@@ -92,6 +93,8 @@ public final class FileWatcher {
 			commitChangesToWatchlist();
 			
 			activeWatchList = watchLists.get(activeUser = user); //could be set to null here
+			AccountManager.getInstance().setActiveUser(user);
+			
 			if (activeWatchList == null) { //This user doesn't have a watchlist!  Make a default!
 				activeWatchList = new WatchList(user);
 				watchLists.put(activeUser,activeWatchList);
@@ -100,8 +103,11 @@ public final class FileWatcher {
 			registerAllFilesToWatchService();
 			return true;
 		}
-		else return false;
-		
+		else return false;	
+	}
+	
+	public final static User getActiveUser(){
+		return activeUser;
 	}
 	
 	public final static boolean addWatchList(WatchList lst, User usr){

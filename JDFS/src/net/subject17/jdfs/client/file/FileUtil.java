@@ -26,9 +26,11 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import net.subject17.jdfs.client.file.model.EncryptedFileInfoStruct;
 import net.subject17.jdfs.client.io.Printer;
-import net.subject17.jdfs.client.file.model.EncryptedFileInfo;
+import net.subject17.jdfs.security.JDFSSecurity;
 
+import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.tukaani.xz.LZMA2Options;
 import org.tukaani.xz.XZInputStream;
@@ -40,10 +42,6 @@ public final class FileUtil {
 	public final static Path compressDirectory = Paths.get(System.getProperty("user.dir"),tempCompressDirectory);
 
 	private final static int maxBufferShift = 26;
-	
-	private final static int numRoundsToHash = 10000;
-	private final static String saltsies = "JDFS-AprilLover~Java*Distributed_File.System^";
-	
 	
 	private static FileUtil _instance = null;
 	
@@ -132,15 +130,18 @@ public final class FileUtil {
         
 		return targetPath;
 	}
+	public EncryptedFileInfoStruct compressAndEncryptFile(Path pathToRead, String plaintextPassword) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+		return compressAndEncryptFile(pathToRead, JDFSSecurity.getSecureDigest(plaintextPassword));
+	}
 	
-	public EncryptedFileInfo compressAndEncryptFile(Path pathToRead, String plaintextPassword) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
+	public EncryptedFileInfoStruct compressAndEncryptFile(Path pathToRead, byte[] securePasswordDigest) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException {
 		
 		//Set output directory
 		Path outputLoc = compressDirectory.resolve(pathToRead.getFileName().toString()+".xz.enc");
 		Files.deleteIfExists(outputLoc); //Talk about dangerous.  Hey!!! LOOK OUT FOR THREADING!!!
 		
 		//Get cipher
-		Cipher ciph = getEncryptCipher(plaintextPassword);
+		Cipher ciph = JDFSSecurity.getEncryptCipher(securePasswordDigest);
 		
 		//Set up options
         LZMA2Options options;
@@ -183,10 +184,10 @@ public final class FileUtil {
 	        
 		} //Streams auto closed
 		
-		return new EncryptedFileInfo(outputLoc, ciph.getIV());
+		return new EncryptedFileInfoStruct(outputLoc, ciph.getIV());
 	}
 	
-	public Path decryptAndExtractFile(EncryptedFileInfo efi, Path targetPath, String plaintextPassword) throws InvalidKeyException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IOException{
+	public Path decryptAndExtractFile(EncryptedFileInfoStruct efi, Path targetPath, String plaintextPassword) throws InvalidKeyException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IOException{
 		return decryptAndExtractFile(efi.fileLocation, targetPath, plaintextPassword, new IvParameterSpec(efi.IV));
 	}
 	
@@ -194,7 +195,7 @@ public final class FileUtil {
 		Files.deleteIfExists(targetPath);
 		
 		//Get cipher
-		Cipher ciph = getDecryptCipher(plaintextPassword, aesIV);		
+		Cipher ciph = JDFSSecurity.getDecryptCipher(plaintextPassword, aesIV);		
 		
 		try (
 	        InputStream fInStream = new FileInputStream(pathToRead.toFile());
@@ -218,7 +219,7 @@ public final class FileUtil {
 	
 	public Path encryptFile(Path path, String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IOException {
 		
-		Cipher ciph = getEncryptCipher(plaintextPassword);
+		Cipher ciph = JDFSSecurity.getEncryptCipher(plaintextPassword);
 		Path outPath = compressDirectory.resolve(path.getFileName().toString()+".enc");
 		
 		CipherOutputStream ciphOut = new CipherOutputStream(new FileOutputStream(outPath.toFile()),ciph);
@@ -233,7 +234,7 @@ public final class FileUtil {
 		Path outF = path.resolve(path.getParent()).resolve(path.getFileName().toString()+".dec.txt");
 		Files.deleteIfExists(outF);
 		
-		Cipher ciph = getDecryptCipher(plaintextPassword, getLaughablyUnsecureDefaultIV());
+		Cipher ciph = JDFSSecurity.getDecryptCipher(plaintextPassword, getLaughablyUnsecureDefaultIV());
 		
 		Printer.log("CIPH:"+ciph.toString());
 		
@@ -348,74 +349,20 @@ public final class FileUtil {
 		return 1 << Math.min( Math.max(Long.SIZE - Long.numberOfLeadingZeros(Files.size(path)),13), 26);
 	}
 	
-	
-	
-	
-	//////////////////////////////////////////////
-	//			Encryption Utilities			//
-	//////////////////////////////////////////////
-	
-	//////  Ciphers //////
-	
-	private Cipher getEncryptCipher(String plaintextPassword) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
-		//Generate key given password
-		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
-		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
-		
-		//instantiate cipher
-		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		ciph.init(Cipher.ENCRYPT_MODE,oKey);
-		
-		return ciph;
-	}
-	
-	private Cipher getDecryptCipher(String plaintextPassword, IvParameterSpec iv) throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, InvalidAlgorithmParameterException {
-		//Generate key given password
-		byte[] key = Arrays.copyOf(getSecureDigest(plaintextPassword),16); //TODO use bouncy castle eventually
-		SecretKeySpec oKey = new SecretKeySpec(key,"AES");
-		
-		//instantiate cipher
-		Cipher ciph = Cipher.getInstance("AES/CBC/PKCS5Padding");
-		ciph.init(Cipher.DECRYPT_MODE, oKey, iv);
-		ciph.getIV();
-		
-		return ciph;
-	}
-	
-	////// Cryptographic Hashes/Digests //////
-	
-	private byte[] getSaltedSha256Digest(byte toHash[]) throws NoSuchAlgorithmException{
-		//Once Java gets SHA-3 as a standard, I'd like to use it just for the hell of it.  Alternatively, make it a user choice
-		MessageDigest digest = MessageDigest.getInstance("SHA-256"); //SHA2, using keysize of 256 bits
-		digest.update(saltsies.getBytes());
-		digest.update(toHash);
-		
-		return digest.digest();
-	}
-
-	private byte[] getSaltedSha3Digest(byte[] toHash) {
-		SHA3Digest sha3 = new SHA3Digest();
-		
-		sha3.update(saltsies.getBytes(), 0, saltsies.getBytes().length);
-		sha3.update(toHash, 0, toHash.length);
-		
-		byte[] sha3Digest = new byte[sha3.getDigestSize()];
-		sha3.doFinal(sha3Digest, 0);
-
-		sha3.reset();
-		
-		return sha3Digest;
-	}
-	
-	private byte[] getSecureDigest(String plaintextPassword) throws NoSuchAlgorithmException {
-		//We use both Sha3 and Sha2
-		byte[] digest = plaintextPassword.getBytes();
-		
-		for (int i = 0; i < numRoundsToHash; ++i) {
-			digest = 0 == (i & 1) ? getSaltedSha3Digest(digest) : getSaltedSha256Digest(digest);
+	public byte[] getMD5Checksum(Path path) throws FileNotFoundException, IOException {
+		try (FileInputStream fStream = new FileInputStream(path.toString())){
+			MD5Digest digest = new MD5Digest();
+			byte[] buff = new byte[getBuffSize(path)];
+			
+			int bytesRead;
+			while (-1 != (bytesRead=fStream.read(buff))) {
+				digest.update(buff, 0, bytesRead);
+			}
+			byte[] ret = new byte[digest.getDigestSize()];
+			digest.finish();
+			digest.doFinal(ret,0);
+			return ret;
 		}
-		digest = getSaltedSha256Digest(digest);
-		return digest;
 	}
 	
 	/**
@@ -429,7 +376,7 @@ public final class FileUtil {
 	private final IvParameterSpec getLaughablyUnsecureDefaultIV() {
 		byte[] iv = "klj1234@#J42#:$J@#4,.jk23l;'4jk".getBytes();
 		for (int i = 0; i < 10000; ++i)
-			iv = getSaltedSha3Digest(iv);
+			iv = JDFSSecurity.getSaltedSha3Digest(iv);
 		return new IvParameterSpec(iv,0,16);
 	}
 }

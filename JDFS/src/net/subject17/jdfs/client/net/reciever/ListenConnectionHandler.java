@@ -127,7 +127,7 @@ public final class ListenConnectionHandler implements Runnable {
 			Printer.log("Using port "+Port);
 			
 			Printer.log("Starting new file reciever");
-			FileReciever reciever = new FileReciever(Port,fromClient, toClient);
+			FileReciever reciever = new FileReciever(Port,json);
 			return reciever.run();
 		} catch (PortMgrException e) {
 			return LanguageProtocol.FILE_RECV_FAIL;

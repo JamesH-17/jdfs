@@ -2,21 +2,56 @@ package net.subject17.jdfs.client.account;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.UUID;
 
+import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.io.UserInput;
 import net.subject17.jdfs.client.settings.reader.UserSettingsReader;
 import net.subject17.jdfs.client.settings.writer.UserSettingsWriter;
 import net.subject17.jdfs.client.user.User;
+import net.subject17.jdfs.client.user.User.UserException;
+import net.subject17.jdfs.security.JDFSSecurity;
 
 
 public class AccountManager {
-	private static Path usersFile = null;
-	private static ArrayList<User> users = new ArrayList<User>();	//Using array list here since data integrity is important
+	private static AccountManager _instance = null;
+	
+	private static Path usersFile;
+	private static ArrayList<User> users;	//Using array list here since data integrity is important
 																	//(don't trust unique hashCode), we do a lot of lookup based
 																	//upon element properties (necessitating a lookup anyway)
 																	//and there won't be too many elements in here anyway. 
-	private static User activeUser =  null;
+	private static User activeUser;
+	
+	private static HashMap<User, byte[]> keys;
+	
+	private AccountManager(){
+		users = new ArrayList<User>();
+		keys = new HashMap<User,byte[]>();
+		activeUser = null;
+		usersFile = null;
+	}
+	
+	public static AccountManager getInstance(){
+		if (null == _instance){
+			synchronized(AccountManager.class){
+				if (null == _instance){
+					_instance = new AccountManager();
+				}
+			}
+		}
+		return _instance;
+	}
+	
+	
+	
+	/////////////
+	// Seed Users
+	//
+	
 	
 	public void readUsersFromFile(Path userSettingsFile) throws Exception {
 		usersFile = userSettingsFile;
@@ -27,30 +62,32 @@ public class AccountManager {
 		activeUser = settingsSource.getActiveUser();
 	}
 	
-	public static void setUsersSettingsFile(Path newLocation) {
+	public void setUsersSettingsFile(Path newLocation) {
 		usersFile = newLocation;
 	}
 		
-	//ACTIVE USER
+	//////////////////////////////////////////////////////
+	//			Utilities to handle active user			//
+	//////////////////////////////////////////////////////
 	
-	public static User getActiveUser() {
+	public User getActiveUser() {
 		return activeUser;
 	}
 	
-	public static void modifyActiveUser(User modifiedActiveUser){
+	public void modifyActiveUser(User modifiedActiveUser){
 		if(users.contains(activeUser))
 			users.remove(activeUser);
 		users.add(modifiedActiveUser);
 		activeUser = modifiedActiveUser;
 	}
 	
-	public static void setActiveUser(User newActiveUser) {
+	public void setActiveUser(User newActiveUser) {
 		if (!users.contains(newActiveUser))
 			users.add(newActiveUser);
 		activeUser = newActiveUser;
 	}
 	
-	public static boolean setExistingActiveUserByAccount(String accountEmail){
+	public boolean setExistingActiveUserByAccount(String accountEmail){
 		User temp = getUserByAccount(accountEmail);
 		if (temp != null ){
 			activeUser = temp;
@@ -58,15 +95,15 @@ public class AccountManager {
 		} else return false;
 	}
 	
-	public static User setActiveUserByGUID(String guid){
+	public User setActiveUserByGUID(String guid){
 		return activeUser = getUserByGUID(guid);		
 	}
 	
-	public static User setActiveUserByAccount(String accountEmail){
+	public User setActiveUserByAccount(String accountEmail){
 		return activeUser = getUserByAccount(accountEmail);		
 	}
 	
-	public static boolean setExistingActiveUserByUserName(String userName){
+	public boolean setExistingActiveUserByUserName(String userName){
 		User temp = getUserByUserName(userName);
 		if (temp != null ){
 			activeUser = temp;
@@ -74,33 +111,35 @@ public class AccountManager {
 		} else return false;
 	}
 	
-	public static User setActiveUserByUserName(String userName){
+	public User setActiveUserByUserName(String userName){
 		return activeUser = getUserByUserName(userName);		
 	}
 	
 	
 	
-	//All Users
+	//////////////////////////////////////////////////////
+	//			Utilities for all users					//
+	//////////////////////////////////////////////////////
 	
-	public static void clearUsers() {
+	public void clearUsers() {
 		users.clear();
 		activeUser = null;
 	}
 	
-	public static void writeUsersToFile() {
+	public void writeUsersToFile() {
 		writeUsersToFile(usersFile);
 	}
 	
-	public static void writeUsersToFile(String path, String filename) {
+	public void writeUsersToFile(String path, String filename) {
 		writeUsersToFile(Paths.get(path, filename));
 	}
 	
-	public static void writeUsersToFile(Path file) {
+	public void writeUsersToFile(Path file) {
 		UserSettingsWriter writer = new UserSettingsWriter(file);
 		writer.writeUserSettings(users, activeUser);
 	}
 
-	public static User getUserByAccount(String account) {
+	public User getUserByAccount(String account) {
 		for (User user : users) {
 			if (user.getAccountEmail().equals(account))
 				return user;
@@ -108,7 +147,7 @@ public class AccountManager {
 		return null;
 	}
 
-	public static boolean accountExists(String account) {
+	public boolean accountExists(String account) {
 		for (User user : users) {
 			if (user.getAccountEmail().equals(account))
 				return true;
@@ -116,10 +155,10 @@ public class AccountManager {
 		return false;
 	}
 	
-	public static User getUserByGUID(String guid) {
+	public User getUserByGUID(String guid) {
 		return getUserByGUID(UUID.fromString(guid));
 	}
-	public static User getUserByGUID(UUID guid) {
+	public User getUserByGUID(UUID guid) {
 		for (User user : users) {
 			if (user.getGUID().equals(guid))
 				return user;
@@ -127,7 +166,7 @@ public class AccountManager {
 		return null;
 	}
 	
-	public static User getUserByUserName(String userName) {
+	public User getUserByUserName(String userName) {
 		for (User user : users) {
 			if (user.getUserName().equals(userName))
 				return user;
@@ -135,7 +174,7 @@ public class AccountManager {
 		return null;
 	}
 
-	public static boolean userNameExists(String userName) {
+	public boolean userNameExists(String userName) {
 		for (User user : users) {
 			if (user.getUserName().equals(userName))
 				return true;
@@ -143,14 +182,33 @@ public class AccountManager {
 		return false;
 	}
 	
-	public static boolean guidExists(String guid){
+	public boolean guidExists(String guid){
 		return guidExists(guid.toString());
 	}
-	public static boolean guidExists(UUID guid) {
+	public boolean guidExists(UUID guid) {
 		for (User user : users) {
 			if (user.getGUID().equals(guid))
 				return true;
 		}
 		return false;
+	}
+
+	public String getPasswordDigest() throws UserException {
+		if (null == activeUser){
+			String userName = UserInput.getInstance().getNextString("Please enter a user name");
+			String accountEmail = UserInput.getInstance().getNextString("Please Enter an email address");
+			users.add(activeUser = new User(userName, accountEmail));
+			Printer.print("An account has been created for you.");
+		}
+		if (!keys.containsKey(activeUser)) {
+			String plaintextPass = UserInput.getInstance().getNextString("Please enter a password to encrypt/decrypt files");
+			try {
+				keys.put(activeUser, JDFSSecurity.getSecureDigest(plaintextPass));
+			} catch (NoSuchAlgorithmException e) {
+				Printer.logErr("An error was encountered in encrypting your password.", Printer.Level.High);
+				Printer.logErr(e);
+			}
+		}
+		return null;
 	}
 }

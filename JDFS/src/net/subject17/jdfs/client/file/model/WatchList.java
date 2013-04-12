@@ -43,8 +43,8 @@ public class WatchList {
 	public final User setUser(User newUser) {return this.user = newUser;}
 	
 	private final void setUser(UUID userGUID) {
-		if (AccountManager.guidExists(userGUID))
-			user = AccountManager.getUserByGUID(userGUID);
+		if (AccountManager.getInstance().guidExists(userGUID))
+			user = AccountManager.getInstance().getUserByGUID(userGUID);
 	}
 	
 	private final void resetFilesAndDirectories(){

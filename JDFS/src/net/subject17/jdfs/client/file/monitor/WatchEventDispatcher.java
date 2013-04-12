@@ -7,9 +7,14 @@ import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.StandardWatchEventKinds;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+
+import javax.crypto.NoSuchPaddingException;
 
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.sender.TalkerPooler;
+import net.subject17.jdfs.client.user.User.UserException;
 
 public class WatchEventDispatcher implements Runnable {
 		private final WatchService watcher;
@@ -48,7 +53,15 @@ public class WatchEventDispatcher implements Runnable {
 					        @SuppressWarnings("unchecked")
 							WatchEvent<Path> ev = (WatchEvent<Path>)event;
 					        
-					        TalkerPooler.getInstance().UpdatePath(ev.context());
+					        try {
+								TalkerPooler.getInstance().UpdatePath(ev.context());
+							} catch (InvalidKeyException
+									| NoSuchAlgorithmException
+									| NoSuchPaddingException | IOException
+									| UserException e) {
+								Printer.logErr("Error encountered in dispatching modified file ["+ev.context().toString()+"]",Printer.Level.High);
+								Printer.logErr(e);
+							}
 					    }
 		
 					    // Reset the key -- this step is critical if you want to

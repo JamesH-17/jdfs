@@ -111,9 +111,7 @@ public class UserSettingsTest {
 		if (null != users && !users.isEmpty()) {
 			User temp = users.get(0);
 			
-			UUID tmpUU = Settings.getMachineGUID();
-			if (null == tmpUU) tmpUU=UUID.randomUUID();
-			
+			UUID tmpUU = Settings.getMachineGUIDSafe();
 			temp.registerUserToMachine(tmpUU);
 		}
 		

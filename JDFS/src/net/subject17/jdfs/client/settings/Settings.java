@@ -9,7 +9,7 @@ import java.util.UUID;
 import net.subject17.jdfs.JDFSUtil;
 
 public abstract class Settings {
-	protected static UUID MachineGUID = null;
+	private static UUID MachineGUID = null;
 	
 	protected static final String defaultSettingsPathName = "settings.conf";
 	//protected static final String defaultSettingsDirectory = System.getProperty("user.dir"); //Gets current directory
@@ -104,5 +104,17 @@ public abstract class Settings {
 	public final UUID setMachineGUID(UUID guid){
 		return MachineGUID = guid;
 	}
-	public static final UUID getMachineGUID(){return MachineGUID;}
+	
+	//Should only use this for readers
+	protected static final UUID getMachineGUID(){return MachineGUID;}
+
+	public static UUID getMachineGUIDSafe() {
+		if (null == MachineGUID) {
+			synchronized(Settings.class) {
+				if (null == MachineGUID)
+					MachineGUID = UUID.randomUUID();
+			}
+		}
+		return MachineGUID;
+	}
 }
