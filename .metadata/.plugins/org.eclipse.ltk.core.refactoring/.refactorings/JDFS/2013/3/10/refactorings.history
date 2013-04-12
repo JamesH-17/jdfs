@@ -1,4 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<session version="1.0">
-<refactoring comment="Rename resource &apos;JDFS/fileStoragePath.conf&apos; to &apos;FileStorage.conf&apos;" description="Rename resource &apos;fileStoragePath.conf&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="fileStoragePath.conf" name="FileStorage.conf" stamp="1362764205191" updateReferences="true"/>
-</session>

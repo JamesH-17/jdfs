@@ -2,12 +2,17 @@ package net.subject17.jdfs.test.client.settings.reader;
 
 import static org.junit.Assert.*;
 
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.UUID;
 
+import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.settings.Settings;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.settings.reader.UserSettingsReader;
+import net.subject17.jdfs.client.settings.writer.UserSettingsWriter;
 import net.subject17.jdfs.client.user.User;
 import net.subject17.jdfs.client.user.UserUtil;
 
@@ -18,8 +23,9 @@ import org.junit.Test;
 
 
 public class UserSettingsTest {
-	private static final String rootDirectory = System.getProperty("user.dir");
-	private static String rootTestDirectory;
+	//private static final String rootDirectory = System.getProperty("user.dir");
+	private static final String rootDirectory = JDFSUtil.defaultDirectory;
+	private static Path rootTestDirectory;
 	
 	private static SettingsReader settingsReader, settingsReaderTest;
 	private static UserSettingsReader userSettingsReader, userSettingsReaderTest;
@@ -27,11 +33,11 @@ public class UserSettingsTest {
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		System.out.println("Root Directory: "+rootDirectory);
-		rootTestDirectory = new File(System.getProperty("user.dir"),"TEST").getCanonicalPath();
+		rootTestDirectory = Paths.get(rootDirectory,"TEST");
 		System.out.println("Root Test Directory: "+rootTestDirectory);
 		
 		settingsReader = new SettingsReader();
-		settingsReaderTest = new SettingsReader(rootTestDirectory,"SettingsReaderTest.conf");
+		settingsReaderTest = new SettingsReader(rootTestDirectory.resolve("SettingsReaderTest.conf"));
 	}
 	@Before
 	public void setUp() throws Exception {
@@ -51,8 +57,8 @@ public class UserSettingsTest {
 	
 	@Test
 	public void testGetSettingsFile(){
-		userSettingsReader.getUserSettingsPath();
-		userSettingsReaderTest.getUserSettingsPath();
+		Printer.log(userSettingsReader.getUserSettingsPath());
+		Printer.log(userSettingsReaderTest.getUserSettingsPath());
 	}
 	@Test
 	public void testGetUsers() {
@@ -91,5 +97,26 @@ public class UserSettingsTest {
 			Printer.println("userA null");
 		}
 		assertTrue(!UserUtil.isEmptyUser(userSettingsReaderTest.getActiveUser()));
+	}
+	
+	@Test
+	public void writeUsers(){
+		UserSettingsWriter writer = new UserSettingsWriter();
+		Printer.log(writer.getUserSettingsPath());
+		
+		writer.writeUserSettings(userSettingsReader.getUsers());
+		writer.setOutputFile(rootTestDirectory.resolve("UsersWriterTest.xml"));
+		
+		ArrayList<User> users = userSettingsReaderTest.getUsers();
+		if (null != users && !users.isEmpty()) {
+			User temp = users.get(0);
+			
+			UUID tmpUU = Settings.getMachineGUID();
+			if (null == tmpUU) tmpUU=UUID.randomUUID();
+			
+			temp.registerUserToMachine(tmpUU);
+		}
+		
+		writer.writeUserSettings(users);
 	}
 }

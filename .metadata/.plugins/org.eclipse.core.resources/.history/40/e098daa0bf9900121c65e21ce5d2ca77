@@ -1,9 +1,0 @@
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-
-
-public final class WriteOut {
-	public static void main(String args[]){
-		BufferedWriter buffWrit = new BufferedWriter(new FileWriter());
-	}
-}

@@ -4,12 +4,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import net.subject17.jdfs.client.file.model.WatchList;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.settings.writer.WatchSettingsWriter;
 import net.subject17.jdfs.client.user.User;
 
 import org.w3c.dom.Document;
@@ -39,7 +42,12 @@ public class WatchSettingsReader extends SettingsReader {
 	}
 	
 	private void Init() throws ParserConfigurationException, SAXException, IOException {
-		if (!Files.isRegularFile(watchSettingsPath)) throw new IOException("");
+		if (!Files.exists(watchSettingsPath)) {
+			WatchSettingsWriter.writeWatchSettings(watchSettingsPath, new HashSet<WatchList>());
+		}
+		if (!Files.isReadable(watchSettingsPath)) {
+			throw new IOException("Cannot read file");
+		}
 		watchDoc = getWatchDocument();
 		readWatchLists();
 	}

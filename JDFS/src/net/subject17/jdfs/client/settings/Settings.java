@@ -6,15 +6,18 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.UUID;
 
+import net.subject17.jdfs.JDFSUtil;
+
 public abstract class Settings {
 	protected static UUID MachineGUID = null;
 	
 	protected static final String defaultSettingsPathName = "settings.conf";
-	protected static final String defaultSettingsDirectory = System.getProperty("user.dir"); //Gets current directory
+	//protected static final String defaultSettingsDirectory = System.getProperty("user.dir"); //Gets current directory
+	protected static final String defaultSettingsDirectory = JDFSUtil.defaultDirectory; //Gets current directory
 	protected static final String defaultPeersPathName = "Peers.xml";
 	protected static final String defaultUserPathName = "Users.xml";
 	protected static final String defaultWatchPathName = "FileWatch.xml";
-	protected static final String defaultStorageDirectory = Paths.get(System.getProperty("user.dir"),"storage/").toString();
+	protected static final String defaultStorageDirectory = Paths.get(defaultSettingsDirectory,"storage").toString();
 	
 	protected Path settingsPath = Paths.get(defaultSettingsDirectory, defaultSettingsPathName);
 	protected Path peerSettingsPath = Paths.get(defaultSettingsDirectory, defaultPeersPathName);
@@ -101,4 +104,5 @@ public abstract class Settings {
 	public final UUID setMachineGUID(UUID guid){
 		return MachineGUID = guid;
 	}
+	public static final UUID getMachineGUID(){return MachineGUID;}
 }

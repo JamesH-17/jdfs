@@ -13,11 +13,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 
-public class WatchSettingsWriter extends SettingsWriter {
+public final class WatchSettingsWriter extends SettingsWriter {
 	public void writeWatchSettings(Collection<WatchList> watchLists) {
 		writeWatchSettings(userSettingsPath, watchLists);
 	}
-	public void writeWatchSettings(Path loc, Collection<WatchList> watchLists) {
+	public static void writeWatchSettings(Path loc, Collection<WatchList> watchLists) {
 		try {
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc, watchLists);
@@ -31,7 +31,7 @@ public class WatchSettingsWriter extends SettingsWriter {
 		}
 	}
 	
-	private Document createDocument(Document doc, Collection<WatchList> watchLists){
+	private static Document createDocument(Document doc, Collection<WatchList> watchLists){
 		Element root = doc.createElement("watchLists");
 		
 		for (WatchList list : watchLists) { //Note that storing the users is redundant

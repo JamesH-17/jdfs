@@ -42,12 +42,14 @@ public class SettingsReader extends Settings {
 		settingsPath = Paths.get(nameOfSettingsFileToUse);
 		parseAndReadXMLDocument();
 	}
-	public SettingsReader(String pathOfFile, String nameOfFile) throws ParserConfigurationException, SAXException, IOException {
-		settingsPath = Paths.get(pathOfFile, nameOfFile);
+	public SettingsReader(Path location) throws ParserConfigurationException, SAXException, IOException {
+		settingsPath = location;
 		parseAndReadXMLDocument();
 	}
 
 	private void createDefaultSettingsFile() throws IOException {
+		setMachineGUID(UUID.randomUUID());
+		
 		SettingsWriter sw = new SettingsWriter();
 		sw.setDefaultPathLocations();
 		sw.writeXMLSettings();
@@ -55,7 +57,7 @@ public class SettingsReader extends Settings {
 	
 	private void parseAndReadXMLDocument() throws ParserConfigurationException, SAXException, IOException {
 		setDefaultPathLocations();
-			Document settingsXML = GetDocument(settingsPath);
+		Document settingsXML = GetDocument(settingsPath);
 
 		if (settingsXML != null) {
 			Element configNode = GetConfigNode(settingsXML);
@@ -72,7 +74,7 @@ public class SettingsReader extends Settings {
 	private void readAndSetStorageDirectory(Document settingsXML) throws IOException {
 		Element root = GetFirstNode(settingsXML, "jdfsSettings");
 		if (root != null) {
-			String storagePath = extractNodeValue(root, "fileStoragePath");
+			String storagePath = extractNodeValue(root, "storageDirectory");
 			
 			if (!(storagePath == null || storagePath.trim().isEmpty()))
 				setStorageDirectory(storagePath);
@@ -177,5 +179,6 @@ public class SettingsReader extends Settings {
 		Element root = GetFirstNode(Doc, "jdfsSettings");
 		Element configRoot = GetFirstNode(root, "configLocations");
 		return configRoot;
-	}	
+	}
+	
 }

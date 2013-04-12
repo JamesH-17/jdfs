@@ -1,66 +1,47 @@
 package net.subject17.jdfs.test.client.settings.reader;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.peers.Peer;
 import net.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
+import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
 
-public class PeerSettingsTest {
-	private static final String rootDirectory = System.getProperty("user.dir");
-	private static String rootTestDirectory;
+public final class PeerSettingsTest {
+	//private static final String rootDirectory = System.getProperty("user.dir");
+	private static final Path rootDirectory = Paths.get(JDFSUtil.defaultDirectory);
+	private static final Path rootTestDirectory = rootDirectory.resolve("TEST");
 	
 	private static SettingsReader settingsReader, settingsReaderTest;
 	
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {
 		System.out.println("Root Directory: "+rootDirectory);
-		rootTestDirectory = new File(System.getProperty("user.dir"),"TEST").getCanonicalPath();
 		System.out.println("Root Test Directory: "+rootTestDirectory);
 		
 		settingsReader = new SettingsReader();
-		settingsReaderTest = new SettingsReader(rootTestDirectory,"SettingsReaderTest.conf");
+		settingsReaderTest = new SettingsReader(rootTestDirectory.resolve("SettingsReaderTest.conf"));
 	}
-/*
-	@Test
-	public void test() throws ParserConfigurationException, SAXException, IOException, Exception {
-		try {
-			Printer.println("Testing default file creation");
-			testBlankFile();
-			
-			Printer.println("Testing specific locations");
-			testTestFile();
-			
-			Printer.println("Testing email validation");
-			TestRegexEmailValidation();
-			
-			Printer.println("Testing username validation");
-			
-			
-			Printer.println("All tests passed");
-		} catch (ParserConfigurationException e) {
-			Printer.logErr("TEST FAILED -- PARSER EXCEPTION");
-			Printer.logErr(e);
-		}
-	}
-	*/
+
 	@Test
 	public void testBlankFile() throws ParserConfigurationException, SAXException, IOException, Exception {
 		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReader.getPeerSettingsPath());
-		assertEquals(new File(rootDirectory,"Peers.xml").getCanonicalPath(),settingsReader.getPeerSettingsPath().toString());
+		assertEquals(rootDirectory.resolve("Peers.xml").toString(), settingsReader.getPeerSettingsPath().toString());
 		
 		HashSet<Peer> peers = peerSettingsReader.getPeers();
 		assertEquals(true, peers != null && peers.isEmpty());
@@ -80,8 +61,8 @@ public class PeerSettingsTest {
 	public void testTestFile() throws ParserConfigurationException, SAXException, IOException, Exception {
 		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReaderTest.getPeerSettingsPath());
 		
-		assertEquals("Failed settings File equality",Paths.get(rootTestDirectory,"SettingsReaderTest.conf").toString(),settingsReaderTest.getSettingsPath().toString());
-		assertEquals("Failed peers settings file equality",new File(rootTestDirectory,"PeersTest.xml").getCanonicalPath(),settingsReaderTest.getPeerSettingsPath().toString());
+		assertEquals("Failed settings File equality",rootTestDirectory.resolve("SettingsReaderTest.conf").toString(),settingsReaderTest.getSettingsPath().toString());
+		assertEquals("Failed peers settings file equality",rootTestDirectory.resolve("PeersTest.xml").toString(),settingsReaderTest.getPeerSettingsPath().toString());
 		
 		HashSet<Peer> peers = peerSettingsReader.getPeers();
 		assertEquals("No peers found (Make sure file pointed to contains some)",false, peers == null || peers.isEmpty());
@@ -101,8 +82,20 @@ public class PeerSettingsTest {
 			}
 		}
 	}
+	
 	@Test
-	private void TestRegexEmailValidation(){
+	public void testWriter() throws Exception {
+		PeerSettingsWriter writer = new PeerSettingsWriter();
+		
+		PeerSettingsReader peerSettingsReader = new PeerSettingsReader(settingsReader.getPeerSettingsPath());
+		writer.writePeerSettings(rootTestDirectory.resolve("PeersWriterTestBlank.xml"), peerSettingsReader.getPeers());
+		
+		peerSettingsReader = new PeerSettingsReader(settingsReaderTest.getPeerSettingsPath());
+		writer.writePeerSettings(rootTestDirectory.resolve("PeersWriterTest.xml"), peerSettingsReader.getPeers());
+	}
+	
+	@Test
+	public void TestRegexEmailValidation(){
 		String validEmail = "jdfs-test@mailinator.net";
 		assertEquals("Valid email does not match regex",true,validEmail.matches("[^@]+@[^@]+"));
 	}

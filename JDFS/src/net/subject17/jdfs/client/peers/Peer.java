@@ -41,7 +41,14 @@ public class Peer {
 		NodeList ip6Tags = peerTag.getElementsByTagName("ip6");
 		NodeList machineTags = peerTag.getElementsByTagName("machine");
 		
-		setGUID(SettingsReader.GetFirstNodeValue(peerTag, "peerGUID"));
+		
+		String guid = SettingsReader.GetFirstNodeValue(peerTag, "peerGUID");
+		try {
+			setGUID(guid);
+		} catch(IllegalArgumentException e) {
+			setGUID(UUID.randomUUID());
+		}
+		
 		setAccountEmail(SettingsReader.GetFirstNodeValue(peerTag, "accountEmail"));
 		setUsername(SettingsReader.GetFirstNodeValue(peerTag, "userName"));
 		
@@ -88,7 +95,7 @@ public class Peer {
 	}
 	
 	public void setGUID(String guid) {
-		 setGUID(UUID.fromString(guid));
+			setGUID(UUID.fromString(guid));
 	}
 	public void setGUID(UUID guid){
 		this.GUID = guid;
@@ -104,6 +111,10 @@ public class Peer {
 	
 	@Override
 	public int hashCode() {
-		return (""+accountEmail+seperatorChar+userName+GUID.hashCode()+seperatorChar+machineGUIDs.hashCode()+seperatorChar+ip4s.hashCode()+seperatorChar+ip6s.hashCode()).hashCode();
+		if (isBlankPeer())
+			return 0;
+		else {
+			return (""+accountEmail+seperatorChar+userName+GUID.hashCode()+seperatorChar+machineGUIDs.hashCode()+seperatorChar+ip4s.hashCode()+seperatorChar+ip6s.hashCode()).hashCode();
+		}
 	} 
 }

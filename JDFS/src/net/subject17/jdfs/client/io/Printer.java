@@ -1,9 +1,5 @@
 package net.subject17.jdfs.client.io;
 
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-
 /**
  * @author james
  * Abstracts the printing process, since this app can run in gui or console mode<br />
@@ -24,7 +20,10 @@ public class Printer {
 
 		public static void logErr(Object o) { logErr(o.toString()); }
 		public static void logErr(Object o, Level i) { logErr(o.toString(), i); }
-		public static void logErr(Exception e) { logErr(e.getMessage()); }
+		public static void logErr(Exception e) {
+			e.printStackTrace();
+			logErr(e.getMessage());
+		}
 		public static void logErr(String s) { logErr(s, Level.Medium); }
 		public static void logErr(String s, Level i) {
 			System.err.println(s);

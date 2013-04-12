@@ -1,0 +1,11 @@
+<?xml version="1.0" standalone="yes" ?>
+<watchList>
+	<userGUID>13ba2c21-411b-43e3-b05c-ba0fe4a4768f</userGUID>
+	<directory>
+		<path>C:\Users\James\Documents\School\test</path>
+		<followSubs>true</followSubs>
+	</directory>
+	<file>
+		<path>C:\Users\James\Documents\School\test\test.txt</path>
+	</file>
+</watchList>

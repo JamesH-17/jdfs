@@ -58,10 +58,10 @@ public class WatchDirectory {
 	public final void disabeSubdirectoryTracking(){followSubDirectories = false;}
 	
 	//
-	public final HashSet<Path> getFilesToWatch() throws IOException {
-		return getFilesToWatch(directory);
+	public final HashSet<Path> getAllFilesToWatch() throws IOException {
+		return getAllFilesToWatch(directory);
 	}
-	private final HashSet<Path> getFilesToWatch(Path loc) throws IOException { //TODO may have to extend this to take a level parameter
+	private final HashSet<Path> getAllFilesToWatch(Path loc) throws IOException { //TODO may have to extend this to take a level parameter
 		final HashSet<Path> filesToWatch = new HashSet<Path>();
 		//TODO watch out for symlinks!
 		try (DirectoryStream<Path> stream = Files.newDirectoryStream(loc)){
@@ -69,13 +69,38 @@ public class WatchDirectory {
 				if(Files.isRegularFile(path))
 					filesToWatch.add(path);
 				else if (Files.isDirectory(path) && followSubDirectories)
-					filesToWatch.addAll(getFilesToWatch(path)); //recurse
+					filesToWatch.addAll(getAllFilesToWatch(path)); //recurse
 			} 
 		} catch(DirectoryIteratorException e) {
 			Printer.logErr("Error gettings paths in directory");
 			Printer.logErr(e);
 		}
 		return filesToWatch;
+	}
+	
+	public final HashSet<Path> getDirectoriesToWatch() {
+		try {
+			return getDirectoriesToWatch(directory);
+		} catch (IOException e) {
+			Printer.logErr("Error encountered grabbing paths to watch on directory "+directory);
+			Printer.logErr(e);
+			return new HashSet<Path>();
+		}
+	}
+	private final HashSet<Path> getDirectoriesToWatch(Path location) throws IOException {
+		HashSet<Path> directories = new HashSet<Path>();
+		directories.add(location);
+		
+		try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
+			
+			for (Path pathToCheck : canidatePaths) {
+				if (Files.isDirectory(pathToCheck)  && followSubDirectories)
+					directories.addAll(getDirectoriesToWatch(pathToCheck));
+			}
+		}
+		
+		
+		return directories;
 	}
 
 	//Overrides/Class implementation

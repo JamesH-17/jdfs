@@ -1,6 +1,18 @@
 package net.subject17.jdfs;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
+/**
+ * 
+ * @author James
+ *	This class mostly contains stuff I wished the java API had written for me
+ */
 public class JDFSUtil {
+	public static final String defaultDirectory = "C:\\Users\\James\\Documents\\GitHub\\jdfs\\JDFS";
+	
 	public enum OS {Windows, MAC, Linux, BSD, Unknown}
 	public static OS getOS() {
 		String os = System.getProperty("os.name");
@@ -12,6 +24,7 @@ public class JDFSUtil {
 		
 	}
 	
+	//String joins
 	public static String stringJoin(Object[] Parts) {
 		return stringJoin(Parts,",");
 	}
@@ -33,5 +46,28 @@ public class JDFSUtil {
 			builder.append(seperator.toString());
 		}
 		return builder.toString();
+	}
+	
+	/*Inverse mappings for hash set
+	 * Courtesy of the following stack overflow user:
+	 * http://stackoverflow.com/users/288671/vitalii-fedorenko
+	*/
+	public static <T, E> Set<T> getKeysByValue(Map<T, E> map, E value) {
+	     Set<T> keys = new HashSet<T>();
+	     for (Entry<T, E> entry : map.entrySet()) {
+	         if (value.equals(entry.getValue())) {
+	             keys.add(entry.getKey());
+	         }
+	     }
+	     return keys;
+	}
+	
+	public static <T, E> T getKeyByValue(Map<T, E> map, E value) {
+	    for (Entry<T, E> entry : map.entrySet()) {
+	        if (value.equals(entry.getValue())) {
+	            return entry.getKey();
+	        }
+	    }
+	    return null;
 	}
 }

@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.file.model.WatchDirectory;
 import net.subject17.jdfs.client.file.model.WatchFile;
 import net.subject17.jdfs.client.file.model.WatchList;
@@ -28,7 +29,19 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
 import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
-public class FileWatcher {
+
+/**
+ * 
+ * @author James
+ *	This class is responsible for managing the paths we're watching.
+ *	Calling to the settings readers to read/export xml data,  adding
+ *	new directories and paths, removing things from and adding them to
+ *	the watch service are all handled here.
+ *
+ *	Actually processing any events that occur are handled by the 
+ *	WatchEventDispatcher thread, which this class starts.
+ */
+public final class FileWatcher {
 
 	private static volatile boolean isRunning = false; 
 	private static Path watchSettingsFile;
@@ -37,17 +50,19 @@ public class FileWatcher {
 	private static User activeUser;
 	private static WatchList activeWatchList;
 	
+	//Keep in mind each watchList actually tracks some user data
 	private static HashMap<User,WatchList> watchLists; //I'm considering making a superclass that handles what to do with switching watchlists
 														//Actually, it would be pretty easy to just put a watch file location for each user, and pass in the list here
 	private static ConcurrentHashMap<WatchKey,Path> watchKeys; //The event we get back is a watchkey, so we index by that
 	
 	private static WatchService watcher;
+	private static Thread watchDispatcherThread; 
 	
 	
 	public final static void setWatchSettingsFile(Path target) throws FileNotFoundException, IOException, ParserConfigurationException, SAXException {
 		if (!Files.isReadable(target)) {
 			try {
-				//TODO set up a writer in the watch reader class
+				WatchSettingsWriter.writeWatchSettings(target, watchLists.values());
 			} catch(Exception e) {
 				
 			}
@@ -62,6 +77,14 @@ public class FileWatcher {
 	}
 	public final static WatchList getWatchListByUser(HashMap<User,WatchList> haystack,User key){
 		return haystack.get(key);
+	}
+	public final static void modifyUser(User oldUser, User newUser){
+		watchLists.get(oldUser).setUser(newUser);
+		WatchList temp = watchLists.remove(oldUser);
+		watchLists.put(newUser, temp);
+		
+		if (activeUser.equals(oldUser))
+			activeUser = newUser;
 	}
 	
 	public final static boolean setActiveWatchList(User user) throws IOException{ /* ----------------This is the magic function that inits everything else--------------------*/
@@ -113,13 +136,8 @@ public class FileWatcher {
 		return addDirectoryToWatchList(watchLists, user, directory, trackSubdirectories);
 	}
 	
-	private final static boolean commitChangesToWatchlist(){
-		if(isRunning){
-			WatchSettingsWriter writer = new WatchSettingsWriter();
-			writer.writeWatchSettings(watchSettingsFile, watchLists.values());
-			return true;
-		}
-		else return true;
+	private final static void commitChangesToWatchlist(){
+		WatchSettingsWriter.writeWatchSettings(watchSettingsFile, watchLists.values());
 	}
 	
 	private final static boolean addDirectoryToWatchList(HashMap<User,WatchList> haystack, User user, Path directory, boolean trackSubdirectories) throws FileSystemException{
@@ -138,16 +156,12 @@ public class FileWatcher {
 		//This function only handles the current watchlist
 		
 		//Register directories
-		for(WatchDirectory directory : activeWatchList.getDirectories()){
+		for(WatchDirectory directories : activeWatchList.getDirectories()){
 			//First, put the directory on. (Keep in mind, we need to handle if new files are added to the directory, if the directory is deleted, or if it is moved)
-			watchKeys.put(
-					directory.getDirectory().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
-					directory.getDirectory()
-			);
-			for (Path path : directory.getFilesToWatch()){
+			for (Path directory : directories.getDirectoriesToWatch()) {
 				watchKeys.put(
-						path.register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
-						path
+						directory.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY),
+						directory
 				);
 			}
 		}
@@ -158,7 +172,23 @@ public class FileWatcher {
 					file.getPath().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
 					file.getPath()
 			);
+		}	
+	}
+	
+	public void removeWatchedPath(Path pathToRemove) {
+		for (WatchKey key : JDFSUtil.getKeysByValue(watchKeys, pathToRemove)) {
+			key.cancel();
+			watchKeys.remove(key);
 		}
 	}
 	
+	public void startWatchEventDispatcher() {
+		watchDispatcherThread = new Thread(new WatchEventDispatcher(watcher));
+	}
+	
+	public void cleanUp() {
+		if (watchDispatcherThread != null) {
+			//watchDi
+		}
+	}
 }

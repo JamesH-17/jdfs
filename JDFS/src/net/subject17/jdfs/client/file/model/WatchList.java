@@ -24,8 +24,13 @@ public class WatchList {
 		
 		readDirectories(watchEle.getElementsByTagName("directory"));
 		readFiles(watchEle.getElementsByTagName("file"));
-		
-		setUser(UUID.fromString(SettingsReader.GetFirstNodeValue(watchEle,"userGUID")));
+		try {
+			setUser(UUID.fromString(SettingsReader.GetFirstNodeValue(watchEle,"userGUID")));
+		} catch (IllegalArgumentException e){
+			Printer.logErr(e);
+			Printer.log("Watchlist user absent or invalid.  Setting user to null.");
+			user = null;
+		}
 	}		
 	public WatchList(User newUser) {
 		resetFilesAndDirectories();
@@ -35,6 +40,7 @@ public class WatchList {
 	public final HashSet<WatchDirectory> getDirectories() {return directories;}
 	public final HashSet<WatchFile> getFiles() {return files;}
 	public final User getUser() {return user;}
+	public final User setUser(User newUser) {return this.user = newUser;}
 	
 	private final void setUser(UUID userGUID) {
 		if (AccountManager.guidExists(userGUID))
@@ -46,7 +52,7 @@ public class WatchList {
 		directories = new HashSet<WatchDirectory>();
 	}
 	private final void readDirectories(NodeList directoryNodes){
-		for (int i = 0; i < directoryNodes.getLength(); ++i) {
+		for (int i = 0; null != directoryNodes && i < directoryNodes.getLength(); ++i) {
 			try {
 				Element directoryTag = (Element)directoryNodes.item(i);
 				WatchDirectory watchDir = new WatchDirectory(directoryTag);
@@ -59,7 +65,7 @@ public class WatchList {
 		}
 	}
 	private final void readFiles(NodeList fileNodes){
-		for (int i = 0; i < fileNodes.getLength(); ++i) {
+		for (int i = 0; null != fileNodes && i < fileNodes.getLength(); ++i) {
 			try {
 				Element fileTag = (Element)fileNodes.item(i);
 				WatchFile watchFile = new WatchFile(fileTag);

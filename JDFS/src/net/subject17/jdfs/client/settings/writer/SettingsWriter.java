@@ -38,10 +38,13 @@ public class SettingsWriter extends Settings {
 			doc = createDocument(doc);
 			
 			writeDocument(doc, loc);
+			Printer.log("Created settings configuration file at "+loc);
 			
 		} catch (TransformerException e) {
+			Printer.logErr(e);
 			Printer.logErr("Could not instatiate transformer to write settings file", Printer.Level.Medium);
 		} catch (Exception e) {
+			Printer.logErr(e);
 			Printer.logErr("An unexpected error occured in SettingsWriter.writeXMLSettings.  Wrong filepath?");
 		}
 	}
@@ -79,11 +82,11 @@ public class SettingsWriter extends Settings {
 		configLocations.insertBefore(peerComm, peersFilePath);
 		
 		//Watch settings
-		Element watchFilePath = doc.createElement("watchFilePath");
+		Element watchFilePath = doc.createElement("watchFilesPath");
 		watchFilePath.appendChild(doc.createTextNode(watchSettingsPath.getParent().toString()));
 		configLocations.appendChild(watchFilePath);
 		
-		Element watchFileName = doc.createElement("watchFileName");
+		Element watchFileName = doc.createElement("watchFilesName");
 		watchFileName.appendChild(doc.createTextNode(watchSettingsPath.getFileName().toString()));
 		configLocations.appendChild(watchFileName);
 		
@@ -100,7 +103,8 @@ public class SettingsWriter extends Settings {
 		
 		//Machine GUID settings
 		Element MachineGUIDTag = doc.createElement("MachineGUID");
-		MachineGUIDTag.appendChild(doc.createTextNode(MachineGUID.toString()));
+		String machineID = null == Settings.getMachineGUID() ? "" :Settings.getMachineGUID().toString();
+		MachineGUIDTag.appendChild(doc.createTextNode(machineID));
 		root.appendChild(MachineGUIDTag);
 		
 		Comment machineGuidComm = doc.createComment("Unique Identifier for this machine.  DO NOT CHANGE!!!");
@@ -117,7 +121,7 @@ public class SettingsWriter extends Settings {
 		writeDocument(doc, Paths.get(defaultSettingsDirectory, defaultSettingsPathName));
 	}
 	
-	protected void writeDocument(Document doc, Path sourceFile) throws TransformerException {
+	protected static void writeDocument(Document doc, Path sourceFile) throws TransformerException {
 		Transformer transformer = getNewTransformer(); //Has pretty print in it as well
 		DOMSource src = new DOMSource(doc);
 		StreamResult res = new StreamResult(sourceFile.toFile());
@@ -146,13 +150,13 @@ public class SettingsWriter extends Settings {
 		return new File(settingsFilePath, settingsFileName); //If they supply a wrong location, not our problem
 	}
 	
-	protected Document getNewDocBuilder() throws ParserConfigurationException {
+	protected static Document getNewDocBuilder() throws ParserConfigurationException {
 		DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
 		DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
 		return docBuilder.newDocument();
 	}
 
-	private Transformer getNewTransformer() throws TransformerConfigurationException {
+	private static Transformer getNewTransformer() throws TransformerConfigurationException {
 		TransformerFactory transFact = TransformerFactory.newInstance();
 		Transformer trans = transFact.newTransformer();
 		trans.setOutputProperty(OutputKeys.ENCODING, "UTF-8");

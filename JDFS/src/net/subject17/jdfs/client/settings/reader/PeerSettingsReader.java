@@ -35,7 +35,7 @@ public class PeerSettingsReader extends SettingsReader {
 			peerDoc = GetDocument(sourceFile);
 			peers = ReadInPeers(peerDoc);
 			
-		} catch (FileNotFoundException e){
+		} catch (FileNotFoundException e){ //Also a possibility of malformed layout (ex: no peers tag), which will give a nullptr exception
 			
 			Printer.logErr("File not found -- "+sourceFile);
 			Printer.logErr(e);
@@ -54,16 +54,36 @@ public class PeerSettingsReader extends SettingsReader {
 		Printer.log("Default peer settings file initialized.");
 	}
 
-	private HashSet<Peer> ReadInPeers(Document doc) {		
-		NodeList peerTags = GetFirstNode(doc, "peers").getElementsByTagName("peer");
+	private HashSet<Peer> ReadInPeers(Document doc) {
 		HashSet<Peer> peersFound = new HashSet<Peer>();
+		try {
+			NodeList peerTags = GetFirstNode(doc, "peers").getElementsByTagName("peer");
+			
+			Printer.log("Found "+peerTags.getLength()+" potential peers");
 		
-		Printer.log("Found "+peerTags.getLength()+" potential peers");
-
-		for (int i = 0; i < peerTags.getLength(); ++i) {
-			Peer currentNode = new Peer((Element) peerTags.item(0));
-			if (!currentNode.isBlankPeer())
-				peersFound.add(currentNode);
+			for (int i = 0; i < peerTags.getLength(); ++i) {
+				Peer currentNode = new Peer((Element) peerTags.item(0));
+				if (!currentNode.isBlankPeer())
+					peersFound.add(currentNode);
+			}
+		} catch(NullPointerException e) {
+			Printer.logErr(e);
+			Printer.log(
+					"----------------------------------------------------"+
+					System.getProperty("line.separator")+
+					"YO!   AY, YOU!  A Null Pointer Exception was thrown in PeerSettingsReader." +
+					System.getProperty("line.separator")+
+					"This is bad.  Like, real bad.  You should check to see if the file located at ["+
+					sourceFile +
+					"] is malformed.  "+
+					System.getProperty("line.separator")+
+					"Is there a tag labelled <peers>? Cause there's supposed to be."+
+					System.getProperty("line.separator")+
+					"Anyway, no peers were loaded, and no attempt to fix the file was made."+
+					System.getProperty("line.separator")+
+					"----------------------------------------------------"
+					,
+					Printer.Level.High);
 		}
 		return peersFound;
 	}

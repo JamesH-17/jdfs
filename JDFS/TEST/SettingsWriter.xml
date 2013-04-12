@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<jdfsSettings>
+    <configLocations>
+        <!--User Settings-->
+        <userFilePath>C:\Users\James\Documents\GitHub\jdfs\JDFS</userFilePath>
+        <userFileName>Users.xml</userFileName>
+        <!--Peer Settings-->
+        <peersFilePath>C:\Users\James\Documents\GitHub\jdfs\JDFS</peersFilePath>
+        <peersFileName>Peers.xml</peersFileName>
+        <!--Watch Settings-->
+        <watchFilesPath>C:\Users\James\Documents\GitHub\jdfs\JDFS</watchFilesPath>
+        <watchFilesName>FileWatch.xml</watchFilesName>
+    </configLocations>
+    <!--Locations where other user's files will be stored-->
+    <storageDirectory>C:\Users\James\Documents\GitHub\jdfs\JDFS\storage</storageDirectory>
+    <!--Unique Identifier for this machine.  DO NOT CHANGE!!!-->
+    <MachineGUID/>
+</jdfsSettings>

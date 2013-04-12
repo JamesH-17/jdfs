@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<users>
+    <user>
+        <email>dboyzetown@gmail.com</email>
+        <userName>james</userName>
+        <GUID>13ba2c21-411b-43e3-b05c-ba0fe4a4768f</GUID>
+        <linkedMachines>
+            <machine>473a4a21-a772-4f88-9325-9d2a6f91204e</machine>
+        </linkedMachines>
+    </user>
+    <user>
+        <email>inactive@gmail.com</email>
+        <userName>inactive</userName>
+        <GUID>bcfe7ffc-f275-48b8-89b2-d9de164c5337</GUID>
+        <linkedMachines/>
+    </user>
+</users>
