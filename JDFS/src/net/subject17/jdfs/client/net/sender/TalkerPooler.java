@@ -16,6 +16,7 @@ import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
 import net.subject17.jdfs.client.file.model.EncryptedFileInfoStruct;
+import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.settings.Settings;
 import net.subject17.jdfs.client.user.User.UserException;
@@ -63,27 +64,29 @@ public final class TalkerPooler {
 		
 		
 		try (ResultSet filesToSend = DBManager.getInstance().select(
-				"SELECT UserFiles.FileGUID AS FileGUID, UserFiles.UpdatedDate AS UpdatedDate, UserFiles.IV AS IV, "+
+				"SELECT TOP 1 "+
+				"UserFiles.FileGUID AS FileGUID, UserFiles.UpdatedDate AS UpdatedDate, UserFiles.Priority AS Priority"+
 				"Users.UserGUID AS UserGUID, Users.UserName AS UserName, Users.AccountEmail AS AccountEmail"+
 				"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
-				"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK"+
-				" WHERE UserFiles.LocalFilePath = '"+context.toString()+"'"
+				"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
+				"WHERE UserFiles.LocalFilePath = '"+context.toString()+"' "+
+				"AND COALESCE(UserFiles.IV,'') LIKE ''" //TODO exception case here.  We've received a file, but haven't decoded it, and old one is marked for sending
 		)){
 			
 			UUID MachineGUID = Settings.getMachineGUIDSafe();
 			byte[] CheckSum = FileUtil.getInstance().getMD5Checksum(context);
 			
 			while(filesToSend.next()) {
-				UUID FileToSendGUID = UUID.fromString(filesToSend.getString("FileGUID"));
+				UUID fileGUID = UUID.fromString(filesToSend.getString("FileGUID"));
 				UUID userGUID = UUID.fromString(filesToSend.getString("UserGUID"));
 				
 				String email = filesToSend.getString("AccountEmail");
 				String userName = filesToSend.getString("UserName");
 				
 				Date UpdatedDate = filesToSend.getDate("UpdatedDate");
-				byte[] IV = filesToSend.getBlob("IV").getBytes(1, (int) filesToSend.getBlob("IV").length());
-				
-				
+				//byte[] IV = filesToSend.getBlob("IV").getBytes(1, (int) filesToSend.getBlob("IV").length());
+				int priority = filesToSend.getInt("Priority");
+				FileSenderInfo info = new FileSenderInfo(fileData,context,fileGUID,userGUID,);
 			}
 			
 			

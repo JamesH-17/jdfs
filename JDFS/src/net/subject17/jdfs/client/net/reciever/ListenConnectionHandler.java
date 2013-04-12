@@ -10,7 +10,7 @@ import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.PortMgrException;
-import net.subject17.jdfs.client.net.reciever.FileReciever;
+import net.subject17.jdfs.client.net.model.NewHandlerInfo;
 import net.subject17.jdfs.client.peers.PeersHandler;
 
 
@@ -116,20 +116,30 @@ public final class ListenConnectionHandler implements Runnable {
 		if (resp == null)
 			return "";
 		switch(resp) {
-			case LanguageProtocol.INIT_FILE_TRANS: return handleFileTrans();
+			case LanguageProtocol.INIT_FILE_TRANS: return handleFileTrans(); //returns success/failure string
 			default: return LanguageProtocol.UNKNOWN;
 		}
 	}
 	
 	private String handleFileTrans() {
 		try {
+			
+			//Set up a new port to grab their file on so we don't block this one
 			int Port = PortMgr.getRandomPort();
 			Printer.log("Using port "+Port);
 			
+			//Acknowledge, wait on receiving file info
+			toClient.println(LanguageProtocol.ACK);
+			
+			String json = fromClient.readLine();
+			
 			Printer.log("Starting new file reciever");
 			FileReciever reciever = new FileReciever(Port,json);
+			
+			toClient.println((new NewHandlerInfo(Port)).toJSON());
 			return reciever.run();
-		} catch (PortMgrException e) {
+			
+		} catch (PortMgrException | IOException e) {
 			return LanguageProtocol.FILE_RECV_FAIL;
 		}
 	}

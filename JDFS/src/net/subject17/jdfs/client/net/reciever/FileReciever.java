@@ -12,10 +12,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.NetworkUtil;
 
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 
@@ -27,23 +30,18 @@ import org.codehaus.jackson.map.ObjectMapper;
 public final class FileReciever {
 	
 	protected final int port;
-	private String secretMessage; 
-	private String AESHashOfFile; 
+	//private String secretMessage; 
+	//private String AESHashOfFile; 
+	private final FileSenderInfo info;
 	
-	private BufferedReader commIn;
-	private PrintWriter commOut;
-	
-	public FileReciever(int port, String json) {
+	public FileReciever(int port, String json) throws JsonParseException, JsonMappingException, IOException {
 		this.port = port;
 		ObjectMapper mapper = new ObjectMapper();
-		
+		this.info = mapper.readValue(json, FileSenderInfo.class);
 	}
 
 	public String run() {
-		if (secretMessage == null || secretMessage.equals("") || AESHashOfFile == null || AESHashOfFile.equals(""))
-			return receiveFile();
-		else
-			return recieveFileSecure();
+		return receiveFile();
 	}
 	
 	public String receiveFile() {
@@ -57,11 +55,10 @@ public final class FileReciever {
 			Printer.log("Ready to recieve file -- Connection established");
 			
 			//Get filesize
-			byte[] fileSizeBuff = new byte[4];
-			inStrm.read(fileSizeBuff, 0, 4);
-
-			final int fileSizeInBytes = NetworkUtil.convertBytesToInt(fileSizeBuff); 
-			Printer.log("fileSize:"+fileSizeInBytes);
+			//byte[] fileSizeBuff = new byte[4];
+			//inStrm.read(fileSizeBuff, 0, 4);
+			//final int fileSizeInBytes = NetworkUtil.convertBytesToInt(fileSizeBuff); 
+			Printer.log("fileSize:"+info.size);
 			
 			//Read in the File
 			byte[] bytesRead = new byte[fileSizeInBytes];
@@ -101,11 +98,5 @@ public final class FileReciever {
 			e.printStackTrace();
 			return LanguageProtocol.FILE_RECV_FAIL;
 		}
-	}
-	
-	private String recieveFileSecure() {
-		
-		return LanguageProtocol.UNSUPPORTED; // TODO Implement this
-	}
-	
+	}	
 }
