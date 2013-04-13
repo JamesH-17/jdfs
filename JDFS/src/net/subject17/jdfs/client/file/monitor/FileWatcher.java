@@ -149,7 +149,10 @@ public final class FileWatcher {
 	private final static boolean addDirectoryToWatchList(HashMap<User,WatchList> haystack, User user, Path directory, boolean trackSubdirectories) throws FileSystemException{
 		if 	(haystack==null || haystack.isEmpty() || user==null || user.isEmpty() || !haystack.containsKey(user))
 			return false;
-		else return haystack.get(user).AddDirectory(directory, trackSubdirectories); //TODO check out the reference tracking here
+		else { 
+			haystack.get(user).AddDirectory(directory, trackSubdirectories); //TODO check out the reference tracking here
+			return true;
+		}
 	}
 	
 	private final static void initWatchService() throws IOException {
@@ -162,7 +165,7 @@ public final class FileWatcher {
 		//This function only handles the current watchlist
 		
 		//Register directories
-		for(WatchDirectory directories : activeWatchList.getDirectories()){
+		for(WatchDirectory directories : activeWatchList.getDirectories().values()){
 			//First, put the directory on. (Keep in mind, we need to handle if new files are added to the directory, if the directory is deleted, or if it is moved)
 			for (Path directory : directories.getDirectoriesToWatch()) {
 				watchKeys.put(
@@ -173,7 +176,7 @@ public final class FileWatcher {
 		}
 		
 		//Register files
-		for(WatchFile file : activeWatchList.getFiles()){
+		for(WatchFile file : activeWatchList.getFiles().values()){
 			watchKeys.put(
 					file.getPath().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
 					file.getPath()

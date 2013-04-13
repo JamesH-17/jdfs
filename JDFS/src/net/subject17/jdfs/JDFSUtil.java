@@ -1,9 +1,14 @@
 package net.subject17.jdfs;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 
 /**
  * 
@@ -69,5 +74,10 @@ public class JDFSUtil {
 	        }
 	    }
 	    return null;
+	}
+	
+	public String toJSON() throws JsonGenerationException, JsonMappingException, IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.writeValueAsString(this);
 	}
 }

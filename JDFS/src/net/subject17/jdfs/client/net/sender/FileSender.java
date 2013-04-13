@@ -7,20 +7,28 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.NetworkUtil;
 
 
-public class FileSender {
+public class FileSender implements Runnable {
 	
-	private final String ipAddr;
-	private final int port;
-	private final Path path;
+	public String ipAddr;
+	public int port;
+	public final Path path;
+	public final String jsonPayload;
 	
 	public FileSender(String ip, int port, Path pathToUse, String jsonFileInfo){
-		ipAddr = ip;
+		this.ipAddr = ip;
 		this.port = port;
-		path = pathToUse;
+		this.path = pathToUse;
+		this.jsonPayload = jsonFileInfo;
+	}
+	
+	public FileSender(Path fileToSend, String jsonPayload) {
+		this.path = fileToSend;
+		this.jsonPayload = jsonPayload;  
 	}
 
 	public boolean sendFile() {
@@ -30,7 +38,9 @@ public class FileSender {
 		 	//TODO put in a guid
 			Printer.log("Sending file "+path.getFileName()+"on connection "+ipAddr+":"+port);
 			
+			/*
 			FileChannel fileSrc = FileChannel.open(path);
+			
 			
 			//Send over the file size first; they're waiting on this
 			int fileSize = (int)  Files.size(path);
@@ -46,6 +56,8 @@ public class FileSender {
 			//Send it to the server
 			toServer.write(fileBytesBuff.array());
 			toServer.flush();
+			*/
+			FileUtil.getInstance().readFileToStream(path, toServer);
 			
 			Printer.log("File sent!");
 			return true;
@@ -55,6 +67,11 @@ public class FileSender {
 	    	ex.printStackTrace();
 	    	return false;
 	    }
+	}
+
+	@Override
+	public void run() {
+		sendFile(); //Don't really care if it succeeds
 	}
 	
 	

@@ -76,7 +76,6 @@ public final class ListenConnectionHandler implements Runnable {
 
 	public boolean handleInitialConnection(BufferedReader fromClient, PrintWriter toClient) throws IOException {
 		String clientResponse = "", serverResponse = "";
-		Printer.log("here");
 		
 		for (int attempt = 0; attempt < MAX_CONNECTION_ATTEMPTS ; ++attempt) { //Give them a few tries to send the correct signal
 

@@ -11,15 +11,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Scanner;
 
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+
+import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.PortMgr;
 
 
-public final class Talker {
+public final class Talker implements Runnable {
 	//DEV VARIABLES for easy access when connecting to the same machine
 	private String defaultServerName = "";
 	private int defaultPort = PortMgr.getServerPort(); //TODO Ability to change server port via command line, along with default server port
+	
+	protected Object payload;
 	
 	protected String serverName;
 	protected int port;
@@ -32,16 +38,23 @@ public final class Talker {
 	public Talker(String serv) { setServer(serv); setPort(defaultPort); }
 	public Talker(int targetPort) { setServer(defaultServerName);setPort(targetPort); }
 	
+	//For testing only, or maybe just to do a handshake
 	public Talker(String serv, int p){
 		setServer(serv);
 		setPort(p);
+		payload = null;
 	}
 	
-	public void run(){}; //TODO Implement this bitch since it's definitely gonna need to be threaded.
-						//Mayhaps make multiple constructors that'll do different, predetermined things?
-						//Or have it take in a peer as a paramater, assigning a talker to each peer?
-						//Or make it a super class that's abstract, implementing different functionality for each possible type?
-						//Or make it 
+	public Talker(String targetServer, int targetPort, Object opPayload){
+		setServer(targetServer);
+		setPort(targetPort);
+		
+		this.payload = opPayload;		
+	}
+	
+	public void run() {
+		createTalker();
+	}
 	
 	public void setServer(String s) {serverName=s;}
 	public void setPort(int p) {port=p;}
@@ -55,58 +68,122 @@ public final class Talker {
 			PrintWriter output = new PrintWriter(sock.getOutputStream(), true);
 			BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
 		){
-			TalkerResponder responder = new TalkerResponder(serverName, in, output);
+			//TalkerResponder responder = new TalkerResponder(serverName, in, output);
 			
 			Printer.log("Connected to server "+sock.getInetAddress());
 			
-			//output.print
-			Printer.log("begin output");
+			String serverMessage = "";
 			output.println(LanguageProtocol.SYN);
-			Printer.log("output done");
 			
-			String msg = "", recieved = "";
-			do {
+			if (jdfsRunningOnServer(output, in)) {
+				
+				int attempts = 0;
+				do {
+					sendMachineInfo(output, in);
+					serverMessage = in.readLine();
+				} while(
+						(null == serverMessage || (serverMessage).equals(LanguageProtocol.CONFIRM_ADD_ACCOUNT))
+						&& attempts++ < 3
+				);
 				
 				
-				//////////////////////////TODO
-				//Drop all this logic.
-				//Instead, We're also gonna pass in an object to create the talker
-				//We'll tell the desired operation from the class type
-				//Then, we'll call a commonly nammed method from that class
-				
-				
-				if (!msg.equals(LanguageProtocol.INIT_FILE_TRANS)) {
-					msg = userInput.next();
-					Printer.log("Message to post:"+msg);
+				if (LanguageProtocol.keepGoing(serverMessage)){
 					
-					if (msg != null && !msg.equals("")) {
-						
-						if(msg.contains("send-file")) {
-							msg=LanguageProtocol.INIT_FILE_TRANS;
-						}
-						
-						output.println(msg); //TODO do this in a much cleaner, more modular way
-
-						Printer.log("Messsage from server:"+recieved);
-						recieved = in.readLine();
-						Printer.log("Messsage from server:"+recieved);
+					if (payload instanceof FileSender) {
+						sendFile(output, in);
 					}
+					else if (payload instanceof FileRetriever){
+						retrieveFile(output, in);
+					} //TODO: Add peer request
+					
+					output.println(LanguageProtocol.CLOSE);
 				}
-				else {
-					Printer.log("Calling handle");
-					//responder.HandleFileSender(path); //TODO figure out how to get the path as input
-					msg = "asd";
-				}
+				
+				
+				/*
+				String msg = "", recieved = "";
+				do {
+					
+					
+					//////////////////////////TODO
+					//Drop all this logic.
+					//Instead, We're also gonna pass in an object to create the talker
+					//We'll tell the desired operation from the class type
+					//Then, we'll call a commonly named method from that class
+					
+					
+					if (!msg.equals(LanguageProtocol.INIT_FILE_TRANS)) {
+						msg = userInput.next();
+						Printer.log("Message to post:"+msg);
+						
+						if (msg != null && !msg.equals("")) {
+							
+							if(msg.contains("send-file")) {
+								msg=LanguageProtocol.INIT_FILE_TRANS;
+							}
+							
+							output.println(msg); //TODO do this in a much cleaner, more modular way
+	
+							Printer.log("Messsage from server:"+recieved);
+							recieved = in.readLine();
+							Printer.log("Messsage from server:"+recieved);
+						}
+					}
+					else {
+						Printer.log("Calling handle");
+						//responder.HandleFileSender(path); //TODO figure out how to get the path as input
+						msg = "asd";
+					}
+				} while(!(null == msg || msg.equals("") || msg.equals("exit") || msg.equals(LanguageProtocol.CLOSE)));
+				*/
 			}
-			while(msg != null && !msg.equals("") && !msg.equals("exit"));
-
+			
 		} catch(IOException e){
 			Printer.logErr("Could not listen on port "+port);
-			Printer.logErr("Reason:"+e.getMessage());
+			Printer.logErr(e);
 
 		} catch (Exception e) {
-			Printer.logErr(e.getMessage());
+			Printer.logErr(e);
 		}
+	}
+	
+	private void retrieveFile(PrintWriter output, BufferedReader in) {
+		// TODO Auto-generated method stub
+		
+	}
+	private void sendMachineInfo(PrintWriter output, BufferedReader in) {
+		
+		MachineInfo info = new MachineInfo();
+		try {
+			output.println(info.toJSON());
+		} catch (IOException e) {
+			Printer.logErr(e);
+			output.println(LanguageProtocol.SKIPPED);
+		}
+	}
+	private void sendFile(PrintWriter output, BufferedReader in) throws IOException {
+		// TODO Auto-generated method stub
+		FileSender fileSender = (FileSender) payload;
+		
+		output.println(LanguageProtocol.INIT_FILE_TRANS);
+		String response = in.readLine();
+		if (null != response && response.equals(LanguageProtocol.ACCEPT_FILE_TRANS)){
+			output.write(fileSender.jsonPayload);
+			fileSender.port = this.port;
+			fileSender.ipAddr = this.serverName;
+			
+			Thread thread = new Thread(fileSender);
+			thread.run();
+		}
+	}
+	private boolean jdfsRunningOnServer(PrintWriter output, BufferedReader input) throws IOException {
+		for (int attempt = 0; attempt < 3; ++attempt) {
+			if (input.readLine().equals(LanguageProtocol.ACK)) {
+				return true;
+			}
+			output.println(LanguageProtocol.SYN);
+		}
+		return false;
 	}
 	
 }

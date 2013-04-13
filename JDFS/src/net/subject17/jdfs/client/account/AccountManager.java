@@ -125,6 +125,7 @@ public class AccountManager {
 		users.clear();
 		activeUser = null;
 	}
+	public ArrayList<User> getUsers(){return users;}
 	
 	public void writeUsersToFile() {
 		writeUsersToFile(usersFile);

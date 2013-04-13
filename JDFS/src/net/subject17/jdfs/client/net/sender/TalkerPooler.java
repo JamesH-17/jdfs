@@ -4,21 +4,17 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.UUID;
+import java.util.HashSet;
 
 import javax.crypto.NoSuchPaddingException;
 
-import net.subject17.jdfs.client.account.AccountManager;
-import net.subject17.jdfs.client.file.FileUtil;
-import net.subject17.jdfs.client.file.db.DBManager;
-import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
-import net.subject17.jdfs.client.file.model.EncryptedFileInfoStruct;
+import net.subject17.jdfs.client.file.handler.FileHandler;
+import net.subject17.jdfs.client.file.handler.FileHandler.FileHandlerException;
 import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
-import net.subject17.jdfs.client.settings.Settings;
+import net.subject17.jdfs.client.net.PortMgr;
+import net.subject17.jdfs.client.peers.Peer;
+import net.subject17.jdfs.client.peers.PeersHandler;
 import net.subject17.jdfs.client.user.User.UserException;
 
 public final class TalkerPooler {
@@ -38,72 +34,35 @@ public final class TalkerPooler {
 		return _instance;
 	}
 	
-	
-	//
-	public String[] grabIP4s(){
-		return new String[]{""};
-	}
-	
-	
-	
-	private String jsonifyFileData(String pathGUID){
-		//Connect to db, 
-		return null;
-	}
-
-
-
 	public final void UpdatePath(Path context) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, UserException {
 		//TODO Design choice:  Only update this user, or all users that modify that file?  
-		
-		
-		//TODO Use DB to find every peer that has this file
-		//Then use file sender to send it to them
-		
-		EncryptedFileInfoStruct fileData = FileUtil.getInstance().compressAndEncryptFile(context, AccountManager.getInstance().getPasswordDigest());
-		
-		
-		try (ResultSet filesToSend = DBManager.getInstance().select(
-				"SELECT TOP 1 "+
-				"UserFiles.FileGUID AS FileGUID, UserFiles.UpdatedDate AS UpdatedDate, UserFiles.Priority AS Priority"+
-				"Users.UserGUID AS UserGUID, Users.UserName AS UserName, Users.AccountEmail AS AccountEmail"+
-				"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
-				"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
-				"WHERE UserFiles.LocalFilePath = '"+context.toString()+"' "+
-				"AND COALESCE(UserFiles.IV,'') LIKE ''" //TODO exception case here.  We've received a file, but haven't decoded it, and old one is marked for sending
-		)){
+		//TODO implement the directory handling as well
+		try {
+			Thread[] talkers;
 			
-			UUID MachineGUID = Settings.getMachineGUIDSafe();
-			byte[] CheckSum = FileUtil.getInstance().getMD5Checksum(context);
+			FileSenderInfo info = FileHandler.getInstance().prepareToSendFile(context);
 			
-			while(filesToSend.next()) {
-				UUID fileGUID = UUID.fromString(filesToSend.getString("FileGUID"));
-				UUID userGUID = UUID.fromString(filesToSend.getString("UserGUID"));
+			HashSet<String> peerIPs = FileHandler.getInstance().getPeersToSendFileTo(info.fileGuid);
+			
+			if (peerIPs.size() < 1) 
+				peerIPs.addAll(PeersHandler.searchForIPs());
+			
+			if (peerIPs.size() > 0) {
+				talkers = new Thread[peerIPs.size()];
+				int i = 0;
+				for (String ip : peerIPs) {
+					FileSender temp = new FileSender(info.encryptedFileLocation, info.getAsJSON());
+					talkers[i] = new Thread(new Talker(ip, PortMgr.getServerPort(), temp));
+					talkers[i].run();
+				}
 				
-				String email = filesToSend.getString("AccountEmail");
-				String userName = filesToSend.getString("UserName");
-				
-				Date UpdatedDate = filesToSend.getDate("UpdatedDate");
-				//byte[] IV = filesToSend.getBlob("IV").getBytes(1, (int) filesToSend.getBlob("IV").length());
-				int priority = filesToSend.getInt("Priority");
-				FileSenderInfo info = new FileSenderInfo(fileData,context,fileGUID,userGUID,);
+			} else {
+				Printer.log("File not sent, no peers found");
 			}
 			
-			
-			
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			Printer.logErr(e);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			Printer.logErr(e);
-		} catch (DBManagerFatalException e) {
-			// TODO Auto-generated catch block
+		} catch (FileHandlerException e) {
+			Printer.logErr("Could not send file ["+context+"] !");
 			Printer.logErr(e);
 		}
-		
-		
-		Printer.log("Path:");
-		Printer.log("Got here");
 	}
 }

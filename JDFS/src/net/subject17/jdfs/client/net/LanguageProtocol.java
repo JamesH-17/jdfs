@@ -8,6 +8,7 @@ public class LanguageProtocol {
 	public final static String UNSUPPORTED = "jdfs-Unsupported-Communication";
 	public final static String CLOSE = "jdfs-Close-Connection";
 	public final static String ERROR = "jdfs-Invalid-Response";
+	public final static String SKIPPED = "jdfs-Skipped-Operation";
 	
 	public final static String RESEND_LAST = "jdfs-Resend-Last-Transmission";
 	
@@ -35,5 +36,9 @@ public class LanguageProtocol {
 			case SYN: return ACK;
 			default: return UNKNOWN;
 		}
+	}
+	
+	public static boolean keepGoing(String s){
+		return !(null == s || s.equals("") || s.equals(LanguageProtocol.CLOSE));
 	}
 }

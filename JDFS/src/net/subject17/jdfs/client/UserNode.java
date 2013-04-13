@@ -11,6 +11,7 @@ import java.security.MessageDigest;
 import java.util.Scanner;
 
 import net.subject17.jdfs.client.account.AccountManager;
+import net.subject17.jdfs.client.file.monitor.FileWatcher;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.reciever.Listener;
@@ -35,6 +36,10 @@ public class UserNode {
 	 * 
 	 */
 	public static void main(String[] args) {
+		//TODO: for args:  Allow to pass in a settings config file, and possibly a port
+		
+		
+		
 		Printer.log("Program started");
 		
 		try (Scanner inScan = new Scanner(System.in)){
@@ -74,7 +79,7 @@ public class UserNode {
 	private static void initializeSettingsAndHandlers() throws Exception {
 		//This function will handle setting up any settings and any handlers related to them
 		Printer.log("Initializing reader....");
-		SettingsReader settingsReader = new SettingsReader();
+		SettingsReader settingsReader = SettingsReader.getInstance();
 		
 		Printer.log("Reader initialized.  Starting Services...");
 		
@@ -85,7 +90,7 @@ public class UserNode {
 		AccountManager.getInstance().setUsersSettingsFile(settingsReader.getUserSettingsPath());
 		
 		Printer.log("Starting Watch Service");
-		//FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsPath());
+		FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsPath());
 		
 		//Next, add in code for watch service monitor
 		

@@ -10,6 +10,10 @@ import org.junit.Test;
 public class minitest {
 
 	@Test
+	public void lolol(){
+		Printer.print(Integer.parseInt(""));
+	}
+	@Test
 	public void test() {
 		byte[] bytes = new byte[4];
 	}

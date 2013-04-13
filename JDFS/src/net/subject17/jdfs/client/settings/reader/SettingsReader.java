@@ -19,32 +19,35 @@ import org.xml.sax.SAXException;
 
 
 public class SettingsReader extends Settings {
+	
+	private static SettingsReader _instance;
 
-	public class SettingsReaderException extends Exception {
+	public static final class SettingsReaderException extends Exception {
 		private static final long serialVersionUID = -5082082063748172393L;
 		SettingsReaderException(String msg){super(msg);}
+		SettingsReaderException(Exception e){super(e);}
 		SettingsReaderException(String msg, Throwable thrw){super(msg, thrw);}
 	}
 	
-	public SettingsReader() throws ParserConfigurationException, SAXException, IOException {
-		settingsPath = Paths.get(defaultSettingsDirectory,defaultSettingsPathName);
-		try {
-			parseAndReadXMLDocument();
-		} catch(FileNotFoundException e) {
-			Printer.logErr("Could not parse document -- using default values for locations");
-			//Printer.logErr(e);
-			Printer.logErr("Attempting to create file with default values");
-			createDefaultSettingsFile();
+	public static final SettingsReader getInstance() throws SettingsReaderException {
+		if (null == _instance) {
+			synchronized(SettingsReader.class){
+				if (null==_instance){
+					try {
+						_instance = new SettingsReader();
+					} catch (ParserConfigurationException | SAXException
+							| IOException e) {
+						Printer.logErr("Error instantiating settings reader");
+						throw new SettingsReaderException(e);
+					}
+				}
+			}
 		}
+		return _instance;
 	}
 	
-	public SettingsReader(String nameOfSettingsFileToUse) throws ParserConfigurationException, SAXException, IOException {
-		settingsPath = Paths.get(nameOfSettingsFileToUse);
-		parseAndReadXMLDocument();
-	}
-	public SettingsReader(Path location) throws ParserConfigurationException, SAXException, IOException {
-		settingsPath = location;
-		parseAndReadXMLDocument();
+	protected SettingsReader() throws ParserConfigurationException, SAXException, IOException {
+		settingsPath = Paths.get(defaultSettingsDirectory,defaultSettingsPathName);
 	}
 
 	private void createDefaultSettingsFile() throws IOException {
@@ -55,7 +58,18 @@ public class SettingsReader extends Settings {
 		sw.writeXMLSettings();
 	}
 	
-	private void parseAndReadXMLDocument() throws ParserConfigurationException, SAXException, IOException {
+	public void parseAndReadXMLDocument(Path location) throws ParserConfigurationException, SAXException, IOException{
+		settingsPath = location;		
+		try {
+			parseAndReadXMLDocument();
+		} catch(FileNotFoundException e) {
+			Printer.logErr("Could not parse document -- using default values for locations");
+			//Printer.logErr(e);
+			Printer.logErr("Attempting to create file with default values");
+			createDefaultSettingsFile();
+		}
+	}
+	public void parseAndReadXMLDocument() throws ParserConfigurationException, SAXException, IOException {
 		setDefaultPathLocations();
 		Document settingsXML = GetDocument(settingsPath);
 

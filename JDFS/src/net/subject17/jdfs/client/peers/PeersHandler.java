@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -171,5 +172,20 @@ public class PeersHandler {
 			
 			
 		}
+	}
+	public static HashSet<Peer> startPeerSearchService() {
+		HashSet<Peer> peersFound = new HashSet<Peer>();
+		
+		//scan a bunch of random ips and ports, attempting to find new jdfs users
+		
+		
+		return peersFound;
+	}
+	public static HashSet<String> searchForIPs() {
+		HashSet<String> peersIpsFound = new HashSet<String>();
+		
+		// similar to startPeerSearchService, but also simply tracks ips
+		
+		return peersIpsFound;
 	}
 }

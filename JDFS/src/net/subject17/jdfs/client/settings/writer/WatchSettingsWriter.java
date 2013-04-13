@@ -48,14 +48,14 @@ public final class WatchSettingsWriter extends SettingsWriter {
 			userGUID.setTextContent(list.getUser().getGUID().toString());
 			watchList.appendChild(userGUID);
 			
-			for(WatchDirectory directory : list.getDirectories()){
+			for(WatchDirectory directory : list.getDirectories().values()){
 				if (!directory.isEmpty()) {
 					Element directoryTag = directory.toElement(doc);
 					watchDirectories.appendChild(directoryTag);
 				}
 			}
 			
-			for(WatchFile file : list.getFiles()){
+			for(WatchFile file : list.getFiles().values()){
 				if (!file.isEmpty()) {
 					Element fileTag = file.toElement(doc);
 					watchFiles.appendChild(fileTag);

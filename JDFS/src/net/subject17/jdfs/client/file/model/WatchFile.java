@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
+import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 
 import org.w3c.dom.Document;
@@ -14,12 +15,20 @@ import org.w3c.dom.Element;
 public class WatchFile {
 	private Path file;
 	private UUID GUID;
+	private int priority;
 	
 	public WatchFile(Element node){
 		
 		//We want to throw a nullPtrException if the node doesn't exist.
 		file = Paths.get(SettingsReader.GetFirstNodeValue(node, "path"));
 		
+		try {
+			String priorityEle = SettingsReader.GetFirstNodeValue(node, "priority");
+			priority = priorityEle.equals("") ? 0 : Integer.parseInt(SettingsReader.GetFirstNodeValue(node, "priority"));
+		} catch (NumberFormatException e){
+			Printer.logErr(e);
+			priority = 0;
+		} 
 		//Grab this file's uuid, and if it doesn't exist, toss an error
 		String guid = SettingsReader.GetFirstNodeValue(node, "guid");
 		if ( !(null == guid || guid.equals("")) )
@@ -33,9 +42,6 @@ public class WatchFile {
 	public WatchFile(Path file, String guid) throws FileNotFoundException {
 		this(file, UUID.fromString(guid));
 	}
-	public WatchFile(String file, String guid) throws FileNotFoundException {
-		this(Paths.get(file), UUID.fromString(guid));
-	}
 	public WatchFile(Path file, UUID guid) throws FileNotFoundException {
 		if (Files.isRegularFile(file)) {
 			this.file = file;
@@ -47,6 +53,8 @@ public class WatchFile {
 	
 	public Path getPath() {return file;}
 	public UUID getGUID() {return GUID;}
+	public int getPriority(){return priority;}
+	public int setPriority(int newPriority){return priority = newPriority;}
 	public void setUUID(UUID newGUID) {this.GUID = newGUID;}
 	
 	public boolean isEmpty(){ return file == null || !Files.isRegularFile(file); }

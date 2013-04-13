@@ -195,7 +195,7 @@ public class DBManager {
 	}
 	
 	//For testing
-	private boolean dropEverything() throws SQLException {
+	public boolean dropEverything() throws SQLException {
 		try(Connection conn = getConnection();
 			Statement statement = conn.createStatement()
 		){

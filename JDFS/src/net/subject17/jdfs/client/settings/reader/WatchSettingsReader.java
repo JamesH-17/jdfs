@@ -64,7 +64,7 @@ public class WatchSettingsReader extends SettingsReader {
 			try {
 				Element watchList = (Element)lst.item(i);
 				WatchList watchLst = new WatchList(watchList);
-				watchLists.put(watchLst.getUser(),watchLst);
+				watchLists.put(watchLst.getUser(), watchLst);
 			}
 			catch (Exception e){
 				Printer.logErr("Could not read Watch List, number "+i+" in list.");

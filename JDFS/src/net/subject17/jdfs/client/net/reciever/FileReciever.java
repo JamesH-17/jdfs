@@ -61,10 +61,10 @@ public final class FileReciever {
 			Printer.log("fileSize:"+info.size);
 			
 			//Read in the File
-			byte[] bytesRead = new byte[fileSizeInBytes];
+			byte[] bytesRead = new byte[info.size];
 			int numBytesRead = inStrm.read(bytesRead, 0, bytesRead.length);
 			
-			if (numBytesRead == fileSizeInBytes) {
+			if (numBytesRead == info.size) {
 				//Write the received file to disk
 				return writeFile(filename, bytesRead);
 			} else {

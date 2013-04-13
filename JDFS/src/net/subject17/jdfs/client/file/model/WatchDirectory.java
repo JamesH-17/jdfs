@@ -21,15 +21,18 @@ public class WatchDirectory {
 	private Path directory;
 	private UUID GUID;
 	public boolean followSubDirectories;
+	public int priority;
 	
 	public  WatchDirectory(Element e) {
 		Element pathEle = SettingsReader.GetFirstNode(e, "path");
 		Element followEle = SettingsReader.GetFirstNode(e, "followSubDirectories");
 		Element guidEle = SettingsReader.GetFirstNode(e, "guid");
+		Element priorityEle = SettingsReader.GetFirstNode(e, "priority");
 		
 		String follow = null == followEle ? "false" : followEle.getTextContent().toLowerCase();
 		String guid = null == guidEle ? "" : guidEle.getTextContent();
 		
+		priority = null == priorityEle ? 0 : Integer.parseInt(priorityEle.getTextContent()); 
 		directory = Paths.get(pathEle.getTextContent());
 		followSubDirectories = follow.equals("true");
 		GUID = guid.equals("") ? UUID.randomUUID() : UUID.fromString(guid);
@@ -116,6 +119,10 @@ public class WatchDirectory {
 		Element guidTag = doc.createElement("guid");
 		guidTag.appendChild(doc.createTextNode(GUID.toString()));
 		directoryTag.appendChild(guidTag);
+		
+		Element priorityTag = doc.createElement("priority");
+		priorityTag.appendChild(doc.createTextNode(""+priority));
+		directoryTag.appendChild(priorityTag);
 		
 		Element followSubsTag = doc.createElement("followSubDirectories");
 		followSubsTag.appendChild(doc.createTextNode(followSubDirectories ? "true" : "false"));

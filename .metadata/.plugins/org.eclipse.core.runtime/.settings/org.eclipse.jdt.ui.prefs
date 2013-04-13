@@ -1,3 +1,4 @@
+content_assist_lru_history=<?xml version\="1.0" encoding\="UTF-8" standalone\="no"?><history maxLHS\="100" maxRHS\="10"><lhs name\="java.lang.Enum"><rhs name\="net.subject17.jdfs.client.io.Printer$Level"/></lhs><lhs name\="net.subject17.jdfs.client.io.Printer$Level"><rhs name\="net.subject17.jdfs.client.io.Printer$Level"/></lhs><lhs name\="java.lang.Cloneable"><rhs name\="java.util.Date"/></lhs><lhs name\="java.util.Date"><rhs name\="java.util.Date"/></lhs></history>
 content_assist_number_of_computers=13
 content_assist_proposals_background=255,255,255
 content_assist_proposals_foreground=0,0,0
@@ -21,6 +22,7 @@ org.eclipse.jface.textfont=1|Consolas|14.25|0|WINDOWS|1|-19|0|0|0|400|0|0|0|0|3|
 proposalOrderMigrated=true
 sourceHoverBackgroundColor=255,255,225
 spelling_locale_initialized=true
+spelling_user_dictionary=C\:\\Program Files (x86)\\eclipse\\configuration\\org.eclipse.osgi\\bundles\\282\\2\\.cp\\nl\\en\\spelling.dictionary
 tabWidthPropagated=true
 useAnnotationsPrefPage=true
 useQuickDiffPrefPage=true
