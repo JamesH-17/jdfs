@@ -1,4 +1,4 @@
-package net.subject17.jdfs.client.net.sender;
+package net.subject17.jdfs.client.net.model;
 
 import java.io.IOException;
 import java.util.ArrayList;
