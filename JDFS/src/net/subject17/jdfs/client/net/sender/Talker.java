@@ -3,18 +3,10 @@ package net.subject17.jdfs.client.net.sender;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Scanner;
 
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
-
-import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.PortMgr;
@@ -82,9 +74,14 @@ public final class Talker implements Runnable {
 				do {
 					sendMachineInfo(output, in);
 					serverMessage = in.readLine();
-				} while(
-						(null == serverMessage || (serverMessage).equals(LanguageProtocol.CONFIRM_ADD_ACCOUNT))
-						&& attempts++ < 3
+				} while (
+							( null == serverMessage || 
+								!(
+									serverMessage.equals(LanguageProtocol.CONFIRM_ADD_ACCOUNT) || 
+									serverMessage.equals(LanguageProtocol.QUERY_ACCOUNT_EXISTS)
+								)
+							) &&
+							attempts++ < 3
 				);
 				
 				
@@ -139,7 +136,7 @@ public final class Talker implements Runnable {
 				*/
 			}
 			
-		} catch(IOException e){
+		} catch(IOException e) {
 			Printer.logErr("Could not listen on port "+port);
 			Printer.logErr(e);
 
@@ -162,27 +159,38 @@ public final class Talker implements Runnable {
 			output.println(LanguageProtocol.SKIPPED);
 		}
 	}
-	private void sendFile(PrintWriter output, BufferedReader in) throws IOException {
-		// TODO Auto-generated method stub
+	private void sendFile(PrintWriter output, BufferedReader in) throws IOException, NumberFormatException {
+		
 		FileSender fileSender = (FileSender) payload;
 		
 		output.println(LanguageProtocol.INIT_FILE_TRANS);
+		
 		String response = in.readLine();
-		if (null != response && response.equals(LanguageProtocol.ACCEPT_FILE_TRANS)){
-			output.write(fileSender.jsonPayload);
-			fileSender.port = this.port;
-			fileSender.ipAddr = this.serverName;
+		if (null != response && response.equals(LanguageProtocol.ACK)) { 
+			output.println(fileSender.jsonPayload);
+			response = in.readLine();
 			
-			Thread thread = new Thread(fileSender);
-			thread.run();
+			if (null != response && response.equals(LanguageProtocol.ACCEPT_FILE_TRANS)) {
+				output.println(LanguageProtocol.ACK);
+				
+				fileSender.port = this.port;
+				fileSender.ipAddr = this.serverName;
+				
+				fileSender.port = Integer.parseInt(in.readLine());
+				
+				Thread thread = new Thread(fileSender);
+				thread.run();
+			}
 		}
 	}
 	private boolean jdfsRunningOnServer(PrintWriter output, BufferedReader input) throws IOException {
 		for (int attempt = 0; attempt < 3; ++attempt) {
+			
+			output.println(LanguageProtocol.SYN);
+			
 			if (input.readLine().equals(LanguageProtocol.ACK)) {
 				return true;
 			}
-			output.println(LanguageProtocol.SYN);
 		}
 		return false;
 	}

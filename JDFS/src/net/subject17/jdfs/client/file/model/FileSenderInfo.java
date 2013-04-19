@@ -28,7 +28,7 @@ public final class FileSenderInfo {
 	
 	//For directories only
 	public final UUID parentGUID;
-	public final Path parentLocation;
+	public final Path parentLocation; //Resolved against TLD of watched dir 
 	
 	@JsonIgnore
 	public final Path encryptedFileLocation;

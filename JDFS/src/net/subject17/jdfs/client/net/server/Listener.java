@@ -1,4 +1,4 @@
-package net.subject17.jdfs.client.net.reciever;
+package net.subject17.jdfs.client.net.server;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -6,10 +6,12 @@ import java.net.ServerSocket;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.PortMgr;
 
-public class Listener {
+public final class Listener {
 	private static int defaultPort = PortMgr.getServerPort();
 	
 	protected int port;
+
+	private boolean run;
 	
 	/**
 	 * @category Constructor
@@ -29,18 +31,23 @@ public class Listener {
 	
 	public void createListener() throws IOException {
 		try (ServerSocket servSock = new ServerSocket(port)){
-			Printer.log("Listener started");
+			run = true;
 			ListenConnectionHandler connHandler;
-			while(true) {
+			
+			Printer.log("Listener started");
+			
+			while(run) {
 				try { //TODO in listen connection handler, 
 					connHandler = new ListenConnectionHandler(servSock.accept());
 					Printer.log("New connection!");
+					
 					Thread t = new Thread(connHandler);
 					t.start();
+					
 				} catch(Exception e) {
 					Printer.logErr("Exception encountered for a connecting client");
 					Printer.logErr("Port in use:"+port);
-					Printer.logErr(e.getMessage());
+					Printer.logErr(e);
 				}
 			}
 		} catch(IOException e) {
@@ -51,5 +58,9 @@ public class Listener {
 			Printer.log("Exception: "+e.getMessage());
 			Printer.log("Port in use:"+port);
 		}
+	}
+	
+	public void stopListener(){
+		run = false;
 	}
 }

@@ -13,7 +13,6 @@ import net.subject17.jdfs.client.file.handler.FileHandler.FileHandlerException;
 import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.PortMgr;
-import net.subject17.jdfs.client.peers.Peer;
 import net.subject17.jdfs.client.peers.PeersHandler;
 import net.subject17.jdfs.client.user.User.UserException;
 

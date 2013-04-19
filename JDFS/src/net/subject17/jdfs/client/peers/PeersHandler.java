@@ -2,66 +2,235 @@ package net.subject17.jdfs.client.peers;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.UUID;
 
-import org.hsqldb.result.Result;
-
 import net.subject17.jdfs.JDFSUtil;
+import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
+import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
+import net.subject17.jdfs.client.file.model.FileRetrieverRequest;
+import net.subject17.jdfs.client.file.model.FileSenderInfo;
+import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.net.IPUtil;
+import net.subject17.jdfs.client.net.model.MachineInfo;
 import net.subject17.jdfs.client.settings.reader.PeerSettingsReader;
+import net.subject17.jdfs.client.settings.reader.SettingsReader;
+import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
+import net.subject17.jdfs.client.user.User;
+import net.subject17.jdfs.security.JDFSSecurity;
+
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.Arrays;
+import org.codehaus.jackson.map.ObjectMapper;
 
 
 public class PeersHandler {
 	
 	private static Path peersFile;
 	private static PeerSettingsReader peersReader;
+	
+	@Deprecated
 	private static HashSet<Peer> peers = new HashSet<Peer>();
 
 	public static Path getPeersFile() { return peersFile; }
-	public static void addIncomingPeer(InetAddress ip, int port) {
-		//TODO add peer to peersfileList
+	
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////
+	//								Handle Incoming Peer								//
+	//////////////////////////////////////////////////////////////////////////////////////
+	
+	
+	public static void addIncomingMachine(InetAddress ip, String machineInfoJson) throws DBManagerFatalException, SQLException {
+		ObjectMapper mapper = new ObjectMapper();
+		MachineInfo info = mapper.convertValue(machineInfoJson, MachineInfo.class);
+		addIncomingMachine(ip, info);
+	}
+	public static void addIncomingMachine(InetAddress ip, MachineInfo info) throws DBManagerFatalException, SQLException {
+		UUID machineGuid = info.MachineGUID;
+		
+		addMachine(machineGuid);
+		addIpToMachine(machineGuid, ip.getHostAddress());
+		addPeersToMachine(info.users, machineGuid);
 	}
 	
-	public static Peer getPeerByAccount(String account) {
-		for (Peer peer : peers){
-			if (peer.getEmail().equals(account))
-				return peer;
+	//returns true if the machine was successfully added to the db, false if it already exists or the operation failed
+	private static boolean addMachine(UUID machineGuid) throws DBManagerFatalException {
+		try (ResultSet machinesExist = DBManager.getInstance().select("SELECT MachineGUID FROM Machines WHERE Machines.MachineGUID LIKE '"+"'")
+		) {
+			if (!machinesExist.next()) { //If no next, result set was empty => MachineGUID not in our DB.  So, add it
+				DBManager.getInstance().upsert("INSERT INTO Machines(MachineGUID) VALUES ('"+machineGuid.toString()+"')");
+				return true;
+			}
+			
+		} catch (SQLException e) {
+			Printer.logErr("Failed to add machine "+machineGuid.toString()+" to database.");
+			Printer.logErr(e);
+		}
+		return false;
+	}
+
+	private static void addPeersToMachine(ArrayList<User> usersToAdd, UUID machineGuid) throws DBManagerFatalException, SQLException {
+		
+		try (ResultSet peersRegisteredToMachine = DBManager.getInstance().select(
+				"SELECT PeerPK, PeerGUID, UserName, AccountEmail FROM Peers WHERE Peers.MachineGUID = '"+machineGuid+"'"
+		)) {
+			
+			while (peersRegisteredToMachine.next()) {
+				
+				//Don't need to check these for null due to DB structure
+				String peerGUID = peersRegisteredToMachine.getString("PeerGUID");
+				String userName = peersRegisteredToMachine.getString("UserName");
+				String email = peersRegisteredToMachine.getString("AccountEmail");
+				
+				for (User user : usersToAdd) {
+					if (peerGUID.equals(user.getGUID().toString()) &&
+						email.equals(user.getAccountEmail()) &&
+						userName.equals(user.getUserName())
+					) {
+						usersToAdd.remove(user);
+					}
+				}
+			} 
+			
+		}
+		
+		
+		//Step 2: Assign any remaining peers to this machine
+		for (User peer : usersToAdd) {
+			try {
+				DBManager.getInstance().upsert("INSERT INTO Peers (PeerGUID, UserName, AccountEmail, MachineGUID) "+
+						"VALUES ('"+
+							peer.getGUID()+"','"+
+							peer.getUserName()+"','"+
+							peer.getAccountEmail()+"','"+
+							machineGuid+
+						"')"	
+				);
+				
+			} catch (SQLException e) {
+				Printer.logErr("Error assigning peer "+peer+" to machine "+machineGuid);
+				throw e;
+			}
+		}
+	}
+
+	private static void addIpToMachine(UUID machineGuid, String ip) throws DBManagerFatalException, SQLException {
+		if (IPUtil.isValidIP6Address(ip)) {
+			addIP4ToMachine(machineGuid, ip);
+		}
+		else if (IPUtil.isValidIP4Address(ip)) {
+			addIP6ToMachine(machineGuid, ip);
+		}
+	}
+
+	private static void addIP6ToMachine(UUID machineGuid, String validIP6String) throws DBManagerFatalException, SQLException {
+		try (ResultSet ip6s = DBManager.getInstance().select("SELECT IP6 FROM MachineIP6Links WHERE MachineGUID LIKE '"+machineGuid+"'")) {
+			
+			if (!ip6s.next()) {
+				DBManager.getInstance().upsert("INSERT INTO MachineIP6Links(MachineGUID, IP6) "+
+					"VALUES ('"+machineGuid+"','"+validIP6String+"')"
+				);
+			}
+			
+		}
+	}
+
+	private static void addIP4ToMachine(UUID machineGuid, String validIP4String) throws DBManagerFatalException, SQLException {
+		try (ResultSet ip4s = DBManager.getInstance().select("SELECT IP4 FROM MachineIP4Links WHERE MachineGUID LIKE '"+machineGuid+"'")) {
+			
+			if (!ip4s.next()) {
+				DBManager.getInstance().upsert("INSERT INTO MachineIP4Links(MachineGUID, IP4) "+
+					"VALUES ('"+machineGuid+"','"+validIP4String+"')"
+				);
+			}
+			
+		}
+	}
+	
+	////////////////////////////////////////////////////////////////////////////
+	
+	
+	public Path getStorageLocation(UUID peerGUID, UUID fileGUID) throws SettingsReaderException, IOException {
+		Path storageDirectory = SettingsReader.getInstance().getStorageDirectory();
+		
+		//TODO minor: see if we can combine statements.  
+		if (!Files.exists(storageDirectory))
+			Files.createDirectory(storageDirectory);
+		
+		storageDirectory = storageDirectory.resolve(peerGUID.toString());
+		
+		if (!Files.exists(storageDirectory))
+			Files.createDirectory(storageDirectory);
+		
+		return storageDirectory.resolve(fileGUID.toString()+".xz.enc");
+	}
+	
+	private ResultSet getFiles(UUID peerGuid, UUID fileGuid) throws SQLException, DBManagerFatalException {
+		return DBManager.getInstance().select("SELECT PeerFiles.LocalFilePath AS FilePath FROM Peers INNER JOIN PeerFileLinks ON Peers.PeerPK = PeerFileLinks.PeerPK INNER JOIN PeerFiles ON PeerFileLinks.PeerFilePK = PeerFiles.FilePK WHERE PeerFiles.FileGUID LIKE '"+fileGuid+"' AND Peers.PeerGUID LIKE '"+peerGuid+"'");
+	}
+	
+	public ResultSet getFiles(FileRetrieverRequest criteria, String limit, String order) throws SQLException, DBManagerFatalException {
+		if (null == limit) limit = "";
+		if (null == order) order = "";
+		
+		if (!( null == criteria.fileGuid || null == criteria.userGuid)) {
+			
+			StringBuilder restrictions = new StringBuilder();
+
+			
+			if (null != criteria.lastUpdatedDate) {
+				restrictions.append(" AND '"+criteria.lastUpdatedDate+"' "+criteria.comparison+" PeerFiles.LastUpdatedDate ");
+			}
+			
+			if (null != criteria.parentGUID) {
+				restrictions.append(" AND PeerFiles.ParentGUID LIKE '"+criteria.parentGUID+"'");
+				restrictions.append(" AND PeerFiles.ParentLocation LIKE '"+criteria.parentLocation+"'");
+			}
+			
+			if (null != criteria.sendingMachineGuid) {
+				restrictions.append(" AND Machines.MachineGUID LIKE '"+criteria.sendingMachineGuid+"'");
+			}
+			
+			
+			return DBManager.getInstance().select("SELECT "+limit+" PeerFiles.LocalFilePath AS FilePath, PeerFiles.IV AS IV, PeerFiles.UpdatedDate AS UpdatedDate, PeerFiles.FileGUID AS FileGUID, PeerFiles.CheckSum AS CheckSum "+
+					"FROM Peers "+
+					"INNER JOIN PeerFileLinks ON Peers.PeerPK = PeerFileLinks.PeerPK "+
+					"INNER JOIN PeerFiles ON PeerFileLinks.PeerFilePK = PeerFiles.FilePK "+
+					"LEFT JOIN Machines ON PeerFileLinks.MachinePK = Machines.MachinePK "+
+					"WHERE PeerFiles.FileGUID LIKE '"+criteria.fileGuid+"' AND Peers.PeerGUID LIKE '"+criteria.userGuid+"'"+
+					restrictions
+			);
 		}
 		return null;
 	}
 	
-	public static Peer getPeerByUsername(String username) {
-		for (Peer peer : peers){
-			if (peer.getUsername().equals(username))
-				return peer;
+	public FileRetrieverInfo getFile(FileRetrieverRequest criteria) throws DBManagerFatalException {
+		try (ResultSet filesFound = getFiles(criteria, "TOP 1", "ORDER BY UpdatedDate DESC")) {
+			if (filesFound != null && filesFound.next()) {
+				return new FileRetrieverInfo(filesFound);
+			}
+		} catch (SQLException | IOException e) {
+			Printer.logErr("Error retrieving file specified by criteria");
+			Printer.logErr(e);
 		}
 		return null;
 	}
 	
-	public static HashSet<Peer> getPeersByIp4(String ip4) {
-		HashSet<Peer> peersMatchingIp4 = new HashSet<Peer>();
-		for (Peer peer : peers){
-			if (peer.getIp4s().contains(ip4))
-				peersMatchingIp4.add(peer);
-		}
-		return peersMatchingIp4;
-	}
+
 	
-	public static HashSet<Peer> getPeersByIp6(String ip6) {
-		HashSet<Peer> peersMatchingIp6 = new HashSet<Peer>();
-		for (Peer peer : peers) {
-			if (peer.getIp6s().contains(ip6))
-				peersMatchingIp6.add(peer);
-		}
-		return peersMatchingIp6;
-	}
+	//////////////////////////////////////////////////////////////////////
+	//									XML								//
+	//////////////////////////////////////////////////////////////////////
 	
 	public void writePeersToFile() {
 		writePeersToFile(peersFile);
@@ -81,6 +250,8 @@ public class PeersHandler {
 		
 		peers.addAll(importedPeers);
 	}
+	
+	
 	private static void addPeersToDB(HashSet<Peer> importedPeers) throws DBManagerFatalException {
 		for(Peer peer : importedPeers) {
 			
@@ -96,7 +267,7 @@ public class PeersHandler {
 				//Grab all machine ids this peer has, and remove any that already exist in our db
 				HashSet<UUID> machineIds = peer.getMachineGUIDs();
 				while (resSet.next()) {
-					machineIds.remove(UUID.fromString(resSet.getObject("").toString()));
+					machineIds.remove(UUID.fromString(resSet.getObject("MachineGUID").toString()));
 				}
 				
 				//Now, add any new ids
@@ -114,9 +285,8 @@ public class PeersHandler {
 					
 				}
 				
-			} catch (SQLException | IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} catch (SQLException e) {
+				Printer.logErr(e);
 			}
 			
 			///////////////////////////////////////
@@ -160,19 +330,25 @@ public class PeersHandler {
 							);
 						}
 						
-					} catch (SQLException | IOException e) {
-						
+					} catch (SQLException e) {
+
+						Printer.logErr(e);
 					}
 				}
 				
-			} catch (SQLException | IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
+			} catch (SQLException e) {
+				Printer.logErr(e);
 			}
 			
 			
 		}
 	}
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////////
+	//						Peer Discovery (currently not implemented)						//
+	//////////////////////////////////////////////////////////////////////////////////////////
+	
 	public static HashSet<Peer> startPeerSearchService() {
 		HashSet<Peer> peersFound = new HashSet<Peer>();
 		
@@ -187,5 +363,53 @@ public class PeersHandler {
 		// similar to startPeerSearchService, but also simply tracks ips
 		
 		return peersIpsFound;
+	}
+	
+	
+	//////////////////////////////////////////////////////////////////////////////////////////
+	//										OLD CODE										//
+	//////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * Not implemented
+	 * @param ip
+	 * @param port
+	 */
+	private static void addIncomingPeer(InetAddress ip, int port) {
+		//TODO add peer to peersfileList
+	}
+	
+	@Deprecated
+	public static Peer getPeerByAccount(String account) {
+		for (Peer peer : peers){
+			if (peer.getEmail().equals(account))
+				return peer;
+		}
+		return null;
+	}
+	@Deprecated
+	public static Peer getPeerByUsername(String username) {
+		for (Peer peer : peers){
+			if (peer.getUsername().equals(username))
+				return peer;
+		}
+		return null;
+	}
+	@Deprecated
+	public static HashSet<Peer> getPeersByIp4(String ip4) {
+		HashSet<Peer> peersMatchingIp4 = new HashSet<Peer>();
+		for (Peer peer : peers){
+			if (peer.getIp4s().contains(ip4))
+				peersMatchingIp4.add(peer);
+		}
+		return peersMatchingIp4;
+	}
+	@Deprecated
+	public static HashSet<Peer> getPeersByIp6(String ip6) {
+		HashSet<Peer> peersMatchingIp6 = new HashSet<Peer>();
+		for (Peer peer : peers) {
+			if (peer.getIp6s().contains(ip6))
+				peersMatchingIp6.add(peer);
+		}
+		return peersMatchingIp6;
 	}
 }

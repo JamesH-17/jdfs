@@ -26,6 +26,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.file.model.EncryptedFileInfoStruct;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.security.JDFSSecurity;
@@ -38,9 +39,11 @@ import org.tukaani.xz.XZOutputStream;
 
 
 public final class FileUtil {
-	private final static String tempCompressDirectory = "temp/compress";
-	public final static Path compressDirectory = Paths.get(System.getProperty("user.dir"),tempCompressDirectory);
-
+	public final static Path tempDir = Paths.get(JDFSUtil.defaultDirectory).resolve("temp");
+	public final static Path compressDirectory = tempDir.resolve("compress");
+	
+	public final static int NUM_CHECKSUM_BYTES = getBytesInCheckSum();
+	
 	private final static int maxBufferShift = 26;
 	
 	private static FileUtil _instance = null;
@@ -373,10 +376,16 @@ public final class FileUtil {
 	 * 
 	 * @return returns a constant IV used for testing purposes.
 	 */
+	@Deprecated
 	private final IvParameterSpec getLaughablyUnsecureDefaultIV() {
 		byte[] iv = "klj1234@#J42#:$J@#4,.jk23l;'4jk".getBytes();
 		for (int i = 0; i < 10000; ++i)
 			iv = JDFSSecurity.getSaltedSha3Digest(iv);
 		return new IvParameterSpec(iv,0,16);
+	}
+	
+	private final static int getBytesInCheckSum() {
+		MD5Digest digest = new MD5Digest();
+		return digest.getDigestSize();
 	}
 }

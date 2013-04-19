@@ -80,4 +80,9 @@ public class JDFSUtil {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(this);
 	}
+	
+	public static Class<?> fromJson(String json, Class<?> toValueType){
+		ObjectMapper mapper = new ObjectMapper();
+		return (Class<?>) mapper.convertValue(json, toValueType);
+	}
 }

@@ -7,6 +7,7 @@ import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+@Deprecated
 public class NewHandlerInfo {
 	public String servername = ""; //Don't really know how to get our external ip.  Even then.... LAN?
 	public final int port;

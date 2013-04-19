@@ -8,7 +8,9 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.security.JDFSSecurity;
 
 public class DBManager {
 	public static final class DBManagerFatalException extends Exception {
@@ -37,7 +39,7 @@ public class DBManager {
 		}
 	}
 	
-	public static DBManager getInstance() throws IOException, DBManagerFatalException {
+	public static DBManager getInstance() throws DBManagerFatalException {
 		if (null == _instance){
 			synchronized(DBManager.class){
 				if (null == _instance){
@@ -51,7 +53,7 @@ public class DBManager {
 	private String getDBLocation(){
 		return Paths.get(System.getProperty("user.dir"),"DB","jdfs.hsqldb").toString();
 	}
-	
+
 	private Connection getConnection() throws SQLException {
 		/* Apparently this is unneeded for Java 7
 		  try {
@@ -119,7 +121,9 @@ public class DBManager {
 							"LocalFilePath text NOT NULL, " + //including name
 							"LastUpdatedLocal DATETIME, " +
 							"CheckSum VARCHAR(36), " + //Don't think we want this for user files UNUSED
-							"IV BLOB, " + //For storing incoming files we didn't have a chance to decrypt yet
+							"IV VARCHAR("+JDFSSecurity.NUM_IV_BYTES*2+"), " + //For storing incoming files we didn't have a chance to decrypt yet
+							"ParentGUID VARCHAR(36)," +
+							"ParentPath text," +
 							"Priority INTEGER DEFAULT 0 NOT NULL, " + //Default priority = 0, lower priorities < 0 and higher priorities >0
 							"WatchedDirectoryPK Boolean DEFAULT FALSE NOT NULL"+
 			")");
@@ -130,10 +134,12 @@ public class DBManager {
 							"FileGUID VARCHAR(36) NOT NULL, " +
 							"LocalFileName text NOT NULL, " + //NOTE THE DATATYPE!  MAJOR PREFORMANCE ISSUE POSSIBLE!
 							"LocalFilePath text NOT NULL, " + //including name
-							"UpdatedDate DATETIME, " +
-							"IV BLOB, " +
+							"UpdatedDate DATETIME NOT NULL, " +
+							"IV VARCHAR("+JDFSSecurity.NUM_IV_BYTES*2+") NOT NULL, " +
+							"ParentGUID VARCHAR(36)," +
+							"ParentPath text," +
 							"Priority INTEGER DEFAULT 0 NOT NULL, " + //Default priority = 0, lower priorities < 0 and higher priorities >0
-							"CheckSum VARCHAR(36) " +
+							"CheckSum "+FileUtil.NUM_CHECKSUM_BYTES*2+" NOT NULL" +
 			")");
 			
 			//Create machines table if it doesn't exist

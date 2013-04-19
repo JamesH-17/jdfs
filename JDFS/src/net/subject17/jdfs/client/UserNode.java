@@ -14,8 +14,8 @@ import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.file.monitor.FileWatcher;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.PortMgr;
-import net.subject17.jdfs.client.net.reciever.Listener;
 import net.subject17.jdfs.client.net.sender.Talker;
+import net.subject17.jdfs.client.net.server.Listener;
 import net.subject17.jdfs.client.peers.PeersHandler;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 

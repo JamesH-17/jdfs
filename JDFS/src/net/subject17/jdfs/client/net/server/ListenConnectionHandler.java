@@ -1,16 +1,18 @@
-package net.subject17.jdfs.client.net.reciever;
+package net.subject17.jdfs.client.net.server;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.sql.SQLException;
 
+import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
+import net.subject17.jdfs.client.file.handler.FileHandler;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.PortMgrException;
-import net.subject17.jdfs.client.net.model.NewHandlerInfo;
 import net.subject17.jdfs.client.peers.PeersHandler;
 
 
@@ -26,25 +28,32 @@ public final class ListenConnectionHandler implements Runnable {
 		handlingSock = accept;
 	}
 	
+	@Override
 	public void run() {
 		try {			
 			handleSocket();
 			handlingSock.close();
-		} catch(IOException e) {
-			Printer.logErr("An error occured in setting up the socket to ");
+		}
+		catch(IOException e) {
+			Printer.logErr("An error occured in setting up the socket to "+handlingSock.getInetAddress().getHostAddress());
 			Printer.logErr(e);
-			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		}
+		catch (DBManagerFatalException e) {
+			//TODO find a way to signal main
+			Printer.logErr(e);
+		}
+		catch (Exception e) {
+			Printer.logErr(e);
 		}
 	}
 	
 	/**
-	 * This function initializes the input/output streams for the client
+	 * This function initializes the input/output streams for the client, then proceeds to the next step in the handshake process
 	 * @throws IOException
+	 * @throws DBManagerFatalException 
+	 * @throws SQLException 
 	 */
-	private void handleSocket() throws IOException {
+	private void handleSocket() throws IOException, DBManagerFatalException, SQLException {
 		try {
 			
 			toClient = new PrintWriter(handlingSock.getOutputStream(), true);
@@ -94,21 +103,31 @@ public final class ListenConnectionHandler implements Runnable {
 		return false;
 	}
 	
-	public void handleConnection(BufferedReader fromClient, PrintWriter output) throws IOException {
-		PeersHandler.addIncomingPeer(handlingSock.getInetAddress(), handlingSock.getPort());
+	public void handleConnection(BufferedReader fromClient, PrintWriter output) throws IOException, DBManagerFatalException, SQLException {
+		//PeersHandler.addIncomingPeer(handlingSock.getInetAddress(), handlingSock.getPort());
 		String incomingMessage=null, serverMessage="";
-
+		
+		try {
+			PeersHandler.addIncomingMachine(handlingSock.getInetAddress(), fromClient.readLine());
+			output.println(LanguageProtocol.CONFIRM_ADD_ACCOUNT);
+		}
+		catch (DBManagerFatalException | SQLException e) {
+			output.println(LanguageProtocol.DENY_ADD_ACCOUNT);
+			output.println(LanguageProtocol.CLOSE);
+			throw e;
+		}
+		
 		do {
 			incomingMessage = fromClient.readLine();
-			if (incomingMessage!=null) {
-				Printer.log("Message from Client:"+incomingMessage);
+			if (incomingMessage != null) {
+				Printer.log("Message from Client:"+incomingMessage, Printer.Level.VeryLow);
 				
 				serverMessage = handleClientResponse(incomingMessage);
 				
-				Printer.log("Responding with:"+serverMessage);
+				Printer.log("Responding with:"+serverMessage, Printer.Level.VeryLow);
 				output.println(serverMessage);
-			} else incomingMessage = "";
-		} while(!(incomingMessage.equals(LanguageProtocol.CLOSE)));
+			} //else incomingMessage = "";
+		} while(!(null == incomingMessage || incomingMessage.equals("") || incomingMessage.equals(LanguageProtocol.CLOSE)));
 	}
 	
 	public String handleClientResponse(String resp) {
@@ -126,21 +145,43 @@ public final class ListenConnectionHandler implements Runnable {
 			//Set up a new port to grab their file on so we don't block this one
 			int Port = PortMgr.getRandomPort();
 			Printer.log("Using port "+Port);
-			
+
 			//Acknowledge, wait on receiving file info
 			toClient.println(LanguageProtocol.ACK);
 			
 			String json = fromClient.readLine();
 			
-			Printer.log("Starting new file reciever");
-			FileReciever reciever = new FileReciever(Port,json);
+			for (int attempt = 0; attempt < 3 && (null == json || json.equals("")); ++attempt ) {
+				toClient.println(LanguageProtocol.UNKNOWN);
+				json = fromClient.readLine();
+			}
 			
-			toClient.println((new NewHandlerInfo(Port)).toJSON());
-			return reciever.run();
+			if (null == json || json.equals("")) {
+				toClient.println(LanguageProtocol.UNKNOWN);
+			} else {
 			
+				Printer.log("Starting new file reciever");
+				FileReciever reciever = new FileReciever(Port, json);
+				
+				if (FileHandler.getInstance().canStoreFile(reciever.info)) {
+					toClient.println(LanguageProtocol.ACCEPT_FILE_TRANS);
+					
+					String clientMsg = fromClient.readLine();
+					
+					if (clientMsg.equals(LanguageProtocol.ACK)) {
+						//toClient.println((new NewHandlerInfo(Port)).toJSON());
+						toClient.println(Port);
+						reciever.run();
+						
+						return LanguageProtocol.FILE_RECV_SUCC;
+					}
+					
+				}
+			}
 		} catch (PortMgrException | IOException e) {
-			return LanguageProtocol.FILE_RECV_FAIL;
+			Printer.logErr(e);
 		}
+		return LanguageProtocol.FILE_RECV_FAIL;
 	}
 	
 	protected void finalize() {

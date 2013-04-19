@@ -64,7 +64,7 @@ public class FileSender implements Runnable {
 	    }
 	    catch (Exception ex) {
 	    	Printer.logErr("Exception encountered in sending file to server "+ipAddr);
-	    	ex.printStackTrace();
+	    	Printer.logErr(ex);
 	    	return false;
 	    }
 	}
