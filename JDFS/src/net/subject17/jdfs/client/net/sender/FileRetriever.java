@@ -27,7 +27,7 @@ public class FileRetriever implements Runnable {
 		this.port = port;
 	}
 	
-	public FileRetriever(Path storeLocation, UUID fileUUID, String jsonPayload, FileRetrieverRequest criteria) {
+	public FileRetriever(Path storeLocation, UUID fileUUID, FileRetrieverRequest criteria) {
 		this.fileToRetrieveIdentifier = fileUUID;
 		//this.jsonPayload = jsonPayload;
 		this.storeLocation= storeLocation; 
