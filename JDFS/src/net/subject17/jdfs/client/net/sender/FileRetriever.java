@@ -50,7 +50,7 @@ public class FileRetriever implements Runnable {
 			
 			FileUtil.getInstance().readStreamToStream(fromListener, new FileOutputStream(storeLocation.toFile()));
 			
-			Printer.log("File sent!");
+			Printer.log("File Recieved!");
 	    }
 	    catch (Exception ex) {
 	    	Printer.logErr("Exception encountered in sending file to server "+ipAddr);

@@ -30,8 +30,6 @@ public final class FileReciever implements Runnable {
 	//private String secretMessage; 
 	//private String AESHashOfFile; 
 	public final FileSenderInfo info;
-	private final FileUtil fileUtil = FileUtil.getInstance();
-	private final FileHandler handler = FileHandler.getInstance();
 	
 	public FileReciever(int port, String json) throws JsonParseException, JsonMappingException, IOException {
 		this.port = port;
@@ -59,14 +57,12 @@ public final class FileReciever implements Runnable {
 	}
 		
 	private void writeFile(InputStream inStream) throws IOException, DBManagerFatalException {
-		Path outFile = fileUtil.tempDir.resolve(info.userGuid.toString()).resolve(info.fileGuid.toString()+".xz.enc");
+		Path outFile = FileUtil.tempDir.resolve(info.userGuid.toString()).resolve(info.fileGuid.toString()+".xz.enc");
 		
 		Files.deleteIfExists(outFile);
 		
-		FileOutputStream fOut = new FileOutputStream(outFile.toString());
+		FileUtil.getInstance().readStreamToStream(inStream, new FileOutputStream(outFile.toFile()));
 		
-		fileUtil.readStreamToStream(inStream, fOut);
-		
-		handler.organizeFile(outFile, info);
+		FileHandler.getInstance().organizeFile(outFile, info);
 	}
 }
