@@ -36,8 +36,9 @@ public class UserSettingsTest {
 		rootTestDirectory = Paths.get(rootDirectory,"TEST");
 		System.out.println("Root Test Directory: "+rootTestDirectory);
 		
-		settingsReader = new SettingsReader();
-		settingsReaderTest = new SettingsReader(rootTestDirectory.resolve("SettingsReaderTest.conf"));
+		settingsReader = SettingsReader.getInstance();
+		settingsReaderTest = SettingsReader.getInstance().parseAndReadXMLDocument(Paths.get("SettingsReaderTest.conf"));
+				
 	}
 	@Before
 	public void setUp() throws Exception {
@@ -51,17 +52,21 @@ public class UserSettingsTest {
 
 	@Test
 	public void testUserSettingsReaderFile() {
-		testGetUsers();
-		testGetActiveUser();
+		testGetUsersDefault();
+		testGetActiveUserDefault();
 	}
 	
 	@Test
-	public void testGetSettingsFile(){
+	public void testGetSettingsFileDefault(){
 		Printer.log(userSettingsReader.getUserSettingsPath());
 		Printer.log(userSettingsReaderTest.getUserSettingsPath());
 	}
 	@Test
-	public void testGetUsers() {
+	public void testGetSettingsFile() {
+		Printer.log(userSettingsReaderTest.getUserSettingsPath());
+	}
+	@Test
+	public void testGetUsersDefault() {
 		ArrayList<User> usersNorm = userSettingsReader.getUsers();
 		ArrayList<User> usersTest = userSettingsReaderTest.getUsers();
 		
@@ -78,7 +83,7 @@ public class UserSettingsTest {
 	}
 
 	@Test
-	public void testGetActiveUser() {
+	public void testGetActiveUserDefault() {
 		User usr = userSettingsReader.getActiveUser();
 		if (usr != null){
 			Printer.println("default user email:"+usr.getAccountEmail());
@@ -100,7 +105,7 @@ public class UserSettingsTest {
 	}
 	
 	@Test
-	public void writeUsers(){
+	public void writeUsersDefault(){
 		UserSettingsWriter writer = new UserSettingsWriter();
 		Printer.log(writer.getUserSettingsPath());
 		
