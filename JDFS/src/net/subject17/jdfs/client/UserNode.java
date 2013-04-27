@@ -15,6 +15,7 @@ import net.subject17.jdfs.client.file.monitor.FileWatcher;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.sender.Talker;
+import net.subject17.jdfs.client.net.sender.TalkerPooler;
 import net.subject17.jdfs.client.net.server.Listener;
 import net.subject17.jdfs.client.peers.PeersHandler;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
@@ -140,10 +141,19 @@ public class UserNode {
 			} while(!serverName.equals("exit"));
 			
 			inScan.close();
-		} catch (Exception e){}
+		} catch (Exception e) {
+			Printer.logErr("Error in dispatch client, TalkerPooler");
+			Printer.logErr(e);
+		}
 	}
 	
 	private static void dispatchWatchService() {
 		
+	}
+	
+	private static void periodicallyCheckForUpdated(){
+		while (true) {
+			FileWatcher.getInstance().checkForUpdates();
+		}
 	}
 }

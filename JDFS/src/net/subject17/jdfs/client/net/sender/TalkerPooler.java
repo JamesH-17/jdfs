@@ -2,8 +2,10 @@ package net.subject17.jdfs.client.net.sender;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.Date;
 import java.util.HashSet;
 
 import javax.crypto.NoSuchPaddingException;
@@ -63,5 +65,14 @@ public final class TalkerPooler {
 			Printer.logErr("Could not send file ["+context+"] !");
 			Printer.logErr(e);
 		}
+	}
+
+	public final void checkForUpdates() {
+		
+		Date lastModified = Paths.get("sda").get;
+	}
+	
+	public final void updateFile() {
+		
 	}
 }

@@ -46,8 +46,6 @@ public class FileRetriever implements Runnable {
 		 	//TODO put in a guid
 			Printer.log("Recieving file "+storeLocation.getFileName()+" on connection "+ipAddr+":"+port);
 			
-			//Path storageLocation = FileHandler.getInstance().getStorageLocation
-			
 			FileUtil.getInstance().readStreamToStream(fromListener, new FileOutputStream(storeLocation.toFile()));
 			
 			Printer.log("File Recieved!");
