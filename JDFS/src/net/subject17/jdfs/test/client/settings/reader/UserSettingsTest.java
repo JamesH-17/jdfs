@@ -75,7 +75,7 @@ public class UserSettingsTest {
 			Printer.println("User email:" + user.getAccountEmail()+", name:"+user.getUserName());
 		}
 		Printer.println("UserTest");
-		for(User user : usersTest){
+		for(User user : usersTest) {
 			Printer.println("User email:" + user.getAccountEmail()+", name:"+user.getUserName());
 		}
 		assertEquals("Default users config not empty",true, usersNorm.isEmpty());

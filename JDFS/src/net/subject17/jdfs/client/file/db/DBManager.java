@@ -122,10 +122,9 @@ public class DBManager {
 							"LastUpdatedLocal DATETIME, " +
 							"CheckSum VARCHAR(36), " + //Don't think we want this for user files UNUSED
 							"IV VARCHAR("+JDFSSecurity.NUM_IV_BYTES*2+"), " + //For storing incoming files we didn't have a chance to decrypt yet
-							"ParentGUID VARCHAR(36)," +
-							"ParentPath text," +
-							"Priority INTEGER DEFAULT 0 NOT NULL, " + //Default priority = 0, lower priorities < 0 and higher priorities >0
-							"WatchedDirectoryPK Boolean DEFAULT FALSE NOT NULL"+
+							"ParentGUID VARCHAR(36), " +
+							"RelativeParentPath text, " +
+							"Priority INTEGER DEFAULT 0 NOT NULL" + //Default priority = 0, lower priorities < 0 and higher priorities >0
 			")");
 			
 			//Create peer files table if it doesn't exist
@@ -136,8 +135,8 @@ public class DBManager {
 							"LocalFilePath text NOT NULL, " + //including name
 							"UpdatedDate DATETIME NOT NULL, " +
 							"IV VARCHAR("+JDFSSecurity.NUM_IV_BYTES*2+") NOT NULL, " +
-							"ParentGUID VARCHAR(36)," +
-							"ParentPath text," +
+							"ParentGUID VARCHAR(36), " +
+							"RelativeParentPath text, " +
 							"Priority INTEGER DEFAULT 0 NOT NULL, " + //Default priority = 0, lower priorities < 0 and higher priorities >0
 							"CheckSum "+FileUtil.NUM_CHECKSUM_BYTES*2+" NOT NULL" +
 			")");

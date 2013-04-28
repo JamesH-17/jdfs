@@ -97,11 +97,12 @@ public class WatchDirectory {
 		try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
 			
 			for (Path pathToCheck : canidatePaths) {
-				if (Files.isDirectory(pathToCheck)  && followSubDirectories)
+				if (Files.isDirectory(pathToCheck) && followSubDirectories)
 					directories.addAll(getDirectoriesToWatch(pathToCheck));
+				else
+					directories.add(pathToCheck);
 			}
 		}
-		
 		
 		return directories;
 	}
