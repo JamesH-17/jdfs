@@ -15,12 +15,14 @@ import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
+import net.subject17.jdfs.client.file.handler.FileHandler.FileHandlerException;
 import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
 import net.subject17.jdfs.client.file.model.FileRetrieverRequest;
 import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.IPUtil;
 import net.subject17.jdfs.client.net.model.MachineInfo;
+import net.subject17.jdfs.client.settings.Settings;
 import net.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
@@ -194,7 +196,7 @@ public class PeersHandler {
 			
 			if (null != criteria.parentGUID) {
 				restrictions.append(" AND PeerFiles.ParentGUID LIKE '"+criteria.parentGUID+"'");
-				restrictions.append(" AND PeerFiles.ParentLocation LIKE '"+criteria.parentLocation+"'");
+				restrictions.append(" AND PeerFiles.ParentLocation LIKE '"+criteria.relativeParentLoc+"'");
 			}
 			
 			if (null != criteria.sendingMachineGuid) {
@@ -363,6 +365,67 @@ public class PeersHandler {
 		// similar to startPeerSearchService, but also simply tracks ips
 		
 		return peersIpsFound;
+	}
+	
+	public final static HashSet<String> getLinkedMachineIPs() {
+		HashSet<String> peerIPs = new HashSet<String>();
+		
+		try (ResultSet linkedMachinesIp4 = DBManager.getInstance().select(
+				"SELECT TOP "+DBManager.maxRecordsToGrab+" "+
+				"MachineIP4Links.IP4 AS IP4 "+
+				"FROM Users "+
+				"INNER JOIN Machines ON Users.MachinePK = Machines.MachinePK "+
+				"INNER JOIN MachineIP4Links ON Machines.MachinePK = MachineIP4Links.MachinePK "+
+				"WHERE Machines.MachineGUID NOT LIKE '"+Settings.getMachineGUIDSafe()+"'"
+			);
+			ResultSet linkedMachinesIp6 = DBManager.getInstance().select(
+				"SELECT TOP "+DBManager.maxRecordsToGrab+" "+
+				"MachineIP6Links.IP6 AS IP6 "+
+				"FROM Users "+
+				"INNER JOIN Machines ON Users.MachinePK = Machines.MachinePK "+
+				"INNER JOIN MachineIP6Links ON Machines.MachinePK = MachineIP6Links.MachinePK "+
+				"WHERE Machines.MachineGUID NOT LIKE '"+Settings.getMachineGUIDSafe()+"'"
+			)
+		) {
+			while (linkedMachinesIp4.next()) {
+				peerIPs.add(linkedMachinesIp4.getString("IP4"));
+			}
+			while (linkedMachinesIp6.next()) {
+				peerIPs.add(linkedMachinesIp6.getString("IP6"));
+			}
+			
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr("[PeersHandler getLinkedMachineIPs]: Error encountered grabbing linked machines.  Probably returning empty/reduced set");
+			Printer.logErr(e);
+		}
+		return peerIPs;
+	}
+	
+	public static HashSet<String> getSomeStoredIps(int maxToGrab) {
+		HashSet<String> peerIPs = new HashSet<String>();
+		try (	ResultSet peersIP6 = DBManager.getInstance().select(
+				"SELECT TOP "+maxToGrab+" "+
+				"MachineIP6Links.IP6 AS IP6 "+
+				"FROM MachineIP6Links "
+			);
+			ResultSet peersIP4 = DBManager.getInstance().select(
+				"SELECT TOP "+maxToGrab+" "+
+				"MachineIP4Links.IP4 AS IP4 "+
+				"FROM MachineIP4Links "
+			)
+		) {
+			while (peersIP4.next() && peerIPs.size() < maxToGrab) {
+				peerIPs.add(peersIP4.getString("IP4"));
+			}
+			while (peersIP6.next() && peerIPs.size() < maxToGrab) {
+				peerIPs.add(peersIP6.getString("IP6"));
+			}
+			
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr("Error grabbing random peers in [PeersHandler getSomeStoredIps]");
+			Printer.logErr(e);
+		}
+		return peerIPs;
 	}
 	
 	

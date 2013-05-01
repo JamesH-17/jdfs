@@ -9,11 +9,15 @@ import java.sql.SQLException;
 
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
 import net.subject17.jdfs.client.file.handler.FileHandler;
+import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
+import net.subject17.jdfs.client.file.model.FileRetrieverRequest;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.PortMgrException;
 import net.subject17.jdfs.client.peers.PeersHandler;
+
+import org.codehaus.jackson.map.ObjectMapper;
 
 
 public final class ListenConnectionHandler implements Runnable {
@@ -130,15 +134,66 @@ public final class ListenConnectionHandler implements Runnable {
 		} while(!(null == incomingMessage || incomingMessage.equals("") || incomingMessage.equals(LanguageProtocol.CLOSE)));
 	}
 	
-	public String handleClientResponse(String resp) {
+	public String handleClientResponse(String resp) throws DBManagerFatalException {
 		if (resp == null)
 			return "";
 		switch(resp) {
 			case LanguageProtocol.INIT_FILE_TRANS: return handleFileTrans(); //returns success/failure string
+			case LanguageProtocol.INIT_FILE_RETRIEVE: return handleFileSend();
 			default: return LanguageProtocol.UNKNOWN;
 		}
 	}
 	
+	private String handleFileSend() throws DBManagerFatalException {
+		try {
+			//Acknowledge, wait on receiving file info
+			toClient.println(LanguageProtocol.ACK);
+			
+			String json = fromClient.readLine();
+			
+			for (int attempt = 0; attempt < 3 && (null == json || json.equals("")); ++attempt ) {
+				toClient.println(LanguageProtocol.UNKNOWN);
+				json = fromClient.readLine();
+			}
+			
+			if (null == json || json.equals("")) {
+				toClient.println(LanguageProtocol.UNKNOWN);
+			} else {
+
+				ObjectMapper mapper = new ObjectMapper();
+				//See if we have the file, if so, send it
+				FileRetrieverRequest criteria = mapper.readValue(json, FileRetrieverRequest.class);
+				FileRetrieverInfo info = FileHandler.getInstance().getFileStoredOnMachine(criteria);
+				if (null != info) {
+				
+					//TODO finish this conditional
+					Printer.log("Starting new file sender");
+					toClient.println(LanguageProtocol.ACCEPT_FILE_TRANS);
+					
+					String clientMsg = fromClient.readLine();
+					
+					if (clientMsg.equals(LanguageProtocol.ACK)) {
+						//toClient.println((new NewHandlerInfo(Port)).toJSON());
+						toClient.println(info.toJSON());
+						
+						int targetPort = Integer.parseInt(fromClient.readLine());
+						toClient.println(LanguageProtocol.ACK);
+						
+						FileRetriever sender = new FileRetriever(info, targetPort, handlingSock.getInetAddress().getHostAddress());
+						sender.sendFile();
+						
+						return LanguageProtocol.FILE_SEND_SUCC;
+					}
+				}
+			}
+			
+		}
+		catch (IOException e) {
+			Printer.logErr(e);
+		}
+		return LanguageProtocol.FILE_SEND_FAIL;
+	}
+
 	private String handleFileTrans() {
 		try {
 			

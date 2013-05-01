@@ -3,6 +3,8 @@ package net.subject17.jdfs.client.file.handler;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
@@ -14,7 +16,6 @@ import java.util.UUID;
 import javax.crypto.NoSuchPaddingException;
 
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.Arrays;
 
 import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.account.AccountManager;
@@ -22,13 +23,15 @@ import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
 import net.subject17.jdfs.client.file.model.EncryptedFileInfoStruct;
+import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
+import net.subject17.jdfs.client.file.model.FileRetrieverRequest;
 import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.peers.PeersHandler;
 import net.subject17.jdfs.client.settings.Settings;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.user.User.UserException;
-import net.subject17.jdfs.security.JDFSSecurity;
 
 public final class FileHandler {
 	public final static class FileHandlerException extends Exception {
@@ -69,7 +72,7 @@ public final class FileHandler {
 				"Users.UserGUID AS UserGUID, Users.UserName AS UserName, Users.AccountEmail AS AccountEmail"+
 				"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
 				"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
-				"WHERE UserFiles.LocalFilePath = '"+context.toString()+"' "+
+				"WHERE UserFiles.LocalFilePath LIKE '"+context.toString()+"' "+
 				"AND COALESCE(UserFiles.IV,'') LIKE ''" //TODO exception case here.  We've received a file, but haven't decoded it, and old one is marked for sending
 		)){
 			
@@ -81,16 +84,26 @@ public final class FileHandler {
 			byte[] CheckSum = FileUtil.getInstance().getMD5Checksum(context); //Note that the
 			
 			if (filesToSend.next()) {
-				UUID fileGUID = UUID.fromString(filesToSend.getString("FileGUID"));
 				UUID userGUID = UUID.fromString(filesToSend.getString("UserGUID"));
 				
-				String email = filesToSend.getString("AccountEmail");
-				String userName = filesToSend.getString("UserName");
+				//String email = filesToSend.getString("AccountEmail");
+				//String userName = filesToSend.getString("UserName");
 				
 				Date UpdatedDate = new Date(Files.getLastModifiedTime(context).toMillis());
 				
 				int priority = filesToSend.getInt("Priority");
-				return new FileSenderInfo(fileData,context,fileGUID,userGUID,MachineGUID,UpdatedDate,priority,CheckSum);
+				
+				if (null == filesToSend.getString("FileGUID") || filesToSend.getString("FileGUID").equals("")) {
+					UUID parentGUID = UUID.fromString(filesToSend.getString("ParentGUID"));
+					Path relParentPath = Paths.get(filesToSend.getString("RelativeParentPath"));
+
+					return new FileSenderInfo(fileData,context,userGUID,MachineGUID,UpdatedDate,priority,CheckSum,parentGUID,relParentPath);
+				}
+				else {
+					UUID fileGUID = UUID.fromString(filesToSend.getString("FileGUID"));
+					
+					return new FileSenderInfo(fileData,context,fileGUID,userGUID,MachineGUID,UpdatedDate,priority,CheckSum);
+				}
 			}
 			else {
 				throw new FileHandlerException("Unable to send file");
@@ -109,33 +122,7 @@ public final class FileHandler {
 		//////////////////////////////////////////////////
 		//			First, grab linked machines			//
 		//////////////////////////////////////////////////
-		try (	ResultSet linkedMachinesIp4 = DBManager.getInstance().select(
-					"SELECT TOP "+minNumPeersToGrab+" "+
-					"MachineIP4Links.IP4 AS IP4 "+
-					"FROM Users "+
-					"INNER JOIN Machines ON Users.MachinePK = Machines.MachinePK "+
-					"INNER JOIN MachineIP4Links ON Machines.MachinePK = MachineIP4Links.MachinePK "+
-					"WHERE Machines.MachineGUID NOT LIKE '"+Settings.getMachineGUIDSafe()+"'"
-				);
-				ResultSet linkedMachinesIp6 = DBManager.getInstance().select(
-					"SELECT TOP "+minNumPeersToGrab+" "+
-					"MachineIP6Links.IP6 AS IP6 "+
-					"FROM Users "+
-					"INNER JOIN Machines ON Users.MachinePK = Machines.MachinePK "+
-					"INNER JOIN MachineIP6Links ON Machines.MachinePK = MachineIP6Links.MachinePK "+
-					"WHERE Machines.MachineGUID NOT LIKE '"+Settings.getMachineGUIDSafe()+"'"
-				)
-		) {
-			while (linkedMachinesIp4.next()) {
-				peerIPs.add(linkedMachinesIp4.getString("IP4"));
-			}
-			while (linkedMachinesIp6.next()) {
-				peerIPs.add(linkedMachinesIp6.getString("IP6"));
-			}
-			
-		} catch (SQLException | DBManagerFatalException e){
-			throw new FileHandlerException("Unable to send file",e);
-		}
+		peerIPs.addAll(PeersHandler.getLinkedMachineIPs());
 		
 		
 		//////////////////////////////////////////////////
@@ -146,7 +133,7 @@ public final class FileHandler {
 					"MachineIP4Links.IP4 AS IP4 "+
 					"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
 					"INNER JOIN MachineIP4Links ON UserFileLinks.MachinePK = MachineIP4Links.MachinePK "+
-					"WHERE UserFiles.FileGUID = '"+fileGuid.toString()+"' "
+					"WHERE UserFiles.FileGUID LIKE '"+fileGuid.toString()+"' "
 					//May wish to add restriction for only this user
 				);
 				ResultSet peersWithThisFileIP6 = DBManager.getInstance().select(
@@ -155,7 +142,7 @@ public final class FileHandler {
 					"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
 					"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
 					"INNER JOIN MachineIP6Links ON UserFileLinks.MachinePK = MachineIP6Links.MachinePK "+
-					"WHERE UserFiles.FileGUID = '"+fileGuid.toString()+"' "
+					"WHERE UserFiles.FileGUID LIKE '"+fileGuid.toString()+"' "
 					//May wish to add restriction for only this user
 				)
 		) {
@@ -172,6 +159,67 @@ public final class FileHandler {
 		//////////////////////////////////////////////////
 		//  Third, fill out with more peers if needed	//
 		//////////////////////////////////////////////////
+		fillOutIPs(peerIPs);
+		
+		return peerIPs;
+	}
+	
+	public HashSet<String> getPeersToSendFileTo(UUID parentGUID, Path relativePath) throws FileHandlerException {
+		
+		//We're not making a distinction between ip4 and ip6 addresses here.
+		//File sender will figure that out
+		HashSet<String> peerIPs = new HashSet<String>();
+		
+		//////////////////////////////////////////////////
+		//			First, grab linked machines			//
+		//////////////////////////////////////////////////
+		peerIPs.addAll(PeersHandler.getLinkedMachineIPs());
+		
+		
+		//////////////////////////////////////////////////
+		//  Second, grab machines with this file on it	//
+		//////////////////////////////////////////////////
+		try (	ResultSet peersWithThisFileIP4 = DBManager.getInstance().select(
+					"SELECT TOP "+minNumPeersToGrab+" "+
+					"MachineIP4Links.IP4 AS IP4 "+
+					"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
+					"INNER JOIN MachineIP4Links ON UserFileLinks.MachinePK = MachineIP4Links.MachinePK "+
+					"WHERE UserFiles.FileGUID LIKE '' "+
+					"AND UserFiles.ParentGUID LIKE '"+parentGUID+"' "+
+					"AND UserFiles.RelativeParentPath LIKE '"+relativePath+"' "
+					//May wish to add restriction for only this user
+				);
+				ResultSet peersWithThisFileIP6 = DBManager.getInstance().select(
+					"SELECT TOP "+minNumPeersToGrab+" "+
+					"MachineIP6Links.IP6 AS IP6 "+
+					"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
+					"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
+					"INNER JOIN MachineIP6Links ON UserFileLinks.MachinePK = MachineIP6Links.MachinePK "+
+					"WHERE UserFiles.FileGUID LIKE '' "+
+					"AND UserFiles.ParentGUID LIKE '"+parentGUID+"' "+
+					"AND UserFiles.RelativeParentPath LIKE '"+relativePath+"' "
+					//May wish to add restriction for only this user
+				)
+		) {
+			while (peersWithThisFileIP6.next()) {
+				peerIPs.add(peersWithThisFileIP6.getString("IP6"));
+			}
+			while (peersWithThisFileIP4.next()) {
+				peerIPs.add(peersWithThisFileIP6.getString("IP4"));
+			}
+			
+		} catch (SQLException | DBManagerFatalException e){
+			throw new FileHandlerException("Unable to send file",e);
+		}
+		//////////////////////////////////////////////////
+		//  Third, fill out with more peers if needed	//
+		//////////////////////////////////////////////////
+		fillOutIPs(peerIPs);
+		
+		return peerIPs;
+	}
+	
+	private static HashSet<String> fillOutIPs(HashSet<String> peerIPs) throws FileHandlerException {
 		if (minNumPeersToGrab < peerIPs.size()) {
 			int numOfEachToGrab = peerIPs.size() - minNumPeersToGrab; //Guaranteed to be > 0
 			
@@ -201,16 +249,18 @@ public final class FileHandler {
 			}
 			
 		}
-		
 		return peerIPs;
 	}
 	
 	public boolean organizeFile(Path tempFileLocation, FileSenderInfo info) throws DBManagerFatalException {
 		
-		
 		DBManager dbm = DBManager.getInstance();
 		
-		try (ResultSet MachinePKs = dbm.select("SELECT DISTINCT MachinePK FROM Machines "+
+		String whereClause = (null == info.fileGuid) ? 
+				"PeerFiles.ParentGUID LIKE '"+info.parentGUID+ "'"+" AND PeerFiles.RelativeParentPath LIKE '"+info.locationRelativeToParent+"' "
+				:"PeerFiles.FileGUID LIKE '"+info.fileGuid+"'";
+		
+		try (ResultSet MachinePKs = dbm.select("SELECT TOP 1 DISTINCT MachinePK FROM Machines "+
 				"WHERE Machines.MachineGUID LIKE '"+info.sendingMachineGuid+"'"
 			);
 			ResultSet matches = dbm.select(
@@ -220,17 +270,23 @@ public final class FileHandler {
 						" PeerFiles.ParentPath AS ParentPath, PeerFiles.Priority AS Priority, PeerFiles.CheckSum AS CheckSum " +
 				"FROM Peers "+
 				"INNER JOIN PeerFileLinks ON Peers.PeerPK = PeerFileLinks.PeerPK "+
-				"INNER JOIN PeerFiles ON PeerFileLinks.PeerFilePK = PeerFiles.FilePK "+
-				"WHERE PeerFiles.FileGUID LIKE '"+info.fileGuid+"' AND Peers.PeerGUID LIKE '"+info.userGuid+"'"
-			);){
+				"INNER JOIN PeerFiles ON PeerFileLinks.FilePK = PeerFiles.FilePK "+
+				"WHERE Peers.PeerGUID LIKE '"+info.userGuid+"' AND "+whereClause
+			)){
 			
 			boolean fileExistsInDB = false; 
 			
+			
+			//////////////////////////////
+			//		Get Machine PK		//
+			//////////////////////////////
 			int MachinePK;
 			
 			if (MachinePKs.next()) {
 				MachinePK = MachinePKs.getInt("MachinePK");
-			} else { //should not be able to get here
+			} else { //should not be able to get here, since it should be inserted upon initial client connection
+				Printer.logErr("For some reason, machinePK for client wasn't already in db", Printer.Level.Low);
+				
 				synchronized(DBManager.class) {
 					dbm.upsert("INSERT INTO Machines(MachineGUID) VALUES ('"+info.sendingMachineGuid+"')");
 					try (ResultSet priKey = dbm.select("SELECT TOP 1 MachinePK FROM Machines ORDER BY MachinePK DESC")
@@ -243,16 +299,18 @@ public final class FileHandler {
 			
 			while (matches.next()) {
 				
-				//Note how HSQLDB starts at position 1 instead of zero, along with forcing specification of byte array len
-				
-				if (Arrays.areEqual(matches.getBlob("CheckSum").getBytes(1, FileUtil.NUM_CHECKSUM_BYTES), info.Checksum) &&
-					Arrays.areEqual(matches.getBlob("ParentGUID").getBytes(1, JDFSSecurity.NUM_IV_BYTES), 
+				if (matches.getString("CheckSum").equals(info.Checksum) &&
+					matches.getString("IV").equals(
 							info.AESInitializationVector //Note that we doubly-store it if it has a different IV
 					)
 				) {
-					fileExistsInDB = true;
+					fileExistsInDB = true; //Really this is the only needed part
 					
-					if (matches.getString("ParentPath").equals( info.parentLocation.toString() ) && 
+					Printer.log("File recieved already found in database, not stored");
+					
+					//Here from when storing directories was different than that of files
+					/*
+					if (matches.getString("RelativeParentPath").equals( info.locationRelativeToParent.toString() ) && 
 						matches.getString("ParentGUID").equals( info.parentGUID.toString() )
 					) {
 						String sqlUpdate = "";
@@ -261,7 +319,7 @@ public final class FileHandler {
 							sqlUpdate += "Priority = "+info.priority;
 						}
 						
-						if (!matches.getDate("UpdatedDate").equals(info.lastUpdatedDate)) {
+						if (!matches.getDate("UpdatedDate").equals(info.Date)) {
 							if (sqlUpdate.length() > 0)
 								sqlUpdate +=", ";
 							sqlUpdate += "UpdatedDate = '"+info.lastUpdatedDate+"'";
@@ -274,37 +332,38 @@ public final class FileHandler {
 						}
 						
 					} else { //store once, link twice
+					*/
+					/*
 						synchronized(DBManager.class) {
-							dbm.upsert("INSERT INTO PeerFiles (FileGUID, LocalFileName, LocalFilePath, UpdatedDate, IV, ParentGUID, ParentPath, Priority, CheckSum) "+
+							try (ResultSet priKey = dbm.upsert("INSERT INTO PeerFiles (FileGUID, LocalFileName, LocalFilePath, UpdatedDate, IV, ParentGUID, ParentPath, Priority, CheckSum) "+
 									"VALUES ('"+
-										info.fileGuid+"','"+
+										(null == info.fileGuid ? "" :info.fileGuid)+"','"+
 										matches.getString("FileName")+"','"+
 										matches.getString("FilePath")+"','"+
 										info.lastUpdatedDate+"','"+
-										ByteUtils.toHexString(info.AESInitializationVector)+"','"+
-										info.parentGUID+"','"+
-										info.parentLocation+"',"+
+										info.AESInitializationVector+"','"+
+										(null == info.parentGUID ? "" :info.parentGUID)+"','"+
+										(null == info.locationRelativeToParent ? "" :info.locationRelativeToParent)+"',"+
 										info.priority+",'"+
-										ByteUtils.toHexString(info.Checksum)+"'"+
+										info.Checksum+"'"+
 									")"
-							);
-							
-							
-							try (ResultSet priKey = dbm.select("SELECT TOP 1 PeerFiles.FilePK AS FilePK FROM PeerFiles ORDER BY PeerFiles.FilePK DESC")
-							){
+								)
+							) {
 								priKey.next(); //Hard fail if this doesn't work
 								int PeerFilePK = priKey.getInt("FilePK");
 								Printer.log("PeerFilePK:"+PeerFilePK);
 								dbm.upsert("INSERT INTO PeerFileLinks(PeerFilePK, PeerPK, MachinePK) VALUES ("+PeerFilePK+","+matches.getInt("PeerPK")+","+MachinePK+")");
 							}
 						}
-					}
+						*/ //No clue why I was doubly inserting it there.
+							//Only LastUpdatedDate and priority could be different provided DB integrity is sane,
+							//And we wouldn't want to change the LastUpdatedDate anyway (or, at most, take the min of the two)
+					//}
 				}				
 			}
 			
 			if (!fileExistsInDB) { //Insert it if it isn't found in our db
 				Path fileLoc = moveFileToCorrectPlace(tempFileLocation, info);
-				
 				
 				int PeerPK;
 				try (ResultSet peerPKs = dbm.select("SELECT TOP 1 PeerPK FROM Peers WHERE Peers.PeerGUID LIKE '"+info.userGuid+"'")){
@@ -316,15 +375,15 @@ public final class FileHandler {
 				synchronized(DBManager.class) {
 					dbm.upsert("INSERT INTO PeerFiles (FileGUID, LocalFileName, LocalFilePath, UpdatedDate, IV, ParentGUID, ParentPath, Priority, CheckSum) "+
 							"VALUES ('"+
-								info.fileGuid+"','"+
+								(null == info.fileGuid ? "" :info.fileGuid)+"','"+
 								fileLoc.getFileName()+"','"+
 								fileLoc+"','"+
 								info.lastUpdatedDate+"','"+
-								ByteUtils.toHexString(info.AESInitializationVector)+"','"+
-								info.parentGUID+"','"+
-								info.parentLocation+"',"+
+								info.AESInitializationVector+"','"+
+								(null == info.parentGUID ? "" :info.parentGUID)+"','"+
+								(null == info.locationRelativeToParent ? "" :info.locationRelativeToParent)+"',"+
 								info.priority+",'"+
-								ByteUtils.toHexString(info.Checksum)+"'"+
+								info.Checksum+"'"+
 							")"
 					);
 					
@@ -354,7 +413,7 @@ public final class FileHandler {
 		//LOOKUP PATH:
 		//StorageDirectory -> User_GUID ->( <Parent_GUID> -> <Resolved_Against_parent>)->File_GUID->random_name.xz.enc
 		
-		Path location = SettingsReader.getInstance().getStorageDirectory();
+		Path tempLoc, location = SettingsReader.getInstance().getStorageDirectory();
 		
 		//TODO minor: see if we can combine statements.  
 		if (!Files.exists(location))
@@ -370,21 +429,157 @@ public final class FileHandler {
 			if (!Files.exists(location))
 				Files.createDirectory(location);
 			
-			if (null != info.parentLocation) {
-				location = location.resolve(info.parentLocation);
-				if (!Files.exists(location))
-					Files.createDirectory(location);
+			//Assuming locationRelativeToParent can't be null since it shouldn't be
+
+			tempLoc = location.resolve(info.locationRelativeToParent+".xz.enc");
+			for (int i = 0; Files.exists(tempLoc) && i >= 0; ++i) { //Stupid way to prevent infinite loop.  We've got some big problems if that ever occurs
+				tempLoc = location.resolve(info.locationRelativeToParent+"."+i+".xz.enc");
 			}
 		}
-		
-		Path tempLoc = location.resolve(info.fileGuid+".xz.enc");
+		else {
+			tempLoc = location.resolve(info.fileGuid+".xz.enc");
 
-		for (int i = 0; Files.exists(tempLoc) && i >= 0; ++i) { //Stupid way to prevent infinite loop.  We've got some big problems if that ever occurs
-			tempLoc = location.resolve(info.fileGuid+"."+i+".xz.enc");
+			for (int i = 0; Files.exists(tempLoc) && i >= 0; ++i) { //Stupid way to prevent infinite loop.  We've got some big problems if that ever occurs
+				tempLoc = location.resolve(info.fileGuid+"."+i+".xz.enc");
+			}
 		}
 		
 		Files.move(tempFileLocation, tempLoc);
 		
 		return tempLoc;
+	}
+
+	public FileRetrieverInfo getFileStoredOnMachine(FileRetrieverRequest criteria) throws DBManagerFatalException {
+		
+		String criteriaRequestString = "SELECT DISTINCT PeerFiles.* FROM PeerFiles "+
+				"INNER JOIN PeerFileLinks ON PeerFiles.FilePK = PeerFileLinks.PeerFilePK "+
+				"INNER JOIN Peers ON Peers.PeerPK = PeerFileLinks.PeerPK "+
+				"LEFT JOIN Machines ON Machines.MachinePK = PeerFileLinks.MachinePK "+
+				"WHERE Peers.PeerGUID LIKE '"+criteria.userGuid+"'";
+		
+		//File vs directory restrictions
+		if (null != criteria.parentGUID) {
+			criteriaRequestString += " AND PeerFiles.ParentGUID LIKE '"+criteria.parentGUID+"'";
+			//This should not be null in the current iteration of the program.  Once we can get entire directories, that will change
+			if (null != criteria.relativeParentLoc)
+				criteriaRequestString += " AND PeerFiles.ParentLocation LIKE '"+criteria.relativeParentLoc+"'";
+			else
+				Printer.logErr("Functionality required for future:  Retrieve entire directory", Printer.Level.High);
+		}
+		else {
+			criteriaRequestString += " AND PeerFiles.FileGUID LIKE '"+criteria.fileGuid+"'";
+		}
+		
+		//Machine restriction if present
+		if (null != criteria.sendingMachineGuid) {
+			criteriaRequestString += " AND Machines.MachineGUID LIKE '"+criteria.sendingMachineGuid+"'";
+		}
+		
+		//Updated date restriction if present
+		if (null != criteria.lastUpdatedDate) {
+			criteriaRequestString += " AND PeerFiles.UpdatedDate "+criteria.comparison+" '"+criteria.lastUpdatedDate+"'";
+		}
+		
+		criteriaRequestString += " ORDER BY PeerFiles.UpdatedDate DESC";
+		
+		try (ResultSet filesFound = DBManager.getInstance().select(criteriaRequestString)){
+			if (filesFound.next()) {
+				return new FileRetrieverInfo(filesFound);
+			}
+		}
+		catch (SQLException e) {
+			Printer.logErr("SQLException encountered in FileHandler [getFileStoredOnMachine], refusing to send");
+			Printer.logErr(e);
+		}
+		catch (IOException e) {
+			Printer.logErr("IOException encountered in FileHandler [getFileStoredOnMachine], refusing to send");
+			Printer.logErr(e);
+		}
+		return null;
+	}
+
+	public void manageRecievedFile(Path tempStoreLocation, FileRetrieverInfo incomingInfo) {
+		if (null == incomingInfo) {
+			Printer.logErr("For some reason, passed incoming info was null", Printer.Level.High);
+		}
+		else {
+			
+			//Init values to default
+			Path targetPath = incomingInfo.defaultLocation;
+			String sqlRestriction = "", sqlFurtherRestriction = "";
+			
+			try {
+				//TODO assertEquals here
+				Printer.log("Calculated Checksum: "+ByteUtils.toHexString(FileUtil.getInstance().getMD5Checksum(tempStoreLocation)));
+				Printer.log("Provided checksum: "+incomingInfo.Checksum);
+
+				
+				if (null != incomingInfo.fileGuid) {
+					sqlRestriction = "UserFiles.FileGUID LIKE '"+incomingInfo.fileGuid+"'";
+				}
+				else if (null != incomingInfo.parentGUID) {
+					sqlRestriction = "UserFiles.ParentGUID LIKE '"+incomingInfo.fileGuid+"'";
+					
+					if (null != incomingInfo.parentLocation) {
+						sqlFurtherRestriction = " AND UserFiles.RelativeParentPath LIKE '"+incomingInfo.parentLocation+"'";
+					}
+				}
+				
+				if (!sqlRestriction.equals("")) {
+					try (ResultSet fileLocationResults = DBManager.getInstance().select(
+							"SELECT TOP 1 UserFiles.* "+
+							"FROM UserFiles " +
+							"WHERE "+sqlRestriction+sqlFurtherRestriction
+						)
+					) {
+						if (fileLocationResults.next()) {
+							targetPath = Paths.get(fileLocationResults.getString("LocalFilePath"));
+						}
+						else {
+							try (ResultSet lessRestrictResults = DBManager.getInstance().select(
+									"SELECT TOP 1 UserFiles.* "+
+									"FROM UserFiles " +
+									"WHERE "+sqlRestriction
+								)
+							) {
+								if (lessRestrictResults.next()) {
+									targetPath = Paths.get(fileLocationResults.getString("LocalFilePath"));
+								}
+							}
+						}
+					} catch (SQLException | DBManagerFatalException e) {
+						Printer.logErr("SQL/DB Exception encountered in FileHandler whilst storing recieved file.");
+						Printer.logErr("Proceeding with default value of ["+incomingInfo.defaultLocation+"]");
+						Printer.logErr(e);
+					}
+				}
+				
+				FileUtil.getInstance().decryptAndExtractFile(
+							tempStoreLocation,
+							targetPath,
+							AccountManager.getInstance().getPasswordDigest(),
+							ByteUtils.fromHexString(incomingInfo.AESInitializationVector)
+				);
+				
+				Printer.log("Success retrieving file!");
+			}
+			catch (InvalidKeyException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidAlgorithmParameterException e) {
+				Printer.logErr("An error occured during the decryption of the recovered file.");
+				Printer.logErr("The encrypted, compressed version is stored at "+tempStoreLocation+", and the HEX encoded IV is "+incomingInfo.AESInitializationVector);
+				Printer.logErr(e);
+			}
+			catch (IOException e) {
+				Printer.logErr("An IOException occured during the decryption of the recovered file.");
+				Printer.logErr("Attempted to decrypt & extract file to the location ["+targetPath+"]");
+				Printer.logErr("The encrypted, compressed version is stored at "+tempStoreLocation+", and the HEX encoded IV is "+incomingInfo.AESInitializationVector);
+				Printer.logErr(e);
+			}
+			catch (UserException e) {
+				Printer.logErr("An error occured getting the active user password during the decryption of the recovered file.");
+				Printer.logErr("The encrypted, compressed version of tis stored at "+tempStoreLocation+", and the HEX encoded IV is "+incomingInfo.AESInitializationVector);
+				Printer.logErr(e);
+			}
+		}
+		Printer.log("Done with file retrieval");
 	}
 }

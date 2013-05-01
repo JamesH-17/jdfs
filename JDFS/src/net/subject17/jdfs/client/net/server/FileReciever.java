@@ -20,15 +20,12 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 
 /**
- * 
- * @author james
  * @code All meta-data needed to set up and receive a file on the client server
  */
 public final class FileReciever implements Runnable {
 	
 	protected final int port;
-	//private String secretMessage; 
-	//private String AESHashOfFile; 
+	//private String secretMessage; //This may be added after graduation for better security
 	public final FileSenderInfo info;
 	
 	public FileReciever(int port, String json) throws JsonParseException, JsonMappingException, IOException {

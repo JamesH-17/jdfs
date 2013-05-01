@@ -7,25 +7,22 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.MessageDigest;
 import java.util.Scanner;
 
 import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.file.monitor.FileWatcher;
+import net.subject17.jdfs.client.file.monitor.PeriodicFileUpdater;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.sender.Talker;
-import net.subject17.jdfs.client.net.sender.TalkerPooler;
 import net.subject17.jdfs.client.net.server.Listener;
 import net.subject17.jdfs.client.peers.PeersHandler;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA3Digest;
-
 
 public class UserNode {	
 	public static Listener serv;
+	public static Thread updateChecker;
 	
 	
 	/**
@@ -37,22 +34,21 @@ public class UserNode {
 	 * 
 	 */
 	public static void main(String[] args) {
-		//TODO: for args:  Allow to pass in a settings config file, and possibly a port
-		
-		
-		
+
 		Printer.log("Program started");
+		
+		handleArgs(args);	
 		
 		try (Scanner inScan = new Scanner(System.in)){
 			makeEnvironment();
-			//initializeSettingsAndHandlers();
+			initializeSettingsAndHandlers();
 			//dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
 			
 			//dispatchWatchService(); //Will get the directories and files to watch from configuration.
 									//upon change, spawns new child process that will attempt to connect to peers (eventually extended to a peer server)
 									//and send the modified files over.
 			//Now, how to close program?
-			
+			/*
 			System.exit(0);
 			Printer.println("Do you wish to start a server or client?");
 			Printer.println("1) [S]erver");
@@ -62,12 +58,13 @@ public class UserNode {
 				case 's': case '1': dispatchServer(); break;
 				case 'c': case '2': dispatchClient(); break;
 			}
-			
+			*/
 		} catch (Exception e) {
 			Printer.logErr("An exception was encountered running the program:  Terminating application", Printer.Level.Extreme);
 			Printer.logErr(e);
-			e.printStackTrace();
 		}
+		
+		Printer.log("Program Terminated");
 	}
 	
 	private static void makeEnvironment() throws IOException {
@@ -148,12 +145,28 @@ public class UserNode {
 	}
 	
 	private static void dispatchWatchService() {
-		
+		updateChecker = new Thread(new PeriodicFileUpdater());
+		updateChecker.run();
 	}
 	
-	private static void periodicallyCheckForUpdated(){
-		while (true) {
-			FileWatcher.getInstance().checkForUpdates();
+	private static void handleArgs(String[] args) {
+		//TODO: for args:  Allow to pass in a settings config file
+		for (String arg : args) {
+			if (arg.toLowerCase().startsWith("defaultserverport")) {
+				try {
+					String[] strs = arg.split("=");
+					if (strs.length > 1) {
+						int customDefaultPort = Integer.parseInt(strs[1]);
+						PortMgr.setDefaultPort(customDefaultPort);
+					}
+				}
+				catch (NumberFormatException e) {
+					Printer.logErr("Exception encountered trying to parse default port passed");
+					Printer.logErr(e);
+				}
+			} else if (arg.toLowerCase().startsWith("defaultserverport")) {
+				
+			}
 		}
 	}
 }

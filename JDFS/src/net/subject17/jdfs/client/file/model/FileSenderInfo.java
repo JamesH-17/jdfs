@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.util.Date;
 import java.util.UUID;
 
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -12,7 +13,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 public final class FileSenderInfo {
 	//For decrypting.  THE MOST IMPORTANT VARIABLE HERE!
-	public final byte[] AESInitializationVector;
+	public final String AESInitializationVector;
 	
 	//Identification
 	public final Path fileLocation;
@@ -24,14 +25,14 @@ public final class FileSenderInfo {
 	public final Date lastUpdatedDate;
 	public final int priority;
 	public final int size;
-	public final byte[] Checksum;
+	public final String Checksum;
 	
 	//For directories only
 	public final UUID parentGUID;
-	public final Path parentLocation; //Resolved against TLD of watched dir 
+	public final Path locationRelativeToParent; //Resolved against TLD of watched dir 
 	
 	@JsonIgnore
-	public final Path encryptedFileLocation;
+	public final Path encryptedFileLocation; //Used by sender
 	
 	@JsonIgnore
 	public FileSenderInfo(	EncryptedFileInfoStruct info, 
@@ -43,7 +44,7 @@ public final class FileSenderInfo {
 							int priority,
 							byte[] CheckSum
 	){
-		this.AESInitializationVector = info.IV;
+		this.AESInitializationVector = ByteUtils.toHexString(info.IV);
 		this.fileLocation = fileLocation;
 		this.fileGuid = fileGuid;
 		this.userGuid = userGuid;
@@ -51,35 +52,34 @@ public final class FileSenderInfo {
 		this.lastUpdatedDate = lastUpdatedDate;
 		this.priority=priority;
 		this.size = info.size;
-		this.Checksum = CheckSum;
+		this.Checksum = ByteUtils.toHexString(CheckSum);
 		this.parentGUID = null;
-		this.parentLocation = fileLocation;
+		this.locationRelativeToParent = null;
 		this.encryptedFileLocation = info.fileLocation;
 	}
 	
 	@JsonIgnore
 	public FileSenderInfo(	EncryptedFileInfoStruct info, 
 							Path fileLocation,
-							UUID fileGuid,
 							UUID userGuid,
 							UUID sendingMachineGuid,
 							Date lastUpdatedDate,
 							int priority,
 							byte[] CheckSum,
 							UUID parentGUID,
-							Path parentLocation
+							Path locationRelativeToParent
 	){
-		this.AESInitializationVector = info.IV;
+		this.AESInitializationVector = ByteUtils.toHexString(info.IV);
 		this.fileLocation = fileLocation;
-		this.fileGuid = fileGuid;
+		this.fileGuid = null;
 		this.userGuid = userGuid;
 		this.sendingMachineGuid = sendingMachineGuid;
 		this.lastUpdatedDate = lastUpdatedDate;
-		this.priority=priority;
+		this.priority = priority;
 		this.size = info.size;
-		this.Checksum = CheckSum;
+		this.Checksum = ByteUtils.toHexString(CheckSum);
 		this.parentGUID = parentGUID;
-		this.parentLocation = parentLocation;
+		this.locationRelativeToParent = locationRelativeToParent;
 		this.encryptedFileLocation = info.fileLocation;
 	}
 	

@@ -29,6 +29,10 @@ public class LanguageProtocol {
 	public final static String FILE_RECV_SUCC = "jdfs-File-Recieved-Successfully";
 	public final static String FILE_RECV_FAIL = "jdfs-File-Recieved-Unsuccessfully";
 	
+	public final static String INIT_FILE_RETRIEVE = "jdfs-Initialize-File-Retrieve";
+	public static final String FILE_SEND_FAIL = "jdfs-File-Send-Failure";
+	public static final String FILE_SEND_SUCC = "jdfs-File-Send-Success";
+	
 	public static String handleResponse(String s) {
 		if (s == null) return ERROR;
 		

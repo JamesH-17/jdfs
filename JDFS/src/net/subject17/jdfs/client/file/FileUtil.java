@@ -190,15 +190,23 @@ public final class FileUtil {
 		return new EncryptedFileInfoStruct(outputLoc, ciph.getIV());
 	}
 	
-	public Path decryptAndExtractFile(EncryptedFileInfoStruct efi, Path targetPath, String plaintextPassword) throws InvalidKeyException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IOException{
+	public Path decryptAndExtractFile(EncryptedFileInfoStruct efi, Path targetPath, byte[] passwordDigest) throws InvalidKeyException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IOException {
+		return decryptAndExtractFile(efi.fileLocation, targetPath, JDFSSecurity.getDecryptCipher(passwordDigest, new IvParameterSpec(efi.IV)));
+	}
+	public Path decryptAndExtractFile(Path source, Path targetPath, byte[] passwordDigest, byte[] IV) throws InvalidKeyException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IOException {
+		return decryptAndExtractFile(source, targetPath, JDFSSecurity.getDecryptCipher(passwordDigest, new IvParameterSpec(IV)));
+	}
+	public Path decryptAndExtractFile(EncryptedFileInfoStruct efi, Path targetPath, String plaintextPassword) throws InvalidKeyException, FileNotFoundException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException, IOException {
 		return decryptAndExtractFile(efi.fileLocation, targetPath, plaintextPassword, new IvParameterSpec(efi.IV));
 	}
-	
 	public Path decryptAndExtractFile(Path pathToRead, Path targetPath, String plaintextPassword, IvParameterSpec aesIV) throws FileNotFoundException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
+		return decryptAndExtractFile(pathToRead, targetPath, JDFSSecurity.getDecryptCipher(plaintextPassword, aesIV));
+	}
+	public Path decryptAndExtractFile(Path pathToRead, Path targetPath, Cipher ciph) throws FileNotFoundException, IOException, InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidAlgorithmParameterException {
 		Files.deleteIfExists(targetPath);
 		
 		//Get cipher
-		Cipher ciph = JDFSSecurity.getDecryptCipher(plaintextPassword, aesIV);		
+		//Cipher ciph = JDFSSecurity.getDecryptCipher(plaintextPassword, aesIV);		
 		
 		try (
 	        InputStream fInStream = new FileInputStream(pathToRead.toFile());

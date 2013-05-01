@@ -10,11 +10,13 @@ import net.subject17.jdfs.client.io.Printer;
 public final class PortMgr {
 	public final static int defaultStartingPort = 1000;
 	public final static int defaultLastPort = 65534;
-	private final static int serverPort = 42419; //(First five digits of e+pi-phi)+1
+	private final static int defaultServerPort = 42419; //(First five digits of e+pi-phi)+1
+	private static int serverPort = defaultServerPort;
 	
 	/**
+	 * Code adapted from <a href="http://stackoverflow.com/a/13826145/1466964">Stack Overflow Comment</a>, liscensed under <a href="http://creativecommons.org/licenses/by-sa/3.0/">cc-wiki</a>
 	 * @author <a href="http://stackoverflow.com/users/92937/twentymiles">TwentyMiles</a>
-	 * @see Code adpated from <a href="http://stackoverflow.com/a/13826145/1466964">Stack Overflow Comment</a>, liscensed under <a href="http://creativecommons.org/licenses/by-sa/3.0/">cc-wiki</a>
+	 * @Liscence Share-Alike
 	 * @param port port to try
 	 * @return true if port is available to use, false otherwise.
 	 * @throws Throws IOException if closing the socket somehow fails
@@ -66,6 +68,10 @@ public final class PortMgr {
 	
 	public static int getServerPort() {
 		return serverPort;
+	}
+
+	public static void setDefaultPort(int customDefaultPort) {
+		serverPort = customDefaultPort;
 	}
 	
 }

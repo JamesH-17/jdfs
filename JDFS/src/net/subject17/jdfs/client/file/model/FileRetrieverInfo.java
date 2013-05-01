@@ -11,16 +11,21 @@ import java.util.UUID;
 
 import net.subject17.jdfs.client.io.Printer;
 
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 
 public final class FileRetrieverInfo {
 	
 	//For decryption
-	public final byte[] AESInitializationVector;
+	public final String AESInitializationVector;
 	
 	//Identification
-	public final Path fileLocation;
+	@JsonIgnore
+	public final Path fileLocation; //TODO we may want to store the sending machine version of this as well in case client wants default...?
+	public final Path defaultLocation;
+	
 	public final UUID fileGuid;
 	public final UUID userGuid;
 	public final UUID sendingMachineGuid;
@@ -29,29 +34,36 @@ public final class FileRetrieverInfo {
 	public final Date lastUpdatedDate;
 	public final int priority;
 	public final int size;
-	public final byte[] Checksum;
+	public final String Checksum;
 	
 	//For directories only
 	public final UUID parentGUID;
 	public final Path parentLocation; //Resolved against TLD of watched dir 
 
 	@JsonIgnore
-	public FileRetrieverInfo(ResultSet filesFound) throws SQLException, IOException {
-		fileLocation = Paths.get(filesFound.getString("FilePath"));
+	public FileRetrieverInfo(ResultSet fileFound) throws SQLException, IOException {
+		fileLocation = Paths.get(fileFound.getString("LocalFilePath"));
+		defaultLocation = Paths.get(fileFound.getString("PathOnClient"));
+		
 		size = (int) Files.size(fileLocation);
 		
-		fileGuid = UUID.fromString(filesFound.getString("FileGUID"));
-		lastUpdatedDate = filesFound.getDate("UpdatedDate");
-		AESInitializationVector = ByteUtils.fromHexString(filesFound.getString("IV"));
-		userGuid = UUID.fromString(filesFound.getString("UserGUID"));
 		
-		String machineGuid = filesFound.getString("MachineGUID");
+		String fileGUID = fileFound.getString("FileGUID");
+		fileGuid = null == fileGUID || fileGUID.equals("") ? null : UUID.fromString(fileGUID);
+		
+		lastUpdatedDate = fileFound.getDate("UpdatedDate");
+		//AESInitializationVector = ByteUtils.fromHexString(fileFound.getString("IV"));
+		AESInitializationVector = fileFound.getString("IV");
+		userGuid = UUID.fromString(fileFound.getString("UserGUID"));
+		
+		String machineGuid = fileFound.getString("MachineGUID");
 		UUID tempMachineUUID = null;
 		
 		if (!( null == machineGuid || machineGuid.equals("") )) {
 			try {
 				tempMachineUUID = UUID.fromString(machineGuid);
-			} catch (IllegalArgumentException e) {
+			}
+			catch (IllegalArgumentException e) {
 				Printer.logErr("Server sending file:  Could not convert ["+machineGuid+"] to UUID.  Setting value to null and proceeding");
 				Printer.logErr(e);
 				tempMachineUUID = null;
@@ -60,8 +72,7 @@ public final class FileRetrieverInfo {
 		
 		sendingMachineGuid = tempMachineUUID;
 		
-		
-		String parentGuid = filesFound.getString("ParentGUID");
+		String parentGuid = fileFound.getString("ParentGUID");
 		UUID tempParentGuid = null;
 		
 		if (!( null == machineGuid || machineGuid.equals("") )) {
@@ -75,10 +86,23 @@ public final class FileRetrieverInfo {
 		}
 		
 		parentGUID = tempParentGuid;
-		parentLocation = Paths.get(filesFound.getString("ParentLocation"));
+		parentLocation = Paths.get(fileFound.getString("ParentLocation"));
 		
-		Checksum = ByteUtils.fromHexString(filesFound.getString("CheckSum"));
-		priority = filesFound.getInt("Priority");
+		//Checksum = ByteUtils.fromHexString(fileFound.getString("CheckSum"));
+		Checksum = fileFound.getString("CheckSum");
+		priority = fileFound.getInt("Priority");
+	}
+
+	/*
+	public FileRetrieverInfo(String json) {
+		ObjectMapper mapper = new ObjectMapper();
+		this = mapper.readValue(json, FileRetrieverInfo.class);
+	}
+*/
+	@JsonIgnore
+	public String toJSON() throws JsonGenerationException, JsonMappingException, IOException {
+		ObjectMapper mapper = new ObjectMapper();
+		return mapper.writeValueAsString(this);
 	}
 
 }

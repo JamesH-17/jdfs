@@ -38,7 +38,7 @@ public class PeerSettingsReader extends SettingsReader {
 		} catch (FileNotFoundException e){ //Also a possibility of malformed layout (ex: no peers tag), which will give a nullptr exception
 			
 			Printer.logErr("File not found -- "+sourceFile);
-			Printer.logErr(e);
+			//Printer.logErr(e);
 			Printer.logErr("Attempting to create a default peer settings file at provided location");
 			
 			InitDefault();

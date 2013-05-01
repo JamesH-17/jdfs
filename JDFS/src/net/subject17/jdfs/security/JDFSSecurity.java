@@ -14,10 +14,11 @@ import javax.crypto.spec.SecretKeySpec;
 import net.subject17.jdfs.client.io.Printer;
 
 import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 
 public final class JDFSSecurity {
 	private final static int numRoundsToHash = 10_000;
-	private final static String saltsies = "JDFS-AprilLover~Java*Distributed_File.System^";
+	private final static String saltsies = "JDFS-AprilLover~Java*Distributed_File.System^"; //TODO:  Consider adding user GUID/name/email during salting for added security
 	public final static int NUM_IV_BYTES = numBytesInIV();
 	//////////////////////////////////////////////
 	//			Encryption Utilities			//
@@ -95,8 +96,8 @@ public final class JDFSSecurity {
 	
 	private final static int numBytesInIV() {
 		try {
-			return Cipher.getInstance("AES/CBC/PKCS5Padding").getIV().length;
-		} catch (NoSuchAlgorithmException | NoSuchPaddingException e) {
+			return getEncryptCipher("hhkjhjk").getIV().length;
+		} catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
 			Printer.logErr("Major error here! Error thrown when initializing IV length. Using default of 128", Printer.Level.High);
 			Printer.logErr(e);
 			return 128;

@@ -2,14 +2,10 @@ package net.subject17.jdfs.client.net.sender;
 
 import java.io.OutputStream;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.io.Printer;
-import net.subject17.jdfs.client.net.NetworkUtil;
 
 
 public class FileSender implements Runnable {
@@ -73,6 +69,4 @@ public class FileSender implements Runnable {
 	public void run() {
 		sendFile(); //Don't really care if it succeeds
 	}
-	
-	
 }

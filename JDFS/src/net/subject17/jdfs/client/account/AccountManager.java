@@ -194,7 +194,7 @@ public class AccountManager {
 		return false;
 	}
 
-	public String getPasswordDigest() throws UserException {
+	public byte[] getPasswordDigest() throws UserException {
 		if (null == activeUser){
 			String userName = UserInput.getInstance().getNextString("Please enter a user name");
 			String accountEmail = UserInput.getInstance().getNextString("Please Enter an email address");
@@ -205,11 +205,12 @@ public class AccountManager {
 			String plaintextPass = UserInput.getInstance().getNextString("Please enter a password to encrypt/decrypt files");
 			try {
 				keys.put(activeUser, JDFSSecurity.getSecureDigest(plaintextPass));
-			} catch (NoSuchAlgorithmException e) {
+			}
+			catch (NoSuchAlgorithmException e) {
 				Printer.logErr("An error was encountered in encrypting your password.", Printer.Level.High);
 				Printer.logErr(e);
 			}
 		}
-		return null;
+		return keys.get(activeUser);
 	}
 }

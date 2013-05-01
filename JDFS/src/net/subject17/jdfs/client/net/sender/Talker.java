@@ -7,16 +7,21 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
+import org.codehaus.jackson.map.ObjectMapper;
+
+import net.subject17.jdfs.client.file.handler.FileHandler;
+import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.LanguageProtocol;
 import net.subject17.jdfs.client.net.PortMgr;
+import net.subject17.jdfs.client.net.PortMgrException;
 import net.subject17.jdfs.client.net.model.MachineInfo;
 
 
 public final class Talker implements Runnable {
 	//DEV VARIABLES for easy access when connecting to the same machine
-	private String defaultServerName = "";
-	private int defaultPort = PortMgr.getServerPort(); //TODO Ability to change server port via command line, along with default server port
+	private static String defaultServerName = "";
+	private static int defaultPort = PortMgr.getServerPort(); //TODO Ability to change server port via command line, along with default server port
 	
 	protected Object payload;
 	
@@ -27,24 +32,25 @@ public final class Talker implements Runnable {
 	 * @param port -- The port Number that this service will listen on
 	 * @param String
 	 */
-	public Talker() {setServer(defaultServerName); setPort(defaultPort); }
+	public Talker() {this(defaultServerName); setPort(defaultPort); }
+	/*
 	public Talker(String serv) { setServer(serv); setPort(defaultPort); }
 	public Talker(int targetPort) { setServer(defaultServerName);setPort(targetPort); }
-	
+	*/
 	//For testing only, or maybe just to do a handshake
-	public Talker(String serv, int p){
+	public Talker(String serv){
 		setServer(serv);
-		setPort(p);
+		setPort(defaultPort);
 		payload = null;
 	}
-	
-	public Talker(String targetServer, int targetPort, Object opPayload){
+	public Talker(String targetServer, Object opPayload){
 		setServer(targetServer);
-		setPort(targetPort);
+		setPort(defaultPort);
 		
 		this.payload = opPayload;		
 	}
 	
+	@Override
 	public void run() {
 		createTalker();
 	}
@@ -145,10 +151,6 @@ public final class Talker implements Runnable {
 		}
 	}
 	
-	private void retrieveFile(PrintWriter output, BufferedReader in) {
-		// TODO Auto-generated method stub
-		
-	}
 	private void sendMachineInfo(PrintWriter output, BufferedReader in) {
 		
 		MachineInfo info = new MachineInfo();
@@ -159,6 +161,44 @@ public final class Talker implements Runnable {
 			output.println(LanguageProtocol.SKIPPED);
 		}
 	}
+	
+	private void retrieveFile(PrintWriter output, BufferedReader in) throws IOException, PortMgrException {
+		FileRetriever fileRetriever = (FileRetriever) payload;
+		
+		output.println(LanguageProtocol.INIT_FILE_RETRIEVE);
+		String response = in.readLine();
+		
+		if (null != response && response.equals(LanguageProtocol.ACK)) { 
+
+			output.println(fileRetriever.criteria.toJSON());
+			response = in.readLine();
+			
+			if (null != response && response.equals(LanguageProtocol.ACCEPT_FILE_TRANS)) {
+				output.println(LanguageProtocol.ACK);
+				
+				String json = in.readLine();
+				ObjectMapper mapper = new ObjectMapper();
+				FileRetrieverInfo incomingInfo = mapper.convertValue(json, FileRetrieverInfo.class);
+				
+				fileRetriever.setPort(PortMgr.getNextAvailablePort());
+				
+				Thread thread = new Thread(fileRetriever);
+				thread.run();
+				
+				output.println(fileRetriever.port);
+				
+				/*
+				response = in.readLine();
+				if (null != response && response.equals(LanguageProtocol.ACK)) {
+					Thread thread = new Thread(fileRetriever);
+					thread.run();
+				}*/
+				
+				FileHandler.getInstance().manageRecievedFile(fileRetriever.storeLocation, incomingInfo);
+			}
+		}		
+	}
+	
 	private void sendFile(PrintWriter output, BufferedReader in) throws IOException, NumberFormatException {
 		
 		FileSender fileSender = (FileSender) payload;

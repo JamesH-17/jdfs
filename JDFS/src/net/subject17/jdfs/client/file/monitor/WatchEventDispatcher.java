@@ -1,7 +1,6 @@
 package net.subject17.jdfs.client.file.monitor;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -9,20 +8,24 @@ import java.nio.file.WatchService;
 import java.nio.file.StandardWatchEventKinds;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
-
 import javax.crypto.NoSuchPaddingException;
 
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.sender.TalkerPooler;
+import net.subject17.jdfs.client.user.User;
 import net.subject17.jdfs.client.user.User.UserException;
 
 public class WatchEventDispatcher implements Runnable {
-		private final WatchService watcher;
-		private boolean run = true;
+		
+		private static boolean run = true;
 		private final static long timeBetweenHandlesInMillis = 1000;
 		
-		WatchEventDispatcher(WatchService watcher) {
+		private final WatchService watcher;
+		private final User user;
+		
+		public WatchEventDispatcher(WatchService watcher, User user) {
 			this.watcher = watcher;
+			this.user = user;
 		}
 
 		@Override
@@ -34,7 +37,7 @@ public class WatchEventDispatcher implements Runnable {
 			    	//TODO may want to make this poll every 60 seconds or something.  Alternatively, place thread.sleep at end of loop
 			        key = watcher.take();
 			        
-			        if (key.isValid()) {
+			        if (run && key.isValid()) {
 					    for (WatchEvent<?> event: key.pollEvents()) {
 					        WatchEvent.Kind<?> kind = event.kind();
 		
@@ -54,7 +57,10 @@ public class WatchEventDispatcher implements Runnable {
 							WatchEvent<Path> ev = (WatchEvent<Path>)event;
 					        
 					        try {
-								TalkerPooler.getInstance().UpdatePath(ev.context());
+					        	
+					        	//This is all this service ever does!
+					        	
+								TalkerPooler.getInstance().UpdatePath(ev.context(), user);
 							} catch (InvalidKeyException
 									| NoSuchAlgorithmException
 									| NoSuchPaddingException | IOException
@@ -81,7 +87,7 @@ public class WatchEventDispatcher implements Runnable {
 			}
 		}
 		
-		public void stop() {
+		public static void stop() {
 			run = false;
 		}
 }
