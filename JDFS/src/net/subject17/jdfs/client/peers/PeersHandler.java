@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.UUID;
 
@@ -234,26 +235,35 @@ public class PeersHandler {
 	//									XML								//
 	//////////////////////////////////////////////////////////////////////
 	
-	public void writePeersToFile() {
+	public static void writePeersToFile() {
 		writePeersToFile(peersFile);
 	}
 	
-	public void writePeersToFile(Path file) {
+	public static void writePeersToFile(Path file) {
 		PeerSettingsWriter writer = new PeerSettingsWriter();
-		writer.writePeerSettings(file,peers);
+		try {
+			writer.writePeerSettings(file,getAllPeersInDB());
+		}
+		catch (DBManagerFatalException e) {
+			Printer.logErr("Error encountered grabbing peers in db, writing what is in local var to xml");
+			Printer.logErr(e);
+			
+			//TODO mayhaps don't write anything since it overwrites existing file?
+			writer.writePeerSettings(file,peers);
+		}
 	}
 
 	public static void setPeersSettingsFile(Path peerSettingsFile) throws Exception {
 		peersReader = new PeerSettingsReader(peerSettingsFile);
 		peersFile = peerSettingsFile;
-		HashSet<Peer> importedPeers = new HashSet<Peer>();
+		HashSet<Peer> importedPeers = peersReader.getPeers();
 		
 		addPeersToDB(importedPeers);
 		
 		peers.addAll(importedPeers);
 	}
 	
-	
+	//XML helpers
 	private static void addPeersToDB(HashSet<Peer> importedPeers) throws DBManagerFatalException {
 		for(Peer peer : importedPeers) {
 			
@@ -342,10 +352,118 @@ public class PeersHandler {
 				Printer.logErr(e);
 			}
 			
-			
 		}
 	}
 	
+	private static HashSet<Peer> getAllPeersInDB() throws DBManagerFatalException {
+		HashSet<Peer> peersFound = new HashSet<Peer>();
+		
+		try (ResultSet peerUsers = DBManager.getInstance().select("SELECT DISTINCT Peers.* FROM Peers")){
+			
+			while (peerUsers.next()) {
+				HashSet<UUID> machineGUIDs = getMachinesForPeer(peerUsers.getInt("PeerPK"));
+				HashSet<String> ip4s = new HashSet<String>();
+				HashSet<String> ip6s = new HashSet<String>();
+				
+				for (UUID machineGUID : machineGUIDs) {
+					ip4s.addAll(getIP4sForMachine(machineGUID));
+					ip6s.addAll(getIP6sForMachine(machineGUID));
+				}
+				
+				Peer temp = new Peer(
+						peerUsers.getString("UserName"),
+						peerUsers.getString("AccountEmail"),
+						UUID.fromString(peerUsers.getString("PeerGUID")), //TODO catch this?
+						machineGUIDs,
+						ip4s,
+						ip6s
+				);
+				
+				peersFound.add(temp);
+			}
+		}
+		catch (SQLException e) {
+			Printer.logErr("Error grabbing peers from db to write");
+			Printer.logErr(e);
+		}
+		return peersFound;
+	}
+
+
+	/////////////////////////
+	//To grab machines with//
+	/////////////////////////
+	private static HashSet<UUID> getMachinesForPeer(int peerPK) throws DBManagerFatalException {
+		return getMachinesForPeer("WHERE Peers.PeerPK = "+peerPK);
+	}
+	public static HashSet<UUID> getMachinesForPeer(UUID peerGUID) throws DBManagerFatalException {
+		return getMachinesForPeer("WHERE Peers.PeerGUID LIKE '"+peerGUID+"'");
+	}
+	private static HashSet<UUID> getMachinesForPeer(String restriction) throws DBManagerFatalException {
+		HashSet<UUID> machineGUIDs = new HashSet<UUID>();
+		
+		try (ResultSet machinesFound = DBManager.getInstance().select(
+				"SELECT DISTINCT Machines.* FROM Peers "+
+				"INNER JOIN MachinePeerLinks ON Peers.PeerPK = MachinePeerLinks.PeerPK "+
+				"INNER JOIN Machines ON MachinePeerLinks.MachinePK = Machines.MachinePK "+
+				restriction
+			)
+		){
+			while (machinesFound.next()){
+				try {
+					machineGUIDs.add(UUID.fromString(machinesFound.getString("MachineGUID")));
+				}
+				catch (IllegalArgumentException e) {
+					Printer.logErr("Error converting machineGUID to UUID.  Skipping. (Value was "+machinesFound.getString("MachineGUID")+")");
+				}
+			}
+		} 
+		catch (SQLException e) {
+			Printer.logErr("Error grabbing peer machines");
+			Printer.logErr(e);
+		}
+		return machineGUIDs;
+	}
+	
+	/////////////////////////
+	//To grab ip4/ip6s with//
+	/////////////////////////
+	
+	private static HashSet<String> getIP6sForMachine(UUID machineGUID) throws DBManagerFatalException {
+		HashSet<String> ip6s = new HashSet<String>();
+		try (ResultSet ip6sFound = DBManager.getInstance().select(
+				"SELECT DISTINCT MachineIP6Links.IP6 FROM MachineIP6Links "+
+				"INNER JOIN Machines ON MachineIP6Links.MachinePK = Machines.MachinePK "+
+				"WHERE Machines.MachineGUID LIKE '"+machineGUID+"'"
+			)
+		) {
+			while (ip6sFound.next()) {
+				ip6s.add(ip6sFound.getString("IP6"));
+			}
+		} catch (SQLException e) {
+			Printer.logErr("Error grabbing ips for machine");
+			Printer.logErr(e);
+		}
+		return ip6s;
+	}
+
+	private static HashSet<String> getIP4sForMachine(UUID machineGUID) throws DBManagerFatalException {
+		HashSet<String> ip4s = new HashSet<String>();
+		try (ResultSet ip4sFound = DBManager.getInstance().select(
+				"SELECT DISTINCT MachineIP4Links.IP4 FROM MachineIP4Links "+
+				"INNER JOIN Machines ON MachineIP4Links.MachinePK = Machines.MachinePK "+
+				"WHERE Machines.MachineGUID LIKE '"+machineGUID+"'"
+			)
+		) {
+			while (ip4sFound.next()) {
+				ip4s.add(ip4sFound.getString("IP4"));
+			}
+		} catch (SQLException e) {
+			Printer.logErr("Error grabbing ips for machine");
+			Printer.logErr(e);
+		}
+		return ip4s;
+	}
 	
 	//////////////////////////////////////////////////////////////////////////////////////////
 	//						Peer Discovery (currently not implemented)						//
@@ -432,14 +550,6 @@ public class PeersHandler {
 	//////////////////////////////////////////////////////////////////////////////////////////
 	//										OLD CODE										//
 	//////////////////////////////////////////////////////////////////////////////////////////
-	/**
-	 * Not implemented
-	 * @param ip
-	 * @param port
-	 */
-	private static void addIncomingPeer(InetAddress ip, int port) {
-		//TODO add peer to peersfileList
-	}
 	
 	@Deprecated
 	public static Peer getPeerByAccount(String account) {

@@ -45,6 +45,15 @@ public class Peer {
 		this.GUID = GUID;
 	}
 	@JsonIgnore
+	/**
+	 * 
+	 * @param accountEmail Unique email associated with this peer's GUID
+	 * @param userName
+	 * @param peerGUID
+	 * @param machineGUIDs
+	 * @param ip4s
+	 * @param ip6s
+	 */
 	public Peer (String accountEmail, String userName, UUID peerGUID, HashSet<UUID> machineGUIDs, HashSet<String> ip4s, HashSet<String> ip6s) {
 		this(accountEmail, userName, peerGUID);
 		this.machineGUIDs.addAll(machineGUIDs);

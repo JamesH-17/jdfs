@@ -97,18 +97,15 @@ public final class FileWatcher {
 				}
 			}
 			else { //Key for this machine does not yet exist, so add it
-				//machinePKs.close();
 				try (ResultSet newMachinePK = DBManager.getInstance().upsert(
 						"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
 					)
 				){
-					Printer.log("newMAch is closed"+newMachinePK.isClosed());
-					//newMachinePK.beforeFirst();
-					if (true) {//newMachinePK.next()) {
-						//machinePK = newMachinePK.getInt("MachinePK");
-						machinePK = DBManager.getInstance().upsert2(
-								"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
-							);
+					if (newMachinePK.next()) {
+						machinePK = newMachinePK.getInt("MachinePK");
+						//machinePK = DBManager.getInstance().upsert2(
+						//		"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
+						//	);
 					}
 					else {
 						Printer.logErr("There is an error in the program logic for adding the machine key.", Printer.Level.Extreme);
@@ -116,10 +113,6 @@ public final class FileWatcher {
 						Printer.logErr("Forcibly closing program.", Printer.Level.Extreme);
 						System.exit(-1);
 					}
-				} catch (SQLException e) {
-					Printer.log("hurr");
-					Printer.logErr("Warning [in FileWatcher]: SQLException encountered when grabbing PK for our machine {GUID:"+machineGUID+"}.  Potentially invalid program state", Printer.Level.High);
-					Printer.logErr(e);
 				}
 			}
 		} catch (SQLException e) {

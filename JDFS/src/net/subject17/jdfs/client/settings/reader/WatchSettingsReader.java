@@ -44,10 +44,11 @@ public class WatchSettingsReader extends SettingsReader {
 	private void Init() throws ParserConfigurationException, SAXException, IOException {
 		if (!Files.exists(watchSettingsPath)) {
 			WatchSettingsWriter.writeWatchSettings(watchSettingsPath, new HashSet<WatchList>());
-		}
+		}/*
 		if (!Files.isReadable(watchSettingsPath)) {
 			throw new IOException("Cannot read file");
-		}
+		}*/
+		Printer.log("Path of watchfile:"+watchSettingsPath);
 		watchDoc = getWatchDocument();
 		readWatchLists();
 	}

@@ -16,7 +16,8 @@ import org.codehaus.jackson.map.ObjectMapper;
  *	This class mostly contains stuff I wished the java API had written for me
  */
 public class JDFSUtil {
-	public static final String defaultDirectory = "C:\\Users\\James\\Documents\\GitHub\\jdfs\\JDFS";
+	//public static final String defaultDirectory = "C:\\Users\\James\\Documents\\GitHub\\jdfs\\JDFS";
+	public static final String defaultDirectory = System.getProperty("user.dir");
 	
 	public enum OS {Windows, MAC, Linux, BSD, Unknown}
 	public static OS getOS() {

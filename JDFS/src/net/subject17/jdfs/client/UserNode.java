@@ -10,6 +10,8 @@ import java.nio.file.Paths;
 import java.util.Scanner;
 
 import net.subject17.jdfs.client.account.AccountManager;
+import net.subject17.jdfs.client.file.db.DBManager;
+import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
 import net.subject17.jdfs.client.file.monitor.FileWatcher;
 import net.subject17.jdfs.client.file.monitor.PeriodicFileUpdater;
 import net.subject17.jdfs.client.io.Printer;
@@ -17,7 +19,11 @@ import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.sender.Talker;
 import net.subject17.jdfs.client.net.server.Listener;
 import net.subject17.jdfs.client.peers.PeersHandler;
+import net.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
+import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
+import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
+import net.subject17.jdfs.client.settings.writer.SettingsWriter;
 
 
 public class UserNode {	
@@ -62,6 +68,8 @@ public class UserNode {
 		} catch (Exception e) {
 			Printer.logErr("An exception was encountered running the program:  Terminating application", Printer.Level.Extreme);
 			Printer.logErr(e);
+		} finally {
+			shutdown();
 		}
 		
 		Printer.log("Program Terminated");
@@ -167,6 +175,39 @@ public class UserNode {
 			} else if (arg.toLowerCase().startsWith("defaultserverport")) {
 				
 			}
+		}
+	}
+	
+	private static void shutdown() {
+		Printer.log("Preforming shutdown");
+		
+		//Try to separate possible failures as much as possible here
+		//Basically, wrap almost every task in a separate try/catch
+		
+		//Write Settings
+		try {
+			SettingsWriter writer = new SettingsWriter();
+			writer.writeXMLSettings(SettingsReader.getInstance().getSettingsPath());
+		} catch (SettingsReaderException e) {
+			Printer.logErr("A fatal error occured writing settings.");
+			Printer.logErr(e);
+		}
+		
+		//Write peers
+		try {
+			PeerSettingsReader.getInstance().getPeerSettingsPath();
+			PeersHandler.writePeersToFile();
+		} catch (SettingsReaderException e) {
+			Printer.logErr("A fatal error occured writing settings.");
+			Printer.logErr(e);
+		}
+		
+		try {
+			DBManager.getInstance().finalizeSesssion();
+		}
+		catch (DBManagerFatalException e) {
+			Printer.logErr("A fatal error occured finalizing the DB session.");
+			Printer.logErr(e);
 		}
 	}
 }

@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.security.JDFSSecurity;
@@ -32,9 +33,8 @@ public class DBManager {
 			initializeDatabase();
 			
 		} catch(SQLException e){
-			e.printStackTrace();
-			Printer.log("An error occured initializing the database");
-			Printer.log(e);
+			Printer.logErr("An error occured initializing the database");
+			Printer.logErr(e);
 			throw new DBManagerFatalException(e);
 		}
 	}
@@ -51,7 +51,7 @@ public class DBManager {
 	};
 	
 	private String getDBLocation(){
-		return Paths.get(System.getProperty("user.dir"),"DB","jdfs.hsqldb").toString();
+		return Paths.get(JDFSUtil.defaultDirectory,"DB","jdfs.hsqldb").toString();
 	}
 
 	private Connection getConnection() throws SQLException {
@@ -63,7 +63,7 @@ public class DBManager {
 		      e.printStackTrace();
 		  }
 		  */
-		  return DriverManager.getConnection("jdbc:hsqldb:file:"+getDBLocation(), dbUser, dbPassword);
+		  return DriverManager.getConnection("jdbc:hsqldb:file:"+getDBLocation()+";shutdown=true", dbUser, dbPassword);
 	}
 	
 	private void initializeDatabase() throws SQLException {
@@ -203,10 +203,11 @@ public class DBManager {
 			
 			//auto closes statement and connection
 		}
+		//truncateEverything();
 	}
 	
 	//For testing
-	public boolean truncateEverything() throws SQLException {
+	public boolean truncateEverything2() throws SQLException {
 		try(Connection conn = getConnection();
 			Statement statement = conn.createStatement()
 		){
@@ -226,7 +227,7 @@ public class DBManager {
 	}
 	
 	//For testing
-	public boolean dropEverything() throws SQLException {
+	public boolean dropEverything2() throws SQLException {
 		try(Connection conn = getConnection();
 			Statement statement = conn.createStatement()
 		){
@@ -249,9 +250,8 @@ public class DBManager {
 		try(Connection conn = getConnection();
 			Statement statement = conn.createStatement()
 		){
+			Printer.log("Finalizing DB session");
 			statement.execute("SHUTDOWN");
-			statement.close();
-			conn.close();
 		}
 		catch (SQLException e) {
 			Printer.logErr("An error occured while finalizing the database");
@@ -260,42 +260,41 @@ public class DBManager {
 		}
 	}
 	
+	//Got rid of try/catch due to issues with premature closing of getGeneratedKeys result set
 	public ResultSet upsert(String sql) throws SQLException {
-		try( Connection conn = getConnection();
-			 Statement statement = conn.createStatement()
-		){
-			statement.executeUpdate(sql);
-			Printer.log("IsClosed:"+statement.getGeneratedKeys().isClosed());
-			return statement.getGeneratedKeys();/*
-			Printer.log("upserted");
-			Printer.log("Closed:"+statement.isClosed());
-			ResultSet resSet = statement.getGeneratedKeys();
-			Printer.log("Closed:"+resSet.isClosed());
-			return resSet;*/
-		}
+		Printer.log(sql, Printer.Level.VeryLow);
+		
+		
+		//try(
+			Connection conn = getConnection();
+			Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY,  ResultSet.CONCUR_UPDATABLE, ResultSet.HOLD_CURSORS_OVER_COMMIT);
+		//){
+			statement.closeOnCompletion();
+			statement.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
+			return statement.getGeneratedKeys();
+		//}
 	}
+	/* This code works
 	public int upsert2(String sql) throws SQLException {
 		try( Connection conn = DriverManager.getConnection("jdbc:hsqldb:file:"+getDBLocation(), dbUser, dbPassword);
 			 Statement statement = conn.createStatement()
 		){
-			statement.executeUpdate(sql);
-			Printer.log("IsClosed:"+statement.getGeneratedKeys().isClosed());
+			Printer.log(sql);
+			statement.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 			ResultSet resset = statement.getGeneratedKeys();
-			resset.next();
+			Printer.log("Col tr"+resset.isBeforeFirst());
+			if (resset.next()) {Printer.log("hunky dorey");} else {Printer.log("fucker");}
+			Printer.log("Cursor name:"+resset.getCursorName());
+			Printer.log("Col count"+resset.getMetaData().getColumnCount());
+			Printer.log("Col count"+resset.getMetaData().getColumnName(1));
 			return resset.getInt("MachinePK");
-			
-			//return statement.getGeneratedKeys().next();
-			/*
-			Printer.log("upserted");
-			Printer.log("Closed:"+statement.isClosed());
-			ResultSet resSet = statement.getGeneratedKeys();
-			Printer.log("Closed:"+resSet.isClosed());
-			return resSet;*/
 		}
-	}
+	}*/
 	public ResultSet select(String sql) throws SQLException {
+		Printer.log(sql, Printer.Level.VeryLow);
+		
 		try( Connection conn = getConnection();
-			 Statement statement = conn.createStatement()
+			 Statement statement = conn.createStatement();
 		){
 			return statement.executeQuery(sql);
 		}
