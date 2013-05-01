@@ -4,22 +4,17 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.UUID;
 
 import net.subject17.jdfs.JDFSUtil;
-import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
-import net.subject17.jdfs.client.file.handler.FileHandler.FileHandlerException;
 import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
 import net.subject17.jdfs.client.file.model.FileRetrieverRequest;
-import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.IPUtil;
 import net.subject17.jdfs.client.net.model.MachineInfo;
@@ -29,10 +24,6 @@ import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 import net.subject17.jdfs.client.user.User;
-import net.subject17.jdfs.security.JDFSSecurity;
-
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
-import org.bouncycastle.util.Arrays;
 import org.codehaus.jackson.map.ObjectMapper;
 
 

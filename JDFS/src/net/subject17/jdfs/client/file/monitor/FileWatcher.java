@@ -467,4 +467,9 @@ public final class FileWatcher {
 			}
 		}
 	}
+
+	public static void writeWatchListsToFile(Path watchSettingsPath) {
+		// TODO Auto-generated method stub
+		
+	}
 }

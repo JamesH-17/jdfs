@@ -21,6 +21,8 @@ import net.subject17.jdfs.client.net.server.Listener;
 import net.subject17.jdfs.client.peers.PeersHandler;
 import net.subject17.jdfs.client.settings.reader.PeerSettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
+import net.subject17.jdfs.client.settings.reader.UserSettingsReader;
+import net.subject17.jdfs.client.settings.reader.WatchSettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 import net.subject17.jdfs.client.settings.writer.SettingsWriter;
@@ -193,15 +195,31 @@ public class UserNode {
 			Printer.logErr(e);
 		}
 		
-		//Write peers
+		//Write Peers
 		try {
-			PeerSettingsReader.getInstance().getPeerSettingsPath();
-			PeersHandler.writePeersToFile();
+			PeersHandler.writePeersToFile( PeerSettingsReader.getInstance().getPeerSettingsPath() );
 		} catch (SettingsReaderException e) {
 			Printer.logErr("A fatal error occured writing settings.");
 			Printer.logErr(e);
 		}
 		
+		//Write Users
+		try {
+			AccountManager.getInstance().writeUsersToFile( UserSettingsReader.getInstance().getUserSettingsPath() );
+		}
+		catch (SettingsReaderException e) {
+			Printer.logErr("A fatal error occured writing settings.");
+			Printer.logErr(e);
+		}
+		
+		//Write WatchFiles TODO is this needed?
+		try {
+			FileWatcher.writeWatchListsToFile(WatchSettingsReader.getInstance().getWatchSettingsPath());
+		} catch (SettingsReaderException e) {
+			Printer.logErr("A fatal error occured writing settings.");
+			Printer.logErr(e);
+		}
+
 		try {
 			DBManager.getInstance().finalizeSesssion();
 		}
