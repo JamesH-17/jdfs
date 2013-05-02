@@ -3,7 +3,6 @@ package net.subject17.jdfs.client.file.model;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.FileTime;
@@ -283,7 +282,7 @@ public final class WatchList {
 	private final String getLastModifiedSafe(Path p) {
 		Timestamp lastMod = null;
 		try {
-			FileTime ft = Files.getLastModifiedTime(p,LinkOption.NOFOLLOW_LINKS);
+			FileTime ft = Files.getLastModifiedTime(p);
 			lastMod = new Timestamp(ft.toMillis());
 		} catch (IOException e) {
 			Printer.logErr("Error adding watchfile to db");

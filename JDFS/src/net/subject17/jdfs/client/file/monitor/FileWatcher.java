@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.WatchKey;
@@ -32,8 +31,6 @@ import net.subject17.jdfs.client.file.model.WatchFile;
 import net.subject17.jdfs.client.file.model.WatchList;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.settings.Settings;
-import net.subject17.jdfs.client.settings.reader.SettingsReader;
-import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.settings.reader.WatchSettingsReader;
 import net.subject17.jdfs.client.settings.writer.WatchSettingsWriter;
 import net.subject17.jdfs.client.user.User;
@@ -296,7 +293,7 @@ public final class FileWatcher {
 						(pathToAdd.equals("") ? "'"+directories.getGUID()+"'," : "'',")+ // Don't give it a fileGuid unless it's the actual directory itself
 						"'"+pathToAdd.getFileName()+ "',"+
 						"'"+directories.getDirectory().resolve(pathToAdd)+ "',"+
-						"'"+Files.getLastModifiedTime(pathToAdd, LinkOption.NOFOLLOW_LINKS).toString()+"',"+
+						"'"+Files.getLastModifiedTime(pathToAdd).toString()+"',"+
 						"'"+directories.getGUID()+"',"+
 						"'"+pathToAdd+"',"+
 						directories.priority+
@@ -344,7 +341,7 @@ public final class FileWatcher {
 							"'"+file.getGUID()+"'"+ // Don't give it a fileGuid unless it's the actual directory itself
 							"'"+pathToAdd.getFileName()+ "',"+
 							"'"+pathToAdd+"',"+
-							"'"+Files.getLastModifiedTime(pathToAdd, LinkOption.NOFOLLOW_LINKS).toString()+"',"+
+							"'"+Files.getLastModifiedTime(pathToAdd).toString()+"',"+
 							"'',"+
 							"'',"+
 							file.getPriority()+
