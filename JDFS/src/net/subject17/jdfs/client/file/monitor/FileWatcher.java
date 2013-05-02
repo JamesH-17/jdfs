@@ -477,6 +477,7 @@ public final class FileWatcher {
 
 	public static void writeWatchListsToFile(Path watchSettingsPath) {
 		try {
+			Printer.log("Writing watch settings to file");
 			WatchSettingsWriter.writeWatchSettings(
 				watchSettingsPath,
 				getAllWatchListsFromDB()
@@ -494,7 +495,9 @@ public final class FileWatcher {
 		HashSet<WatchList> watchListsFound = new HashSet<WatchList>();
 		
 		try (ResultSet users = DBManager.getInstance().select("SELECT Distinct Users.* FROM Users")) {
+			Printer.log("DB Grab");
 			while (users.next()) {
+				Printer.log("Next user grab");
 				try {
 					
 					User user = new User(
@@ -502,6 +505,8 @@ public final class FileWatcher {
 							users.getString("AccountEmail"),
 							UUID.fromString(users.getString("UserGUID"))
 					);
+					
+					Printer.log("Currently on user "+user.getGUID());
 					
 					HashMap<Integer, WatchFile> watchFiles = getWatchFilesFromDBForUser(users.getInt("UserPK"));
 					HashMap<Integer, WatchDirectory> watchDirs = getWatchDirectoriesFromDBForUser(users.getInt("UserPK"));
@@ -529,8 +534,9 @@ public final class FileWatcher {
 					" AND COALESCE(RelativeParentPath,'') LIKE ''"
 				)
 			) {
+				Printer.log("directories db grab");
 				while (watchFiles.next()) {
-					
+					Printer.log("next");
 					WatchDirectory watchDir = new WatchDirectory(
 							Paths.get( watchFiles.getString("LocalFilePath") ),
 							UUID.fromString( watchFiles.getString("ParentGUID") ),
@@ -544,6 +550,7 @@ public final class FileWatcher {
 						userWatchDirectories.put( key, watchDir );
 					
 				}
+				Printer.log("DB grab done");
 			}
 			catch (SQLException e) {
 				Printer.logErr("Error getting watch directory from db for user w/ PK "+userPK);
@@ -563,7 +570,9 @@ public final class FileWatcher {
 				" AND COALESCE(UserFiles.ParentGUID,'') LIKE ''"
 			)
 		) {
+			Printer.log("DB Files grab");
 			while (watchFiles.next()) {
+				Printer.log("next");
 				try {
 					WatchFile watchFile = new WatchFile(
 						Paths.get( watchFiles.getString("LocalFilePath") ),
@@ -582,6 +591,7 @@ public final class FileWatcher {
 					Printer.logErr(e);
 				}
 			}
+			Printer.log("DB file grab end");
 		}
 		catch (SQLException e) {
 			Printer.logErr("Error getting watch files from db for user w/ PK "+userPK);

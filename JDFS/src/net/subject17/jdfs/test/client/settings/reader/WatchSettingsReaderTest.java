@@ -12,6 +12,7 @@ import net.subject17.jdfs.client.file.model.WatchFile;
 import net.subject17.jdfs.client.file.model.WatchList;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
+import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.settings.reader.WatchSettingsReader;
 
 import org.junit.BeforeClass;
@@ -30,18 +31,19 @@ public class WatchSettingsReaderTest {
 		System.out.println("Root Directory: "+rootDirectory);
 		System.out.println("Root Test Directory: "+rootTestDirectory);
 		
-		settingsReader = new SettingsReader();
-		settingsReaderTest = new SettingsReader(rootTestDirectory.resolve("SettingsReaderTest.conf"));
 	}
 	
 	@Test
-	public void testNoFile() throws ParserConfigurationException, SAXException, IOException {
+	public void testNoFile() throws ParserConfigurationException, SAXException, IOException, SettingsReaderException {
+		settingsReader = SettingsReader.getInstance();
+		settingsReader.parseAndReadXMLDocument();
+		
 		WatchSettingsReader reader = new WatchSettingsReader(settingsReader.getWatchSettingsPath());
 		for (WatchList list : reader.getAllWatchLists().values()) {
 			Printer.log("User:"+list.getUser());
-			
 			Printer.log("Directories");
-			for (WatchDirectory dir : list.getDirectories()) {
+			
+			for (WatchDirectory dir : list.getDirectories().values()) {
 				Printer.log("GUID:"+dir.getGUID());
 				Printer.log("Tracks subdirectories: "+dir.followSubDirectories);
 				Printer.log("Enabling subdirectory tracking");
@@ -51,7 +53,7 @@ public class WatchSettingsReaderTest {
 				}
 			}
 			Printer.log("Files");
-			for (WatchFile file : list.getFiles()) {
+			for (WatchFile file : list.getFiles().values()) {
 				Printer.log(file.getPath());
 				Printer.log(file.getGUID());
 			}
@@ -59,13 +61,16 @@ public class WatchSettingsReaderTest {
 	}
 	
 	@Test
-	public void testFile() throws ParserConfigurationException, SAXException, IOException {
+	public void testFile() throws ParserConfigurationException, SAXException, IOException, SettingsReaderException {
+		settingsReaderTest = SettingsReader.getInstance();
+		settingsReaderTest.parseAndReadXMLDocument(rootTestDirectory.resolve("SettingsReaderTest.conf"));
+
 		WatchSettingsReader reader = new WatchSettingsReader(settingsReaderTest.getWatchSettingsPath());
 		for (WatchList list : reader.getAllWatchLists().values()) {
 			Printer.log("User:"+list.getUser());
 			
 			Printer.log("Directories");
-			for (WatchDirectory dir : list.getDirectories()) {
+			for (WatchDirectory dir : list.getDirectories().values()) {
 				Printer.log("GUID:"+dir.getGUID());
 				Printer.log("Tracks subdirectories: "+dir.followSubDirectories);
 				Printer.log("Enabling subdirectory tracking");
@@ -75,7 +80,7 @@ public class WatchSettingsReaderTest {
 				}
 			}
 			Printer.log("Files");
-			for (WatchFile file : list.getFiles()) {
+			for (WatchFile file : list.getFiles().values()) {
 				Printer.log(file.getPath());
 				Printer.log(file.getGUID());
 			}

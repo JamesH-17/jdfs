@@ -34,6 +34,8 @@ public class UserUtil {
 	}
 	
 	public static boolean userExistsInDB(User user) throws SQLException, DBManagerFatalException {
+		DBManager.getInstance();
+		Printer.println("User:"+user);
 		try (ResultSet userMatch = DBManager.getInstance().select("SELECT DISTINCT Users.* FROM Users WHERE Users.UserGUID LIKE '"+user.getGUID()+"'")) {
 			return userMatch.next();
 		}

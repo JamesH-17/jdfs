@@ -195,6 +195,7 @@ public class UserNode {
 		
 		//Write Settings
 		try {
+			Printer.log("Writing XML settings");
 			SettingsWriter writer = new SettingsWriter();
 			writer.writeXMLSettings(SettingsReader.getInstance().getSettingsPath());
 		}
@@ -209,6 +210,7 @@ public class UserNode {
 		
 		//Write Peers
 		try {
+			Printer.log("Writing Peer settings");
 			PeersHandler.writePeersToFile( PeerSettingsReader.getInstance().getPeerSettingsPath() );
 		}
 		catch (SettingsReaderException e) {
@@ -222,6 +224,7 @@ public class UserNode {
 		
 		//Write Users
 		try {
+			Printer.log("Writing account settings");
 			AccountManager.getInstance().writeUsersToFile( UserSettingsReader.getInstance().getUserSettingsPath() );
 		}
 		catch (SettingsReaderException e) {
@@ -235,6 +238,8 @@ public class UserNode {
 		
 		//Write WatchFiles //TODO follow subdirectories hard set to true
 		try {
+			Printer.log("Shutting down file watcher");
+			Thread.sleep(1000);
 			FileWatcher.writeWatchListsToFile(WatchSettingsReader.getInstance().getWatchSettingsPath());
 		} catch (SettingsReaderException e) {
 			Printer.logErr("A fatal error occured writing settings.");
@@ -246,6 +251,7 @@ public class UserNode {
 		}
 
 		try {
+			Printer.log("Finalizing DB");
 			DBManager.getInstance().finalizeSession();
 		}
 		catch (DBManagerFatalException e) {
@@ -258,7 +264,9 @@ public class UserNode {
 		}
 		
 		try {
-			//Stop the listener		
+			//Stop the listener
+			Printer.log("Stopping server");
+			
 			if (null != serv) {
 				synchronized (serv) {
 					serv.stopListener();
@@ -280,6 +288,8 @@ public class UserNode {
 		
 		try {
 			//Stop the file updater
+			Printer.log("Stopping file updater");
+			
 			if (null != updateChecker) {
 				synchronized (updateChecker) {
 					updateChecker.stopChecking();

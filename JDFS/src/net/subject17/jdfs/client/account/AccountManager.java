@@ -313,7 +313,12 @@ public final class AccountManager {
 		return guidExists(guid.toString());
 	}
 	public boolean guidExists(UUID guid) {
+		Printer.log("GUID : "+guid);
+		Printer.log("Users : "+users);
+		
 		for (User user : users) {
+			Printer.log("User: "+user);
+			Printer.log("User GUID: "+user.getGUID());
 			if (user.getGUID().equals(guid))
 				return true;
 		}
