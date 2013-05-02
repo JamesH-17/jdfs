@@ -3,12 +3,14 @@ package net.subject17.jdfs.client.file.model;
 import java.io.IOException;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.FileTime;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.UUID;
 
 import net.subject17.jdfs.client.account.AccountManager;
@@ -102,9 +104,10 @@ public class WatchList {
 		
 		int directoryPK;
 		
+		//First, make sure the parent/main directory exists in userfiles
 		try (ResultSet existingDirectories = DBManager.getInstance().select("SELECT DISTINCT * FROM UserFiles WHERE UserFiles.ParentGUID LIKE '"+temp.getGUID()+"' AND UserFiles.RelativeParentPath LIKE ''")) {
 			
-			if (existingDirectories.next()) {
+			if (existingDirectories.next()) { //It's in here, just get the PK
 				directoryPK = existingDirectories.getInt("UserFilePK");
 			}
 			else {
@@ -129,9 +132,11 @@ public class WatchList {
 			Printer.logErr(e);
 			return false;
 		}
+
+		HashMap<Path, Path> relativeAndAbsolutePathsToAdd = new HashMap<Path, Path>();
 		
+		//Step 2:  Get relative paths, find ones that need to be added, preform integrity check on those that already exist
 		try {
-			HashMap<Path, Path> relativeAndAbsolutePathsToAdd = new HashMap<Path, Path>();
 			
 			for (Path path: temp.getAllFilesToWatch()) {
 				Path relative = temp.getDirectory().relativize(path);
@@ -159,19 +164,7 @@ public class WatchList {
 							}
 							
 							
-							try (ResultSet linkedFiles = DBManager.getInstance().select(
-									"SELECT DISTINCT UsersFiles.UserFilePK "+
-									"FROM UserFiles "+
-									"INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
-									"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
-									"WHERE Users.UserGUID LIKE '"+user.getGUID()+"' "+
-									"AND UserFiles.UserFilePK = "+existingPaths.getInt("UserFilePK")
-								)
-							) {
-								if (!linkedFiles.next()) {
-									linkFilePKToUser(existingPaths.getInt("UserFilePK"));
-								}
-							}
+							ensureUserLinkedToFile(existingPaths.getInt("UserFilePK"));
 							
 							
 							relativeAndAbsolutePathsToAdd.remove(resultPath);
@@ -186,6 +179,30 @@ public class WatchList {
 		} catch (IOException e) {
 			Printer.logErr(e);
 			return false;
+		}
+		
+		for (Path relative : relativeAndAbsolutePathsToAdd.keySet()) {
+			Path nonRelative = relativeAndAbsolutePathsToAdd.get(relative);
+			
+			try (ResultSet insertedFile = DBManager.getInstance().upsert(
+					"INSERT INTO UserFiles(FileGUID, LocalFileName, LocalFilePath, LastUpdatedLocal, ParentGUID, RelativeParentPath, Priority) "+
+					"VALUES('','"+
+					nonRelative.getFileName()+"','"+
+					nonRelative+"','"+
+					getLastModifiedSafe(nonRelative)+
+					"','"+
+					temp.getGUID()+"','"+
+					relative+"',"+
+					temp.priority+
+				")")
+			) {
+				insertedFile.next();
+				linkFilePKToUser(insertedFile.getInt("UserFilePK"));
+			}
+			catch (SQLException | DBManagerFatalException e) {
+				Printer.logErr(e);
+				return false;
+			}
 		}
 		
 		return true;
@@ -210,10 +227,67 @@ public class WatchList {
 		}
 	}
 	
-	private void addFileToDB(WatchFile temp) {
-		// TODO Auto-generated method stub
+	private void addFileToDB(WatchFile temp) throws DBManagerFatalException {
+		int filePK;
 		
+		try (ResultSet existingFiles = DBManager.getInstance().select("SELECT Distinct * FROM UserFiles WHERE UserFiles.FileGUID LIKE '"+temp.getGUID()+"'")) {
+			if (existingFiles.next()) {
+				filePK = existingFiles.getInt("UserFilePK");
+			}
+			else {
+				
+				try (ResultSet insertedFile = DBManager.getInstance().upsert(
+					"INSERT INTO UserFiles(FileGUID, LocalFileName, LocalFilePath, LastUpdatedLocal, ParentGUID, RelativeParentPath, Priority) "+
+					"VALUES('"+temp.getGUID()+"','"+
+						temp.getPath().getFileName()+"','"+
+						temp.getPath()+"','"+
+						getLastModifiedSafe(temp.getPath())+
+						"','','',"+
+						temp.getPriority()+
+					")"
+				)) {
+					insertedFile.next();
+					filePK = insertedFile.getInt("UserFilePK");
+				}
+			}
+			
+
+			ensureUserLinkedToFile(filePK);
+		}
+		catch (SQLException e) {
+			Printer.logErr("Error adding watchfile to db");
+			Printer.logErr(e);
+		}
 	}
+	
+	private String getLastModifiedSafe(Path p) {
+		Timestamp lastMod = null;
+		try {
+			FileTime ft = Files.getLastModifiedTime(p,LinkOption.NOFOLLOW_LINKS);
+			lastMod = new Timestamp(ft.toMillis());
+		} catch (IOException e) {
+			Printer.logErr("Error adding watchfile to db");
+			Printer.logErr(e);
+		}
+		return (null == lastMod ? "" : lastMod.toString());
+	}
+	
+	private final void ensureUserLinkedToFile(int userFilePK) throws SQLException, DBManagerFatalException {
+		try (ResultSet linkedFiles = DBManager.getInstance().select(
+				"SELECT DISTINCT UsersFiles.UserFilePK "+
+				"FROM UserFiles "+
+				"INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
+				"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
+				"WHERE Users.UserGUID LIKE '"+user.getGUID()+"' "+
+				"AND UserFiles.UserFilePK = "+userFilePK
+			)
+		) {
+			if (!linkedFiles.next()) {
+				linkFilePKToUser(userFilePK);
+			}
+		}
+	}
+	
 	public final boolean isEmpty(){ return !(hasWatchDirectories() || hasWatchFiles());  }
 	public final boolean hasWatchDirectories() { return !(directories == null || directories.isEmpty());  }
 	public final boolean hasWatchFiles() { return !(files == null || files.isEmpty()); }
