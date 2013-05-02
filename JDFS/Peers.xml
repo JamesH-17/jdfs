@@ -1,10 +1,2 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<peers>
-    <peer>
-        <ip4>1.1.1.1</ip4>
-        <ip6>2001:0db8:85a3:0042:1000:8a2e:0370:7334</ip6>
-        <accountEmail>jdfs-test@mailinator.net</accountEmail>
-        <userName>test</userName>
-        <peerGUID>d0e9a1db-7935-4520-909f-42bd7c9ce668</peerGUID>
-    </peer>
-</peers>
+<peers/>

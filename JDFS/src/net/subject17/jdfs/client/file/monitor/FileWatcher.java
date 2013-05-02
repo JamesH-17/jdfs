@@ -32,9 +32,12 @@ import net.subject17.jdfs.client.file.model.WatchFile;
 import net.subject17.jdfs.client.file.model.WatchList;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.settings.Settings;
+import net.subject17.jdfs.client.settings.reader.SettingsReader;
+import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.settings.reader.WatchSettingsReader;
 import net.subject17.jdfs.client.settings.writer.WatchSettingsWriter;
 import net.subject17.jdfs.client.user.User;
+import net.subject17.jdfs.client.user.User.UserException;
 import net.subject17.jdfs.client.user.UserUtil;
 
 import org.xml.sax.SAXException;
@@ -83,49 +86,6 @@ public final class FileWatcher {
 		watchSettingsFile = target;
 		watchSettingsReader = new WatchSettingsReader(watchSettingsFile);
 		watchLists = watchSettingsReader.getAllWatchLists();		
-	}
-	
-	private static int GetMachinePK() {
-		UUID machineGUID = Settings.getMachineGUIDSafe();
-		machinePK = -1;
-		Printer.log("Getting machine PK");
-		try (ResultSet machinePKs = DBManager.getInstance().select("Select Distinct * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGUID+"'")) {
-			if (machinePKs.next()) {
-				machinePK = machinePKs.getInt("MachinePK");
-				
-				if (machinePKs.next()) {
-					Printer.logErr("Warning [in FileWatcher]:  Multiple entries exist for MachinePK  for machine {GUID:"+machineGUID+"}.  Continuing with value of "+machinePK, Printer.Level.Low);
-				}
-			}
-			else { //Key for this machine does not yet exist, so add it
-				try (ResultSet newMachinePK = DBManager.getInstance().upsert(
-						"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
-					)
-				){
-					if (newMachinePK.next()) {
-						machinePK = newMachinePK.getInt("MachinePK");
-						//machinePK = DBManager.getInstance().upsert2(
-						//		"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
-						//	);
-					}
-					else {
-						Printer.logErr("There is an error in the program logic for adding the machine key.", Printer.Level.Extreme);
-						Printer.logErr("Call to add machine PK ran without exception, yet no value for PK returned.", Printer.Level.Extreme);
-						Printer.logErr("Forcibly closing program.", Printer.Level.Extreme);
-						System.exit(-1);
-					}
-				}
-			}
-		} catch (SQLException e) {
-			Printer.logErr("Warning [in FileWatcher]: SQLException encountered when grabbing PK for our machine {GUID:"+machineGUID+"}.  Potentially invalid program state", Printer.Level.High);
-			Printer.logErr(e);
-		} catch (DBManagerFatalException e) {
-			Printer.logErr("Fatal exception encountered running DB.  Terminating program", Printer.Level.Extreme);
-			Printer.logErr(e);
-			System.exit(-1);
-		} 
-		
-		return machinePK;
 	}
 
 	public final static WatchList getWatchListByUser(User user){
@@ -423,6 +383,51 @@ public final class FileWatcher {
 			Printer.logErr(e);
 		}
 	}
+
+	
+	private static int GetMachinePK() {
+		UUID machineGUID = Settings.getMachineGUIDSafe();
+		machinePK = -1;
+		Printer.log("Getting machine PK");
+		try (ResultSet machinePKs = DBManager.getInstance().select("Select Distinct * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGUID+"'")) {
+			if (machinePKs.next()) {
+				machinePK = machinePKs.getInt("MachinePK");
+				
+				if (machinePKs.next()) {
+					Printer.logErr("Warning [in FileWatcher]:  Multiple entries exist for MachinePK  for machine {GUID:"+machineGUID+"}.  Continuing with value of "+machinePK, Printer.Level.Low);
+				}
+			}
+			else { //Key for this machine does not yet exist, so add it
+				try (ResultSet newMachinePK = DBManager.getInstance().upsert(
+						"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
+					)
+				){
+					if (newMachinePK.next()) {
+						machinePK = newMachinePK.getInt("MachinePK");
+						//machinePK = DBManager.getInstance().upsert2(
+						//		"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
+						//	);
+					}
+					else {
+						Printer.logErr("There is an error in the program logic for adding the machine key.", Printer.Level.Extreme);
+						Printer.logErr("Call to add machine PK ran without exception, yet no value for PK returned.", Printer.Level.Extreme);
+						Printer.logErr("Forcibly closing program.", Printer.Level.Extreme);
+						System.exit(-1);
+					}
+				}
+			}
+		} catch (SQLException e) {
+			Printer.logErr("Warning [in FileWatcher]: SQLException encountered when grabbing PK for our machine {GUID:"+machineGUID+"}.  Potentially invalid program state", Printer.Level.High);
+			Printer.logErr(e);
+		} catch (DBManagerFatalException e) {
+			Printer.logErr("Fatal exception encountered running DB.  Terminating program", Printer.Level.Extreme);
+			Printer.logErr(e);
+			System.exit(-1);
+		} 
+		
+		return machinePK;
+	}
+	
 	
 	private static void removeAllFileLinks() throws SQLException, DBManagerFatalException {
 		//DBManager.getInstance().select("TRUNCATE TABLE UserFileLinks");
@@ -474,7 +479,117 @@ public final class FileWatcher {
 	}
 
 	public static void writeWatchListsToFile(Path watchSettingsPath) {
-		// TODO Auto-generated method stub
+		try {
+			WatchSettingsWriter.writeWatchSettings(
+				watchSettingsPath,
+				getAllWatchListsFromDB()
+			);
+		} catch (DBManagerFatalException e) {
+			WatchSettingsWriter.writeWatchSettings(
+				watchSettingsPath,
+				watchLists.values()
+			);
+		}
+	}
+	
+	public static HashSet<WatchList> getAllWatchListsFromDB() throws DBManagerFatalException {
 		
+		HashSet<WatchList> watchListsFound = new HashSet<WatchList>();
+		
+		try (ResultSet users = DBManager.getInstance().select("SELECT Distinct Users.* FROM Users")) {
+			while (users.next()) {
+				try {
+					
+					User user = new User(
+							users.getString("UserName"),
+							users.getString("AccountEmail"),
+							UUID.fromString(users.getString("UserGUID"))
+					);
+					
+					HashMap<Integer, WatchFile> watchFiles = getWatchFilesFromDBForUser(users.getInt("UserPK"));
+					HashMap<Integer, WatchDirectory> watchDirs = getWatchDirectoriesFromDBForUser(users.getInt("UserPK"));
+					
+					watchListsFound.add(new WatchList(user, watchFiles, watchDirs));
+				}
+				catch (UserException e) {
+					
+				}
+			}
+		} catch (SQLException e) {
+			Printer.logErr(e);
+		}
+		
+		return watchListsFound;
+	}
+	
+	private static HashMap<Integer, WatchDirectory> getWatchDirectoriesFromDBForUser(int userPK) throws DBManagerFatalException {
+			HashMap<Integer, WatchDirectory> userWatchDirectories = new HashMap<Integer, WatchDirectory>();
+			try (ResultSet watchFiles = DBManager.getInstance().select(
+					"SELECT Distinct UserFiles.* FROM UserFiles "+
+					"INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
+					"WHERE UserFileLinks.UserPK = "+userPK+
+					" AND COALESCE(UserFiles.ParentGUID,'') NOT LIKE '' "+
+					" AND COALESCE(RelativeParentPath,'') LIKE ''"
+				)
+			) {
+				while (watchFiles.next()) {
+					
+					WatchDirectory watchDir = new WatchDirectory(
+							Paths.get( watchFiles.getString("LocalFilePath") ),
+							UUID.fromString( watchFiles.getString("ParentGUID") ),
+							watchFiles.getInt("priority"),
+							true//Yep, we always assume they want it tracked.  Could search entire db for paths, and see if a subdirectory was added, but whatevs
+						);
+					
+					Integer key = watchDir.getDirectory().hashCode();
+					
+					if (!userWatchDirectories.containsKey(key))
+						userWatchDirectories.put( key, watchDir );
+					
+				}
+			}
+			catch (SQLException e) {
+				Printer.logErr("Error getting watch directory from db for user w/ PK "+userPK);
+				Printer.logErr(e);
+			}
+			return userWatchDirectories;
+		}
+
+	private static HashMap<Integer, WatchFile> getWatchFilesFromDBForUser(int userPK) throws DBManagerFatalException {
+		
+		HashMap<Integer, WatchFile> userWatchFiles = new HashMap<Integer, WatchFile>();
+		
+		try (ResultSet watchFiles = DBManager.getInstance().select(
+				"SELECT Distinct UserFiles.* FROM UserFiles "+
+				"INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
+				"WHERE UserFileLinks.UserPK = "+userPK+
+				" AND COALESCE(UserFiles.ParentGUID,'') LIKE ''"
+			)
+		) {
+			while (watchFiles.next()) {
+				try {
+					WatchFile watchFile = new WatchFile(
+						Paths.get( watchFiles.getString("LocalFilePath") ),
+						UUID.fromString( watchFiles.getString("FileGUID") ),
+						watchFiles.getInt("priority")
+					);
+					
+					Integer key = watchFile.hashCode();
+					
+					if (!userWatchFiles.containsKey(key))
+						userWatchFiles.put(key, watchFile);
+					
+				}
+				catch (FileNotFoundException e) {
+					Printer.logErr("Could not find file, so not adding watch file: "+watchFiles.getString("LocalFilePath"));
+					Printer.logErr(e);
+				}
+			}
+		}
+		catch (SQLException e) {
+			Printer.logErr("Error getting watch files from db for user w/ PK "+userPK);
+			Printer.logErr(e);
+		}
+		return userWatchFiles;
 	}
 }

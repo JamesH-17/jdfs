@@ -97,7 +97,7 @@ public class UserNode {
 		PeersHandler.setPeersSettingsFile(settingsReader.getPeerSettingsPath());
 		
 		Printer.log("Starting Account Manager");
-		AccountManager.getInstance().setUsersSettingsFile(settingsReader.getUserSettingsPath());
+		AccountManager.getInstance().readUsersFromFile(settingsReader.getUserSettingsPath());
 		
 		Printer.log("Starting Watch Service");
 		FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsPath());
@@ -233,7 +233,7 @@ public class UserNode {
 			Printer.logErr(e);
 		}
 		
-		//Write WatchFiles TODO is this needed?
+		//Write WatchFiles //TODO follow subdirectories hard set to true
 		try {
 			FileWatcher.writeWatchListsToFile(WatchSettingsReader.getInstance().getWatchSettingsPath());
 		} catch (SettingsReaderException e) {
@@ -246,7 +246,7 @@ public class UserNode {
 		}
 
 		try {
-			DBManager.getInstance().finalizeSesssion();
+			DBManager.getInstance().finalizeSession();
 		}
 		catch (DBManagerFatalException e) {
 			Printer.logErr("A fatal error occured finalizing the DB session.");
@@ -258,14 +258,19 @@ public class UserNode {
 		}
 		
 		try {
-			//Stop the listener
-			synchronized(serverThread) {
+			//Stop the listener		
+			if (null != serv) {
 				synchronized (serv) {
 					serv.stopListener();
 					serv = null;
 				}
-				serverThread.interrupt();
-				serverThread = null;
+			}	
+			
+			if (null != serverThread) {
+				synchronized(serverThread) {
+					serverThread.interrupt();
+					serverThread = null;
+				}
 			}
 		}
 		catch (Exception e) {
@@ -275,13 +280,18 @@ public class UserNode {
 		
 		try {
 			//Stop the file updater
-			synchronized(updateCheckerThread) {
+			if (null != updateChecker) {
 				synchronized (updateChecker) {
 					updateChecker.stopChecking();
 					updateChecker = null;
 				}
-				updateCheckerThread.interrupt();
-				updateCheckerThread = null;
+			}
+			
+			if (null != updateCheckerThread) {
+				synchronized(updateCheckerThread) {
+					updateCheckerThread.interrupt();
+					updateCheckerThread = null;
+				}
 			}
 		}
 		catch (Exception e) {

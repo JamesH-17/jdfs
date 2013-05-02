@@ -1,7 +1,6 @@
 package net.subject17.jdfs.client.account;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.NoSuchAlgorithmException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -22,7 +21,7 @@ import net.subject17.jdfs.client.user.User.UserException;
 import net.subject17.jdfs.security.JDFSSecurity;
 
 
-public class AccountManager {
+public final class AccountManager {
 	private static AccountManager _instance = null;
 	
 	private static Path usersFile;
@@ -58,7 +57,6 @@ public class AccountManager {
 	// Seed Users
 	//
 	
-	
 	public void readUsersFromFile(Path userSettingsFile) throws Exception {
 		usersFile = userSettingsFile;
 		UserSettingsReader settingsSource = new UserSettingsReader(userSettingsFile);
@@ -69,6 +67,8 @@ public class AccountManager {
 		
 		activeUser = settingsSource.getActiveUser();
 	}
+	
+	
 	
 	private void updateDatabase(User user) {
 		try (ResultSet usersFound = DBManager.getInstance().select(
@@ -114,34 +114,28 @@ public class AccountManager {
 		}
 	}
 	
-	public ArrayList<User> getUsersFromDatabase() throws DBManagerFatalException {
-		HashSet<User> users = new HashSet<User>();
-		
-		try (ResultSet usersFound = DBManager.getInstance().select(
-				"SELECT DISTINCT Users.* FROM Users "
-			)
-		) {
-			try {
-				users.add(new User(
-						usersFound.getString("UserName"),
-						usersFound.getString("AccountEmail"),
-						UUID.fromString(usersFound.getString("UserGUID"))
-				));
-			} catch (UserException e) {
-				Printer.logErr("Error adding specific user "+usersFound.getString("UserName")+", skipping");
-			}
-		} catch (SQLException e) {
-			Printer.logErr("An error occured grabbing users from the DB");
-			Printer.logErr(e);
+	
+	//////////////////////////////////////////////////////
+	//						XML							//
+	//////////////////////////////////////////////////////
+	
+	public void writeUsersToFile() {
+		writeUsersToFile(usersFile);
+	}
+	
+	public void writeUsersToFile(Path file) {
+		UserSettingsWriter writer = new UserSettingsWriter(file);
+		try {
+			writer.writeUserSettings(getUsersFromDatabase(), activeUser);
 		}
-		
-		return new ArrayList<User>(users);
+		catch (DBManagerFatalException e) {
+			Printer.logErr("Error encountered getting users from DB for xml file creation");
+			Printer.logErr("Using internal users structure to write xml file instead");
+			Printer.logErr(e);
+			
+			writer.writeUserSettings(users, activeUser);
+		}
 	}
-
-	public void setUsersSettingsFile(Path newLocation) {
-		usersFile = newLocation;
-	}
-		
 	//////////////////////////////////////////////////////
 	//			Utilities to handle active user			//
 	//////////////////////////////////////////////////////
@@ -158,9 +152,11 @@ public class AccountManager {
 	}
 	
 	public void setActiveUser(User newActiveUser) {
-		if (!users.contains(newActiveUser))
-			users.add(newActiveUser);
-		activeUser = newActiveUser;
+		try {
+			ensureAccountExists(activeUser = newActiveUser);
+		} catch (DBManagerFatalException e) {
+			Printer.logErr(e);
+		}
 	}
 	
 	public boolean setExistingActiveUserByAccount(String accountEmail) {
@@ -191,8 +187,6 @@ public class AccountManager {
 		return activeUser = getUserByUserName(userName);		
 	}
 	
-	
-	
 	//////////////////////////////////////////////////////
 	//			Utilities for all users					//
 	//////////////////////////////////////////////////////
@@ -202,33 +196,37 @@ public class AccountManager {
 		activeUser = null;
 	}
 	public ArrayList<User> getUsers(){return users;}
-	
-	public void writeUsersToFile() {
-		writeUsersToFile(usersFile);
-	}
-	
-	/*public void writeUsersToFile(String path, String filename) {
-		writeUsersToFile(Paths.get(path, filename));
-	}*/
-	
-	public void writeUsersToFile(Path file) {
-		UserSettingsWriter writer = new UserSettingsWriter(file);
-		try {
-			writer.writeUserSettings(getUsersFromDatabase(), activeUser);
-		}
-		catch (DBManagerFatalException e) {
-			Printer.logErr("Error encountered getting users from DB for xml file creation");
-			Printer.logErr("Using internal users structure to write xml file instead");
-			Printer.logErr(e);
-			
-			writer.writeUserSettings(users, activeUser);
-		}
-	}
 
+	
+	//Account lookups
+	
+	/**
+	 * Returns the value of the account registered to this user, or null if none are found.
+	 * Checks local array first, then DB
+	 * @param account 
+	 * @return the User represented by this account, or null if one is not found
+	 */
 	public User getUserByAccount(String account) {
 		for (User user : users) {
 			if (user.getAccountEmail().equals(account))
 				return user;
+		}
+		return null;
+	}
+	public User getUserInDbByAccount(String account) {
+		try (ResultSet accountsFound = DBManager.getInstance().select(
+				"SELECT DISTINCT Users.* FROM Users WHERE Users.AccountEmail LIKE '"+account+"'"
+			)
+		) {
+			if (accountsFound.next()) {
+				return new User(accountsFound.getString("UserName"),
+						accountsFound.getString("AccountEmail"),
+						UUID.fromString(accountsFound.getString("AccountEmail"))
+				);
+			}
+		}
+		catch (SQLException | DBManagerFatalException | UserException e) {
+			Printer.logErr(e);
 		}
 		return null;
 	}
@@ -241,21 +239,40 @@ public class AccountManager {
 		return false;
 	}
 	
-	public User getUserByGUID(String guid) {
-		return getUserByGUID(UUID.fromString(guid));
-	}
-	public User getUserByGUID(UUID guid) {
-		for (User user : users) {
-			if (user.getGUID().equals(guid))
-				return user;
+	public boolean accountExistsInDb(String account) {
+		try (ResultSet accountsFound = DBManager.getInstance().select(
+				"SELECT DISTINCT * FROM Users WHERE Users.AccountEmail LIKE '"+account+"'"
+			)
+		) {
+			return accountsFound.next();
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr(e);
+			return false;
 		}
-		return null;
 	}
 	
+	//Username lookups
 	public User getUserByUserName(String userName) {
 		for (User user : users) {
 			if (user.getUserName().equals(userName))
 				return user;
+		}
+		return null;
+	}
+	public User getUserInDbByUserName(String userName) {
+		try (ResultSet usernamesFound = DBManager.getInstance().select(
+				"SELECT DISTINCT Users.* FROM Users WHERE Users.UserName LIKE '"+userName+"'"
+			)
+		) {
+			if (usernamesFound.next()) {
+				return new User(usernamesFound.getString("UserName"),
+						usernamesFound.getString("AccountEmail"),
+						UUID.fromString(usernamesFound.getString("AccountEmail"))
+				);
+			}
+		}
+		catch (SQLException | DBManagerFatalException | UserException e) {
+			Printer.logErr(e);
 		}
 		return null;
 	}
@@ -266,6 +283,30 @@ public class AccountManager {
 				return true;
 		}
 		return false;
+	}
+	public boolean userNameExistsInDb(String userName) {
+		try (ResultSet usernamesFound = DBManager.getInstance().select(
+				"SELECT DISTINCT * FROM Users WHERE Users.UserName LIKE '"+userName+"'"
+			)
+		) {
+			return usernamesFound.next();
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr(e);
+			return false;
+		}
+	}
+	
+	//GUID lookups
+
+	public User getUserByGUID(String guid) {
+		return getUserByGUID(UUID.fromString(guid));
+	}
+	public User getUserByGUID(UUID guid) {
+		for (User user : users) {
+			if (user.getGUID().equals(guid))
+				return user;
+		}
+		return null;
 	}
 	
 	public boolean guidExists(String guid){
@@ -279,6 +320,55 @@ public class AccountManager {
 		return false;
 	}
 
+	
+	//Utility/Misc
+	
+	public ArrayList<User> getUsersFromDatabase() throws DBManagerFatalException {
+		HashSet<User> users = new HashSet<User>();
+		
+		try (ResultSet usersFound = DBManager.getInstance().select(
+				"SELECT DISTINCT Users.* FROM Users "
+			)
+		) {
+			try {
+				while (usersFound.next()) {
+					users.add(new User(
+							usersFound.getString("UserName"),
+							usersFound.getString("AccountEmail"),
+							UUID.fromString(usersFound.getString("UserGUID"))
+					));
+				}
+			} catch (UserException e) {
+				Printer.logErr("Error adding specific user "+usersFound.getString("UserName")+", skipping");
+			}
+		} catch (SQLException e) {
+			Printer.logErr("An error occured grabbing users from the DB");
+			Printer.logErr(e);
+		}
+		
+		return new ArrayList<User>(users);
+	}
+	
+	public boolean ensureAccountExists(User user) throws DBManagerFatalException {
+		try {
+			if (!users.contains(user))
+				users.add(user);
+			
+			if (!UserUtil.userExistsInDB(user))
+				UserUtil.addUserToDB(user);
+			
+			return true;
+		}
+		catch (SQLException e) {
+			Printer.logErr("Error: Cannot ensure user "+user.getUserName()+" exists in DB!");
+			Printer.logErr(e);
+			return false;
+		}
+	}
+	
+	
+	//Security
+	
 	public byte[] getPasswordDigest() throws UserException {
 		if (null == activeUser){
 			String userName = UserInput.getInstance().getNextString("Please enter a user name");
@@ -300,10 +390,4 @@ public class AccountManager {
 		return keys.get(activeUser);
 	}
 
-	public boolean ensureAccountExists(User user) {
-		
-		if (!UserUtil.userExistsInDB(user)) {
-			UserUtil.addUserToDB(user);
-		}
-	}
 }

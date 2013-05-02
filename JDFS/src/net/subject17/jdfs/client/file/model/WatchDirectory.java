@@ -49,6 +49,12 @@ public class WatchDirectory {
 		else throw new FileSystemException("Invalid directory");
 	}
 	
+	public WatchDirectory(Path path, UUID guid, int priority, boolean followSubs) {
+		this.directory = path;
+		this.GUID = guid;
+		this.priority = priority;
+		this.followSubDirectories = followSubs;
+	}
 	//Getters
 	public final Path getDirectory() {return directory;}
 	public final UUID getGUID(){return GUID;}

@@ -15,7 +15,7 @@ import org.w3c.dom.Element;
 
 public final class WatchSettingsWriter extends SettingsWriter {
 	public void writeWatchSettings(Collection<WatchList> watchLists) {
-		writeWatchSettings(userSettingsPath, watchLists);
+		writeWatchSettings(watchSettingsPath, watchLists);
 	}
 	public static void writeWatchSettings(Path loc, Collection<WatchList> watchLists) {
 		try {

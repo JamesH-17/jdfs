@@ -25,7 +25,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 
-public class WatchList {
+public final class WatchList {
 	//This is quite possibly one of the stupidest things I've ever seen in the Java API
 	//Why isn't there a .get(Object o) method for HashSet?
 	//Do I *really* have to wrap every single insertion of an Object into the set (logically, i want a set)
@@ -34,25 +34,49 @@ public class WatchList {
 	private HashMap<Integer, WatchFile> files;
 	private User user;
 	
-	public WatchList(Element watchEle){
+	public WatchList(Element watchEle) throws DBManagerFatalException {
 		resetFilesAndDirectories();
 		readDirectories(watchEle.getElementsByTagName("directory"));
 		readFiles(watchEle.getElementsByTagName("file"));
 		try {
-			setUser(UUID.fromString(SettingsReader.GetFirstNodeValue(watchEle,"userGUID")));
+			String userGUID = SettingsReader.GetFirstNodeValue(watchEle,"userGUID");
+			String userName = SettingsReader.GetFirstNodeValue(watchEle,"userAccount");
+			String userAccount = SettingsReader.GetFirstNodeValue(watchEle,"userName");
+			
+			if (!userGUID.equals("")) {
+				setUser(UUID.fromString(userGUID));	
+			}
+			else if (!userAccount.equals("")) {
+				AccountManager.getInstance().getUserByAccount(userAccount);
+			}
+			else if (!userName.equals("")) {
+				
+			}
+			else user = null;
+			
 		} catch (IllegalArgumentException e){
 			Printer.logErr(e);
 			Printer.log("Watchlist user absent or invalid.  Setting user to null.");
+			
+			
 			user = null;
 		}
 		AccountManager.getInstance().ensureAccountExists(user);
-	}		
-	public WatchList(User newUser) {
+	}
+	
+	public WatchList(User newUser) throws DBManagerFatalException {
 		resetFilesAndDirectories();
 		user = newUser;
 		AccountManager.getInstance().ensureAccountExists(user);
 	}
 
+	public WatchList(User user, HashMap<Integer, WatchFile> watchFiles,
+			HashMap<Integer, WatchDirectory> watchDirs) {
+		this.directories = watchDirs;
+		this.files = watchFiles;
+		this.user = user;
+	}
+	
 	public final HashMap<Integer, WatchDirectory> getDirectories() {return directories;}
 	public final HashMap<Integer, WatchFile> getFiles() {return files;}
 	public final User getUser() {return user;}
@@ -100,7 +124,7 @@ public class WatchList {
 		
 		addDirectoryToDB(temp);
 	}
-	private boolean addDirectoryToDB(WatchDirectory temp) {
+	private final boolean addDirectoryToDB(WatchDirectory temp) {
 		
 		int directoryPK;
 		
@@ -127,6 +151,7 @@ public class WatchList {
 				}
 			}
 			
+			ensureUserLinkedToFile(directoryPK);
 		}
 		catch (SQLException | DBManagerFatalException e) {
 			Printer.logErr(e);
@@ -207,12 +232,7 @@ public class WatchList {
 		
 		return true;
 	}
-	private void linkFilePKToUser(int userFilePK) throws SQLException, DBManagerFatalException {
-		int userPK = UserUtil.getUserPK(user);
-		assert(userPK >= 0);
-		
-		DBManager.getInstance().upsert("INSERT INTO UserFileLinks (UserFilePK, UserPK) VALUES ("+userFilePK+","+userPK+")");
-	}
+	
 	public final boolean AddFile(Path path) {
 		try {
 			WatchFile temp = new WatchFile(path);
@@ -227,7 +247,7 @@ public class WatchList {
 		}
 	}
 	
-	private void addFileToDB(WatchFile temp) throws DBManagerFatalException {
+	private final void addFileToDB(WatchFile temp) throws DBManagerFatalException {
 		int filePK;
 		
 		try (ResultSet existingFiles = DBManager.getInstance().select("SELECT Distinct * FROM UserFiles WHERE UserFiles.FileGUID LIKE '"+temp.getGUID()+"'")) {
@@ -260,7 +280,7 @@ public class WatchList {
 		}
 	}
 	
-	private String getLastModifiedSafe(Path p) {
+	private final String getLastModifiedSafe(Path p) {
 		Timestamp lastMod = null;
 		try {
 			FileTime ft = Files.getLastModifiedTime(p,LinkOption.NOFOLLOW_LINKS);
@@ -270,6 +290,13 @@ public class WatchList {
 			Printer.logErr(e);
 		}
 		return (null == lastMod ? "" : lastMod.toString());
+	}
+	
+	private final void linkFilePKToUser(int userFilePK) throws SQLException, DBManagerFatalException {
+		int userPK = UserUtil.getUserPK(user);
+		assert(userPK >= 0);
+		
+		DBManager.getInstance().upsert("INSERT INTO UserFileLinks (UserFilePK, UserPK) VALUES ("+userFilePK+","+userPK+")");
 	}
 	
 	private final void ensureUserLinkedToFile(int userFilePK) throws SQLException, DBManagerFatalException {
@@ -292,12 +319,24 @@ public class WatchList {
 	public final boolean hasWatchDirectories() { return !(directories == null || directories.isEmpty());  }
 	public final boolean hasWatchFiles() { return !(files == null || files.isEmpty()); }
 	
-	public boolean setPriority(Path p, int newPriority) {
+	public final boolean setPriority(Path p, int newPriority) {
+		
+		WatchFile tempFile = files.get(new Integer(p.hashCode()));
+		
+		if (null != tempFile) {
+			tempFile.setPriority(newPriority);
+			return true;
+		}
+		
+		//else...
 		WatchDirectory temp = directories.get(new Integer(p.hashCode()));
+		
 		if (null != temp) {
 			temp.priority = newPriority;
 			return true;
 		}
+		
+		//Can't find, return false
 		return false;
 	}
 }

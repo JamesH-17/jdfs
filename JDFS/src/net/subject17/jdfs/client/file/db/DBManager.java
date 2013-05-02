@@ -246,7 +246,7 @@ public class DBManager {
 		return true;
 	}
 	
-	public void finalizeSesssion() throws DBManagerFatalException { //Possibly add flag, or make connection class property?
+	public void finalizeSession() throws DBManagerFatalException { //Possibly add flag, or make connection class property?
 		try(Connection conn = getConnection();
 			Statement statement = conn.createStatement()
 		){

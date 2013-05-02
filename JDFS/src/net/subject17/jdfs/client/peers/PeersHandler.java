@@ -295,54 +295,56 @@ public class PeersHandler {
 			///////////////////////////////////////
 			
 			//Next up, link the ips if they aren't already
-			try (ResultSet MachinePKset = DBManager.getInstance().select("SELECT MachinePK FROM Machines WHERE "+
-					"MachineGUID IN ("+JDFSUtil.stringJoin(peer.getMachineGUIDs(),",")+")"
-			)){
-				
-				while (MachinePKset.next()) {
+			HashSet<UUID> machineGuids = peer.getMachineGUIDs();
+			if (machineGuids.size() > 0) {
+				try (ResultSet MachinePKset = DBManager.getInstance().select("SELECT MachinePK FROM Machines WHERE "+
+						"MachineGUID IN ("+JDFSUtil.stringJoin(machineGuids,",")+")"
+				)){
 					
-					try (ResultSet ip4sToRemove = DBManager.getInstance().select("SELECT DISTINCT IP4 FROM MachineIP4Links WHERE "+
-							" MachinePK = "+MachinePKset.getInt("MachinePK")
-					);
-					ResultSet ip6sToRemove = DBManager.getInstance().select("SELECT DISTINCT IP6 FROM MachineIP6Links WHERE "+
-							" MachinePK = "+MachinePKset.getInt("MachinePK")
-					)) {
+					while (MachinePKset.next()) {
 						
-						
-						//Grab every ip4 and ip6 this guy has, then remove 
-						HashSet<String> ip4s = peer.getIp4s();
-						HashSet<String> ip6s = peer.getIp6s();
-						
-						while (ip4sToRemove.next())
-							ip4s.remove(ip4sToRemove.getObject("IP4"));
-						
-						while (ip6sToRemove.next())
-							ip6s.remove(ip6sToRemove.getObject("IP6"));
-						
-						for(String ip4 : ip4s) {
-							DBManager.getInstance().upsert(
-									"INSERT INTO MachineIP4Links(MachinePK, IP4) "+
-									"VALUES ("+MachinePKset.getInt("MachinePK")+","+ip4+")"
-							);
+						try (ResultSet ip4sToRemove = DBManager.getInstance().select("SELECT DISTINCT IP4 FROM MachineIP4Links WHERE "+
+								" MachinePK = "+MachinePKset.getInt("MachinePK")
+						);
+						ResultSet ip6sToRemove = DBManager.getInstance().select("SELECT DISTINCT IP6 FROM MachineIP6Links WHERE "+
+								" MachinePK = "+MachinePKset.getInt("MachinePK")
+						)) {
+							
+							
+							//Grab every ip4 and ip6 this guy has, then remove 
+							HashSet<String> ip4s = peer.getIp4s();
+							HashSet<String> ip6s = peer.getIp6s();
+							
+							while (ip4sToRemove.next())
+								ip4s.remove(ip4sToRemove.getObject("IP4"));
+							
+							while (ip6sToRemove.next())
+								ip6s.remove(ip6sToRemove.getObject("IP6"));
+							
+							for(String ip4 : ip4s) {
+								DBManager.getInstance().upsert(
+										"INSERT INTO MachineIP4Links(MachinePK, IP4) "+
+										"VALUES ("+MachinePKset.getInt("MachinePK")+","+ip4+")"
+								);
+							}
+							
+							for(String ip6 : ip6s) {
+								DBManager.getInstance().upsert(
+										"INSERT INTO MachineIP6Links(MachinePK, IP6) "+
+										"VALUES ("+MachinePKset.getInt("MachinePK")+","+ip6+")"
+								);
+							}
+							
+						} catch (SQLException e) {
+	
+							Printer.logErr(e);
 						}
-						
-						for(String ip6 : ip6s) {
-							DBManager.getInstance().upsert(
-									"INSERT INTO MachineIP6Links(MachinePK, IP6) "+
-									"VALUES ("+MachinePKset.getInt("MachinePK")+","+ip6+")"
-							);
-						}
-						
-					} catch (SQLException e) {
-
-						Printer.logErr(e);
 					}
+					
+				} catch (SQLException e) {
+					Printer.logErr(e);
 				}
-				
-			} catch (SQLException e) {
-				Printer.logErr(e);
 			}
-			
 		}
 	}
 	

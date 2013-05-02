@@ -43,9 +43,13 @@ public class WatchFile {
 		this(file, UUID.fromString(guid));
 	}
 	public WatchFile(Path file, UUID guid) throws FileNotFoundException {
+		this(file, guid, 0);
+	}
+	public WatchFile(Path file, UUID guid, int priority) throws FileNotFoundException {
 		if (Files.isRegularFile(file)) {
 			this.file = file;
 			this.GUID = guid;
+			this.priority = priority;
 		}
 		else  //Let the null ptr exception happen if someone passed that in
 			throw new FileNotFoundException("Invalid file -- either file"+file+" is a directory or it doesn't exist");

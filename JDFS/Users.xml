@@ -1,2 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<users/>
+<users>
+    <user active="true">
+        <email>dboyzetown@gmail.com</email>
+        <userName>james</userName>
+        <GUID>1711566d-f3f0-4cce-ba9d-341c33531088</GUID>
+        <linkedMachines>
+            <machine>0df47024-c036-4f80-8ca3-941bfe354bde</machine>
+        </linkedMachines>
+    </user>
+</users>
