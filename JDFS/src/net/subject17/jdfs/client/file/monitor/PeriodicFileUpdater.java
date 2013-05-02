@@ -6,7 +6,7 @@ import net.subject17.jdfs.client.net.sender.TalkerPooler;
 
 public final class PeriodicFileUpdater implements Runnable {
 
-	public boolean keepChecking = true;
+	private boolean keepChecking = true;
 	private final int millisBreakBetweenUpdates = 100_000; //100 seconds
 	
 	@Override
@@ -26,5 +26,9 @@ public final class PeriodicFileUpdater implements Runnable {
 				break;
 			}
 		}
+	}
+
+	public void stopChecking() {
+		keepChecking = false;
 	}
 }

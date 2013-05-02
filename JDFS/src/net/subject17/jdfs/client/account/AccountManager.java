@@ -17,6 +17,7 @@ import net.subject17.jdfs.client.io.UserInput;
 import net.subject17.jdfs.client.settings.reader.UserSettingsReader;
 import net.subject17.jdfs.client.settings.writer.UserSettingsWriter;
 import net.subject17.jdfs.client.user.User;
+import net.subject17.jdfs.client.user.UserUtil;
 import net.subject17.jdfs.client.user.User.UserException;
 import net.subject17.jdfs.security.JDFSSecurity;
 
@@ -297,5 +298,12 @@ public class AccountManager {
 			}
 		}
 		return keys.get(activeUser);
+	}
+
+	public boolean ensureAccountExists(User user) {
+		
+		if (!UserUtil.userExistsInDB(user)) {
+			UserUtil.addUserToDB(user);
+		}
 	}
 }

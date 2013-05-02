@@ -66,9 +66,19 @@ public class minitest {
 				Timestamp dt = new Timestamp(ft.toMillis());
 				
 				Printer.println(dt);
+				break;
 			}
 		} catch (Exception e){
 			Printer.logErr(e);
 		}
+	}
+	
+	@Test
+	public void testPathString() {
+		Path loc = Paths.get(System.getProperty("user.dir"));
+		Printer.println("test relativize");
+		Printer.println(loc);
+		Printer.println(loc.relativize(loc));
+		Printer.println(loc.relativize(loc).toString().length());
 	}
 }

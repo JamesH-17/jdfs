@@ -6,8 +6,8 @@ import java.net.ServerSocket;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.PortMgr;
 
-public final class Listener {
-	private static int defaultPort = PortMgr.getServerPort();
+public final class Listener implements Runnable {
+	private final static int defaultPort = PortMgr.getServerPort();
 	
 	protected int port;
 
@@ -26,8 +26,22 @@ public final class Listener {
 		setPort(targetPort);
 	}
 
+	@Override
+	public void run() {
+		try {
+			createListener();
+		}
+		catch (IOException e) {
+			Printer.logErr("IOException in Listener:  Probable networking issue");
+			Printer.logErr(e);
+		} finally {
+			Printer.log("Listener shut down!");
+		}
+	}
 	public void setPort(int newPort) {port = newPort;}
 	public int getPort() {return port;}
+	
+	
 	
 	public void createListener() throws IOException {
 		try (ServerSocket servSock = new ServerSocket(port)){

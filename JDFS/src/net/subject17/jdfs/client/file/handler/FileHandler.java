@@ -373,11 +373,12 @@ public final class FileHandler {
 				
 				
 				synchronized(DBManager.class) {
-					dbm.upsert("INSERT INTO PeerFiles (FileGUID, LocalFileName, LocalFilePath, UpdatedDate, IV, ParentGUID, ParentPath, Priority, CheckSum) "+
+					dbm.upsert("INSERT INTO PeerFiles (FileGUID, LocalFileName, LocalFilePath, PathOnClient, UpdatedDate, IV, ParentGUID, ParentPath, Priority, CheckSum) "+
 							"VALUES ('"+
 								(null == info.fileGuid ? "" :info.fileGuid)+"','"+
 								fileLoc.getFileName()+"','"+
 								fileLoc+"','"+
+								info.fileLocation+"','"+
 								info.lastUpdatedDate+"','"+
 								info.AESInitializationVector+"','"+
 								(null == info.parentGUID ? "" :info.parentGUID)+"','"+

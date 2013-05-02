@@ -68,7 +68,8 @@ public final class FileWatcher {
 	private static ConcurrentHashMap<WatchKey,Path> watchKeys; //The event we get back is a watchkey, so we index by that
 	
 	private static WatchService watcher;
-	private static Thread watchDispatcherThread; 
+	private static Thread watchDispatcherThread;
+	private static WatchEventDispatcher watchDispatcher; 
 	
 	
 	public final static void setWatchSettingsFile(Path target) throws FileNotFoundException, IOException, ParserConfigurationException, SAXException {
@@ -453,18 +454,22 @@ public final class FileWatcher {
 	public void startWatchEventDispatcher() {
 		synchronized(watchDispatcherThread) {
 			cleanUp();
-			watchDispatcherThread = new Thread(new WatchEventDispatcher(watcher, activeUser));
+			watchDispatcherThread = new Thread(watchDispatcher = new WatchEventDispatcher(watcher, activeUser));
+			watchDispatcherThread.setDaemon(true);
+			watchDispatcherThread.run();
 		}
 	}
 	
 	public void cleanUp() {
 		synchronized(watchDispatcherThread) {
 			if (watchDispatcherThread != null) {
-				//clean up?
-				watchDispatcherThread.stop();
-				
-				watchDispatcherThread = null;
+				synchronized(watchDispatcher) {
+					if (null != watchDispatcher) {
+						watchDispatcher.stop();
+					}
+				}
 			}
+			watchDispatcherThread = null;
 		}
 	}
 

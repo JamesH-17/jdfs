@@ -122,7 +122,7 @@ public class DBManager {
 							"LocalFileName VARCHAR(2000) NOT NULL, " +
 							"LocalFilePath VARCHAR(2000) NOT NULL, " + //including name
 							"LastUpdatedLocal DATETIME, " +
-							"CheckSum VARCHAR(36), " + //Don't think we want this for user files UNUSED
+							"CheckSum VARCHAR(36), " + 
 							"IV VARCHAR("+JDFSSecurity.NUM_IV_BYTES*2+") DEFAULT '', " + //For storing incoming files we didn't have a chance to decrypt yet
 							"ParentGUID VARCHAR(36), " +
 							"RelativeParentPath VARCHAR(2000), " +

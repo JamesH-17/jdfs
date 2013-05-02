@@ -87,7 +87,7 @@ public class WatchEventDispatcher implements Runnable {
 			}
 		}
 		
-		public static void stop() {
+		public void stop() {
 			run = false;
 		}
 }

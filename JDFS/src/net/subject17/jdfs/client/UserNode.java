@@ -24,13 +24,15 @@ import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.settings.reader.UserSettingsReader;
 import net.subject17.jdfs.client.settings.reader.WatchSettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
-import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 import net.subject17.jdfs.client.settings.writer.SettingsWriter;
 
 
 public class UserNode {	
+	public static Thread serverThread;
 	public static Listener serv;
-	public static Thread updateChecker;
+	
+	public static Thread updateCheckerThread;
+	public static PeriodicFileUpdater updateChecker;
 	
 	
 	/**
@@ -110,21 +112,24 @@ public class UserNode {
 	private static void dispatchServer() {
 		Printer.log("Dispatching server");
 		//TODO: Find a better way to choose port for server than just getting a random one
-		int port;
+		
 		try {
-			port = PortMgr.getRandomPort();
 			Printer.log("Starting Server");
 			
-			serv = new Listener(port);
-			serv.createListener();
-		} catch (Exception e) {
+			serverThread = new Thread(serv = new Listener());
+			serverThread.setDaemon(true);
+			
+			serv.run();
+		}
+		catch (Exception e) {
 			Printer.logErr("Could not start server");
-			e.printStackTrace();
+			Printer.logErr(e);
 		}
 	}
 	
 	
 	//this function for testing only TODO delete and move code to watch service
+	@Deprecated
 	private static void dispatchClient() { //public for now
 		Printer.log("dispatching client");
 		try {
@@ -155,8 +160,8 @@ public class UserNode {
 	}
 	
 	private static void dispatchWatchService() {
-		updateChecker = new Thread(new PeriodicFileUpdater());
-		updateChecker.run();
+		updateCheckerThread = new Thread(updateChecker = new PeriodicFileUpdater());
+		updateCheckerThread.run();
 	}
 	
 	private static void handleArgs(String[] args) {
@@ -183,23 +188,35 @@ public class UserNode {
 	private static void shutdown() {
 		Printer.log("Preforming shutdown");
 		
-		//Try to separate possible failures as much as possible here
-		//Basically, wrap almost every task in a separate try/catch
+		//////////////////////////////////////////////////////////////////
+		//	Try to separate possible failures as much as possible here	//
+		//	Basically, wrap almost every task in a separate try/catch	//
+		//////////////////////////////////////////////////////////////////
 		
 		//Write Settings
 		try {
 			SettingsWriter writer = new SettingsWriter();
 			writer.writeXMLSettings(SettingsReader.getInstance().getSettingsPath());
-		} catch (SettingsReaderException e) {
-			Printer.logErr("A fatal error occured writing settings.");
+		}
+		catch (SettingsReaderException e) {
+			Printer.logErr("A fatal error occured writing settings to xml.");
+			Printer.logErr(e);
+		}
+		catch (Exception e) {
+			Printer.logErr("A fatal error occured writing settings to xml.");
 			Printer.logErr(e);
 		}
 		
 		//Write Peers
 		try {
 			PeersHandler.writePeersToFile( PeerSettingsReader.getInstance().getPeerSettingsPath() );
-		} catch (SettingsReaderException e) {
-			Printer.logErr("A fatal error occured writing settings.");
+		}
+		catch (SettingsReaderException e) {
+			Printer.logErr("A fatal error occured writing peer information to xml.");
+			Printer.logErr(e);
+		}
+		catch (Exception e) {
+			Printer.logErr("A fatal error occured writing peer information to xml.");
 			Printer.logErr(e);
 		}
 		
@@ -208,7 +225,11 @@ public class UserNode {
 			AccountManager.getInstance().writeUsersToFile( UserSettingsReader.getInstance().getUserSettingsPath() );
 		}
 		catch (SettingsReaderException e) {
-			Printer.logErr("A fatal error occured writing settings.");
+			Printer.logErr("A fatal error occured writing user data to xml.");
+			Printer.logErr(e);
+		}
+		catch (Exception e) {
+			Printer.logErr("A fatal error occured writing user data to xml.");
 			Printer.logErr(e);
 		}
 		
@@ -219,12 +240,52 @@ public class UserNode {
 			Printer.logErr("A fatal error occured writing settings.");
 			Printer.logErr(e);
 		}
+		catch (Exception e) {
+			Printer.logErr("A fatal error occured writing watch list data to xml.");
+			Printer.logErr(e);
+		}
 
 		try {
 			DBManager.getInstance().finalizeSesssion();
 		}
 		catch (DBManagerFatalException e) {
 			Printer.logErr("A fatal error occured finalizing the DB session.");
+			Printer.logErr(e);
+		}
+		catch (Exception e) {
+			Printer.logErr("A fatal error occured finalizing the DB session.");
+			Printer.logErr(e);
+		}
+		
+		try {
+			//Stop the listener
+			synchronized(serverThread) {
+				synchronized (serv) {
+					serv.stopListener();
+					serv = null;
+				}
+				serverThread.interrupt();
+				serverThread = null;
+			}
+		}
+		catch (Exception e) {
+			Printer.logErr("A fatal error occured shutting down the Listener.");
+			Printer.logErr(e);
+		}
+		
+		try {
+			//Stop the file updater
+			synchronized(updateCheckerThread) {
+				synchronized (updateChecker) {
+					updateChecker.stopChecking();
+					updateChecker = null;
+				}
+				updateCheckerThread.interrupt();
+				updateCheckerThread = null;
+			}
+		}
+		catch (Exception e) {
+			Printer.logErr("A fatal error occured shutting down the file update checker.");
 			Printer.logErr(e);
 		}
 	}
