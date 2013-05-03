@@ -24,6 +24,12 @@ import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.settings.reader.SettingsReader.SettingsReaderException;
 import net.subject17.jdfs.client.settings.writer.PeerSettingsWriter;
 import net.subject17.jdfs.client.user.User;
+
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.map.DeserializationConfig;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 
@@ -45,9 +51,19 @@ public class PeersHandler {
 	
 	
 	public static void addIncomingMachine(InetAddress ip, String machineInfoJson) throws DBManagerFatalException, SQLException {
-		ObjectMapper mapper = new ObjectMapper();
-		MachineInfo info = mapper.convertValue(machineInfoJson, MachineInfo.class);
-		addIncomingMachine(ip, info);
+		ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, Visibility.ANY);;
+		mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		
+		MachineInfo info;
+		try {
+			Printer.log("Parsing json: "+machineInfoJson);
+			info = mapper.readValue(machineInfoJson, MachineInfo.class);
+			addIncomingMachine(ip, info);
+		}
+		catch (IOException e) {
+			Printer.logErr("Error reading machine info");
+			Printer.logErr(e);
+		}
 	}
 	public static void addIncomingMachine(InetAddress ip, MachineInfo info) throws DBManagerFatalException, SQLException {
 		UUID machineGuid = info.MachineGUID;
