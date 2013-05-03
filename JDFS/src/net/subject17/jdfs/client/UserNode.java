@@ -58,7 +58,7 @@ public class UserNode {
 			makeEnvironment();
 			initializeSettingsAndHandlers();
 			
-			//dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
+			dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
 			
 			dispatchWatchService(); //Will get the directories and files to watch from configuration.
 									//upon change, spawns new child process that will attempt to connect to peers (eventually extended to a peer server)
