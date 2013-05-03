@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <users>
     <user active="true">
-        <email>dboyzetown@gmail.com</email>
-        <userName>james</userName>
-        <GUID>1711566d-f3f0-4cce-ba9d-341c33531088</GUID>
+        <email>17subject@gmail.com</email>
+        <userName>James-Laptop</userName>
+        <GUID>fff224e4-a339-484b-8126-41dc0032bb53</GUID>
         <linkedMachines>
-            <machine>388db1b5-b63c-4e71-ac72-89c0a9960cc8</machine>
+            <machine>3ad82883-aba6-4207-8efd-308891b3a2c7</machine>
         </linkedMachines>
     </user>
     <user>
@@ -13,7 +13,7 @@
         <userName>inactive</userName>
         <GUID>2306cfcd-0aaa-43ef-9c02-8de542a867df</GUID>
         <linkedMachines>
-            <machine>388db1b5-b63c-4e71-ac72-89c0a9960cc8</machine>
+            <machine>3ad82883-aba6-4207-8efd-308891b3a2c7</machine>
         </linkedMachines>
     </user>
 </users>

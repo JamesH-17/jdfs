@@ -1,5 +1,7 @@
 temp/
 .metadata/
+DB/
+TEST/*.xml
 
 *.class
 
