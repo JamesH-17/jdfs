@@ -268,8 +268,14 @@ public final class FileWatcher {
 		//This function only handles the current watchlist
 		Printer.log("Registering files to watch service");
 		//Register directories
+		
+		
 		for(WatchDirectory directory : activeWatchList.getDirectories().values()){
 			//First, put the directory on. (Keep in mind, we need to handle if new files are added to the directory, if the directory is deleted, or if it is moved)
+
+			//TODO this may fix our assumption of always track if we also register any returned subs
+			//Well, not fix, but suck less
+			ensureDirectoryRegistered(directory);
 			
 			for (Path path : directory.getOnlyDirectoriesToWatch()) {
 				if (!directoriesWithWatchedFile.contains(path)) {
@@ -282,8 +288,8 @@ public final class FileWatcher {
 				watchedDirectories.add(path);
 			}
 			
-			registerPathToDB(directory.getDirectoriesToWatch(), directory);
-			//TODO maybe directory.getAllFilesToWatch() instead
+			registerPathToDB(directory.getAllFilesToWatch(), directory);
+			//TODO was directory.getDirectoriesToWatch()
 		}
 		
 		//Register files
@@ -306,6 +312,58 @@ public final class FileWatcher {
 		}	
 	}
 	
+	private static void ensureDirectoryRegistered(WatchDirectory directory) {
+		//Ensure integrity
+		try (ResultSet pathsFound = DBManager.getInstance().select("SELECT TOP 1 DISTINCT * FROM UserFiles "+
+				//"INNER JOIN UserFileLinks ON UserFileLinks.UserFilePK = UserFiles.UserFilePK "+
+			"WHERE UserFiles.ParentGUID LIKE '"+directory.getGUID()+"'"+
+			"AND UserFiles.RelativeParentPath LIKE ''"
+			)
+		) {
+			if (pathsFound.next()) { //Ensure data integrity
+				if (!directory.equals( Paths.get( pathsFound.getString("LocalFilePath") ) )) {
+					//fix entry
+					DBManager.getInstance().upsert("UPDATE UserFiles SET "+
+							"LocalFilePath = '"+directory.getDirectory()+"', "+
+							"LocalFileName = '', "+
+							"Priority = "+directory.priority+" "+
+							"WHERE UserFilePK = "+pathsFound.getInt("UserFilePK")
+					);
+				}
+			}
+			else {
+				try (ResultSet keys =  DBManager.getInstance().upsert("INSERT INTO UserFiles(FileGUID, LocalFileName, LocalFilePath, LastUpdatedLocal, ParentGUID, RelativeParentPath, Priority) "+
+						"VALUES ("+
+							"'"+directory.getGUID()+"',"+ // Don't give it a fileGuid unless it's the actual directory itself
+							"'',"+
+							"'"+directory.getDirectory()+ "',"+
+							"'',"+
+							"'"+directory.getGUID()+"',"+
+							"'',"+
+							directory.priority+
+						")"
+					)
+				) {
+					if (keys.next()) {
+						ensureUserFilePKLinked(keys.getInt("UserFilePK"));
+					}
+					else {
+						Printer.logErr("Warning [in FileWatcher]:For some reason, no key added after successful insert to db");
+					}
+				}
+				catch (SQLException e) {
+					Printer.logErr("SQLException encountered when directory path to db");
+					Printer.logErr("Path:  ["+directory.getDirectory()+"]");
+					Printer.logErr(e, Printer.Level.High);
+				}
+			}
+		}
+		catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr(e);
+		}
+		
+	}
+
 	private final static void registerPathToDB(HashSet<Path> directoriesToWatch, WatchDirectory directories) throws DBManagerFatalException {
 		
 		HashSet<Path> relativePathsToAdd = new HashSet<Path>(directoriesToWatch.size());
@@ -315,6 +373,7 @@ public final class FileWatcher {
 		}
 		
 		
+		//Ensure integrity
 		try (ResultSet pathsFound = DBManager.getInstance().select("SELECT DISTINCT * FROM UserFiles "+
 				//"INNER JOIN UserFileLinks ON UserFileLinks.UserFilePK = UserFiles.UserFilePK "+
 			"WHERE UserFiles.ParentGUID LIKE '"+directories.getGUID()+"'")
@@ -353,6 +412,7 @@ public final class FileWatcher {
 		}
 		
 		for (Path pathToAdd : relativePathsToAdd) {
+			Printer.log("Checking path "+pathToAdd);
 			try (ResultSet keys =  DBManager.getInstance().upsert("INSERT INTO UserFiles(FileGUID, LocalFileName, LocalFilePath, LastUpdatedLocal, ParentGUID, RelativeParentPath, Priority) "+
 					"VALUES ("+
 						(pathToAdd.equals("") ? "'"+directories.getGUID()+"'," : "'',")+ // Don't give it a fileGuid unless it's the actual directory itself
@@ -453,7 +513,7 @@ public final class FileWatcher {
 		removeDbEntriesForUser(userPK);
 	}
 	private static void removeDbEntriesForUser(int UserPK) throws DBManagerFatalException {
-		try (ResultSet toDelete = DBManager.getInstance().select(
+		try (ResultSet toDelete = DBManager.getInstance().delete(
 				"SELECT * FROM UserFileLinks WHERE UserFilePK = "+UserPK
 			)
 		){
@@ -546,6 +606,8 @@ public final class FileWatcher {
 					
 					HashMap<Integer, WatchFile> watchFiles = getWatchFilesFromDBForUser(users.getInt("UserPK"));
 					HashMap<Integer, WatchDirectory> watchDirs = getWatchDirectoriesFromDBForUser(users.getInt("UserPK"));
+					
+					Printer.log("About to write "+watchFiles.size()+" watchFiles and "+watchDirs.size()+" watchDirs for user "+user.getUserName());
 					
 					watchListsFound.add(new WatchList(user, watchFiles, watchDirs));
 				}

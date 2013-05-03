@@ -15,6 +15,7 @@ import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
 import net.subject17.jdfs.client.file.monitor.FileWatcher;
 import net.subject17.jdfs.client.file.monitor.PeriodicFileUpdater;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.io.UserGUI;
 import net.subject17.jdfs.client.io.UserInput;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.sender.Talker;
@@ -34,7 +35,7 @@ public class UserNode {
 	
 	public static Thread updateCheckerThread;
 	public static PeriodicFileUpdater updateChecker;
-	
+	private static boolean continueProgram = true;
 	
 	/**
 	 * @param args  There will be a "nogui" flag here, or maybe a "gui" flag, which will affect
@@ -45,7 +46,10 @@ public class UserNode {
 	 * 
 	 */
 	public static void main(String[] args) {
-
+		UserInput.getInstance();
+		//Printer.log(UserInput.getInstance().getNextString("Hello"));
+		
+		
 		Printer.log("Program started");
 		
 		handleArgs(args);	
@@ -53,6 +57,7 @@ public class UserNode {
 		try (Scanner inScan = new Scanner(System.in)){
 			makeEnvironment();
 			initializeSettingsAndHandlers();
+			
 			//dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
 			
 			dispatchWatchService(); //Will get the directories and files to watch from configuration.
@@ -60,12 +65,13 @@ public class UserNode {
 									//and send the modified files over.
 			dispatchFileMonitor();
 			
+						
+			while(continueProgram) {
+				Thread.sleep(1000);
+			};
 			
-			String userIn;
-			do {
-				userIn = UserInput.getInstance().getNextString("Quit?");
-			}
-			while(!userIn.equals("exit"));
+			Printer.log("Exiting program");
+			
 			
 			updateChecker.stopChecking();
 			FileWatcher.stopWatchEventDispatcher();
@@ -333,7 +339,10 @@ public class UserNode {
 			Printer.logErr(e);
 		}
 	}
-	
+
+	public static void exitProgram() {
+		continueProgram  = false;
+	}
 }
 
 /*

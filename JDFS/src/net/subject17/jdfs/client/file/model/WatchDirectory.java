@@ -61,7 +61,23 @@ public class WatchDirectory {
 	public final boolean followSubdirectories() { return followSubDirectories; }
 	
 	public final boolean isEmpty() {
-		return Files.isDirectory(directory);
+		return !(Files.isDirectory(directory) || Files.isSymbolicLink(directory));
+		/*
+		if (Files.isDirectory(directory))
+			return true;
+		try {
+			Path p = Files.readSymbolicLink(directory);
+			return Files.isDirectory(p);
+			//return Files.isDirectory(directory.toRealPath());
+		}
+		catch (IOException e) {
+			Printer.logErr(e);
+			return false;
+		}
+		catch (Exception e) {
+			Printer.logErr(e);
+			return false;
+		}*/
 	}
 	public final void enableSubdirectoryTracking(){followSubDirectories = true;}
 	public final void disabeSubdirectoryTracking(){followSubDirectories = false;}
@@ -103,6 +119,7 @@ public class WatchDirectory {
 		try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
 			
 			for (Path pathToCheck : canidatePaths) {
+				Printer.log("Adding path/directory ["+pathToCheck+"]", Printer.Level.VeryLow);
 				if (Files.isDirectory(pathToCheck) && followSubDirectories)
 					directories.addAll(getDirectoriesToWatch(pathToCheck));
 				else

@@ -1,6 +1,7 @@
 package net.subject17.jdfs.client.file.model;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,23 +37,28 @@ public class WatchFile {
 		else
 			GUID = UUID.randomUUID();
 	}
-	public WatchFile(Path file) throws FileNotFoundException {
+	public WatchFile(Path file) throws IOException {
 		this(file, UUID.randomUUID());
 	}
-	public WatchFile(Path file, String guid) throws FileNotFoundException {
+	public WatchFile(Path file, String guid) throws IOException {
 		this(file, UUID.fromString(guid));
 	}
-	public WatchFile(Path file, UUID guid) throws FileNotFoundException {
+	public WatchFile(Path file, UUID guid) throws IOException {
 		this(file, guid, 0);
 	}
 	public WatchFile(Path file, UUID guid, int priority) throws FileNotFoundException {
-		if (Files.isRegularFile(file)) {
-			this.file = file;
-			this.GUID = guid;
-			this.priority = priority;
+		try {
+			Printer.log("File: "+file.toRealPath());
+			if (Files.exists(file) && !Files.isDirectory(file)) {
+				this.file = file;
+				this.GUID = guid;
+				this.priority = priority;
+			}
+			else  //Let the null ptr exception happen if someone passed that in
+				throw new FileNotFoundException("Invalid file -- either file ["+file+"] is a directory or it doesn't exist");
+		} catch (IOException e) {
+			throw new FileNotFoundException("Invalid file -- cannot get real path of ["+file+"].");
 		}
-		else  //Let the null ptr exception happen if someone passed that in
-			throw new FileNotFoundException("Invalid file -- either file"+file+" is a directory or it doesn't exist");
 	}
 	
 	public Path getPath() {return file;}
@@ -75,6 +81,10 @@ public class WatchFile {
 		Element guidTag = doc.createElement("guid");
 		guidTag.appendChild(doc.createTextNode(GUID.toString()));
 		fileTag.appendChild(guidTag);
+		
+		Element priorityTag = doc.createElement("priority");
+		priorityTag.appendChild(doc.createTextNode(priority+""));
+		fileTag.appendChild(priorityTag);
 		
 		return fileTag;
 	}

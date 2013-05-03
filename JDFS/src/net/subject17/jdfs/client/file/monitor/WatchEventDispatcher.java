@@ -43,11 +43,14 @@ public class WatchEventDispatcher implements Runnable {
 		    WatchKey key;
 			while (run) {
 				// wait for key to be signaled
+				Printer.log("Watch Event Dispatcher started");
 			    try {
 			    	//TODO may want to make this poll every 60 seconds or something.  Alternatively, place thread.sleep at end of loop
 			        key = watcher.take();
 			        Path dir = (Path)key.watchable();
-			        
+
+					Printer.log("Watch Event Dispatcher:  Event Triggered!");
+					
 			        if (run && key.isValid()) {
 					    for (WatchEvent<?> event: key.pollEvents()) {
 					        WatchEvent.Kind<?> kind = event.kind();
@@ -68,19 +71,27 @@ public class WatchEventDispatcher implements Runnable {
 							WatchEvent<Path> ev = (WatchEvent<Path>)event;
 					        
 					        try {
-					        	
+					        	Printer.log("Watch Event Dispatcher: Handling event");
 					        	//This is all this service ever does!
 					        	if (!directoriesWithWatchedFile.contains(dir)) {
 					        		//Can this ever happen?
+
+						        	Printer.log("Watch Event Dispatcher: Yep, happened");
 					        	}
-					        	
-					        	if (watchedFiles.contains(ev.context()) || watchedDirectories.contains(dir)) {
+					        	Path loc = dir.resolve(ev.context());
+					        	if (watchedFiles.contains(loc) || watchedDirectories.contains(dir)) {
 					        		if (watchedDirectories.contains(dir)) {
-					        			FileWatcher.addFileToWatchList(ev.context());
+
+							        	Printer.log("Watch Event Dispatcher: addFileToWatchList "+ev.context());
+					        			FileWatcher.addFileToWatchList(loc);
 					        		}
 					        	
-					        	
-					        		TalkerPooler.getInstance().UpdatePath(ev.context(), user);
+
+						        	Printer.log("Watch Event Dispatcher: Telling TalkerPooler to update");
+					        		TalkerPooler.getInstance().UpdatePath(loc, user);
+					        	}
+					        	else {
+						        	Printer.log("Watch Event Dispatcher: File triggered isn't registerd for tracking ---skipped update");
 					        	}
 					        	//Else:  It shares a directory with a watched file, but it is not a child of a watched directory
 							}
@@ -97,7 +108,7 @@ public class WatchEventDispatcher implements Runnable {
 					    // receive further watch events.  If the key is no longer valid,
 					    // the directory is inaccessible so exit the loop.
 					    boolean valid = key.reset();
-					    Printer.log("Valid:"+valid, Printer.Level.VeryLow);
+					    Printer.log("Watch Event Dispatcher: Key still valid: "+valid, Printer.Level.VeryLow);
 					    
 					    if (!key.isValid()) {
 					    	directoriesWithWatchedFile.remove(dir);

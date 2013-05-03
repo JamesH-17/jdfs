@@ -5,10 +5,15 @@ import java.util.Scanner;
 public class UserInput {
 	
 	private Scanner input;
+	private static Thread guiThread;
+	
+	private static String nextInput = null;
 	
 	private static UserInput _instance = null;
 	private UserInput(){
 		input = new Scanner(System.in);
+		nextInput = null;
+		setUpGui();
 	}
 	public static UserInput getInstance(){
 		if (null == _instance) {
@@ -27,6 +32,27 @@ public class UserInput {
 	
 	public String getNextString(String messageToDisplay){
 		Printer.println(messageToDisplay);
-		return input.next();
+		while (null == nextInput){
+			try {
+				Thread.sleep(200);
+			} catch (InterruptedException e) {}
+		}
+		String temp = new String(nextInput);
+		nextInput = null;
+		return temp;
+	}
+	
+
+	
+	private static void setUpGui(){
+		UserGUI gui = new UserGUI();
+		guiThread = new Thread(gui);
+		guiThread.start();
+	}
+	public String returnInput(String inputString) {
+		return inputString;
+	}
+	public void setInput(String inputString) {
+		nextInput = inputString;
 	}
 }

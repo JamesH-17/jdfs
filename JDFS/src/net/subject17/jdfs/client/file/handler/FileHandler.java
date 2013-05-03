@@ -68,8 +68,9 @@ public final class FileHandler {
 	public FileSenderInfo prepareToSendFile(Path context) throws FileHandlerException {
 		try (ResultSet filesToSend = DBManager.getInstance().select(
 				"SELECT TOP 1 "+
-				"UserFiles.FileGUID AS FileGUID, UserFiles.UpdatedDate AS UpdatedDate, UserFiles.Priority AS Priority"+
-				"Users.UserGUID AS UserGUID, Users.UserName AS UserName, Users.AccountEmail AS AccountEmail"+
+				//"UserFiles.FileGUID AS FileGUID, UserFiles.ParentGUID AS ParentGUID, UserFiles.RelativeParentPath AS RelativeParentPath, UserFiles.LastUpdatedLocal AS UpdatedDate, UserFiles.Priority AS Priority, "+
+				"UserFiles.*, "+
+				"Users.UserGUID AS UserGUID, Users.UserName AS UserName, Users.AccountEmail AS AccountEmail "+
 				"FROM UserFiles INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
 				"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+
 				"WHERE UserFiles.LocalFilePath LIKE '"+context.toString()+"' "+

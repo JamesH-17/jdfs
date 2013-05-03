@@ -86,4 +86,19 @@ public class minitest {
 	public void testFilePermissons() {
 		String file = "C:\\Users\\James\\My Documents\\School\\test\\test.txt";
 	}
+	
+	@Test
+	public void testSym(){
+		Path path = Paths.get("C:\\Users\\James\\My Documents\\School\\test");
+		Printer.log("testing syms");
+		
+		Printer.println(path);
+		
+		Printer.println(Files.isDirectory(path));
+		Printer.println(Files.notExists(path));
+		Printer.println(Files.isSymbolicLink(path));
+		Printer.println(Files.isRegularFile(path));
+		
+		Printer.log("done testing syms");
+	}
 }

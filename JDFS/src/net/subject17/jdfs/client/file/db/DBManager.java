@@ -293,7 +293,18 @@ public class DBManager {
 		Printer.log(sql, Printer.Level.VeryLow);
 		
 		try( Connection conn = getConnection();
-			 Statement statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+			 //Statement statement = conn.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				Statement statement = conn.createStatement();
+		){
+			return statement.executeQuery(sql);
+		}
+	}
+	
+	public ResultSet delete(String sql) throws SQLException {
+		Printer.log(sql, Printer.Level.VeryLow);
+		
+		try( Connection conn = getConnection();
+			 Statement statement = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_UPDATABLE)
 		){
 			return statement.executeQuery(sql);
 		}
