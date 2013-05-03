@@ -22,7 +22,7 @@ public final class User {
 	
 	private String userName;
 	private String account;
-	private UUID GUID;
+	private UUID guid;
 	private HashSet<UUID> MachineGUIDs;
 	//private static final char seperatorChar = '\n';
 	public User(){MachineGUIDs=new HashSet<UUID>();}
@@ -33,7 +33,7 @@ public final class User {
 		if (UserUtil.isValidEmail(email) && UserUtil.isValidUsername(email)) {
 			this.userName = name;
 			this.account = email;
-			this.GUID = GUID;
+			this.guid = GUID;
 			
 			MachineGUIDs = new HashSet<UUID>();
 			MachineGUIDs.add(Settings.getMachineGUIDSafe());
@@ -51,16 +51,16 @@ public final class User {
 
 		userName = SettingsReader.GetFirstNodeValue(node, "userName");
 		account = SettingsReader.GetFirstNodeValue(node, "email");
-		String guid = SettingsReader.GetFirstNodeValue(node, "GUID");
+		String guidString = SettingsReader.GetFirstNodeValue(node, "GUID");
 		
-		this.GUID = guid.equals("") ? UUID.randomUUID() : UUID.fromString(guid);
+		this.guid = guidString.equals("") ? UUID.randomUUID() : UUID.fromString(guidString);
 		
 		//Validate that this is an actual user before continuing 
 		if (!UserUtil.isValidEmail(account) || !UserUtil.isValidUsername(userName)) {
 			this.account = null;
 			this.userName = null;
-			this.GUID = null;
-			throw new UserException("Invalid data for user -- provided email:["+account+"], name: ["+userName+"], GUID:["+GUID.toString()+"]");
+			this.guid = null;
+			throw new UserException("Invalid data for user -- provided email:["+account+"], name: ["+userName+"], GUID:["+guid.toString()+"]");
 			
 		} else { //Now, add on the GUIDs.  This is done here instead of above since this program does things like I do:
 				 //As lazy as possible.
@@ -85,22 +85,22 @@ public final class User {
 				&& cmp instanceof User 
 				&& this.userName.equals(((User)cmp).userName)
 				&& this.account.equals(((User)cmp).account)
-				&& this.GUID.equals(((User)cmp).GUID);
+				&& this.guid.equals(((User)cmp).guid);
 	}
 	
 	@Override
 	public int hashCode() { //Note how our equals method is more restrictive than our hashcode method
 		//return (username+seperatorChar+account).hashCode();
-		return GUID.hashCode();
+		return guid.hashCode();
 	} 
 	@Override
 	public String toString(){
-		return "{\n\tGUID: "+this.GUID+",\n\tUserName: "+this.userName+",\n\tAccountEmail: "+this.account+"\n}";
+		return "{\n\tGUID: "+this.guid+",\n\tUserName: "+this.userName+",\n\tAccountEmail: "+this.account+"\n}";
 	}
 	
 	public String getUserName() {return userName;}
 	public String getAccountEmail() {return account;}
-	public UUID getGUID() {return GUID;}
+	public UUID getGUID() {return guid;}
 	@JsonIgnore
 	public HashSet<UUID> getRegisteredMachines(){return MachineGUIDs;}
 	
