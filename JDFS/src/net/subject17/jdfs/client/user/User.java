@@ -101,6 +101,7 @@ public final class User {
 	public String getUserName() {return userName;}
 	public String getAccountEmail() {return account;}
 	public UUID getGUID() {return GUID;}
+	@JsonIgnore
 	public HashSet<UUID> getRegisteredMachines(){return MachineGUIDs;}
 	
 	@JsonIgnore

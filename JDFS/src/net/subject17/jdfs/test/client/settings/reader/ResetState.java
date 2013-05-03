@@ -29,8 +29,8 @@ public class ResetState {
 	
 	public void truncateDB() {
 		try {
-			DBManager.getInstance().truncateEverything2();
 			DBManager.getInstance().dropEverything2();
+			//DBManager.getInstance().truncateEverything2();
 		} catch (SQLException | DBManagerFatalException e) {
 			fail("Could not truncate db");
 		}
