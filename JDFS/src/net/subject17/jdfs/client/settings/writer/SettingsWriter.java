@@ -40,10 +40,12 @@ public class SettingsWriter extends Settings {
 			writeDocument(doc, loc);
 			Printer.log("Created settings configuration file at "+loc);
 			
-		} catch (TransformerException e) {
+		}
+		catch (TransformerException e) {
 			Printer.logErr(e);
 			Printer.logErr("Could not instatiate transformer to write settings file", Printer.Level.Medium);
-		} catch (Exception e) {
+		}
+		catch (Exception e) {
 			Printer.logErr(e);
 			Printer.logErr("An unexpected error occured in SettingsWriter.writeXMLSettings.  Wrong filepath?");
 		}

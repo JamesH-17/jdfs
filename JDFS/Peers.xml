@@ -1,2 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<peers/>
+<peers>
+    <peer>
+        <accountEmail>James-Laptop</accountEmail>
+        <userName>jdfs-test@mailinator.net</userName>
+        <peerGUID>c7d9c8af-71ce-488e-87de-54d03270426b</peerGUID>
+    </peer>
+</peers>

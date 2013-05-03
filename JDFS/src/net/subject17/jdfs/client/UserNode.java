@@ -108,6 +108,7 @@ public class UserNode {
 		//This function will handle setting up any settings and any handlers related to them
 		Printer.log("Initializing reader....");
 		SettingsReader settingsReader = SettingsReader.getInstance();
+		settingsReader.parseAndReadXMLDocument();
 		
 		Printer.log("Reader initialized.  Starting Services...");
 		
@@ -356,4 +357,5 @@ public class UserNode {
 /*
 	KNOWN BUGS:
 	-Currently, we always assume they want directories tracked
+	- Null pointer issues if no user or files found in watchers
 */

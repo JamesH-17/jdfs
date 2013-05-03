@@ -127,6 +127,7 @@ public abstract class Settings {
 		UUID machineGUID = Settings.getMachineGUIDSafe();
 		int machinePK = -1;
 		Printer.log("Getting machine PK");
+		
 		try (ResultSet machinePKs = DBManager.getInstance().select("Select Distinct * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGUID+"'")) {
 			if (machinePKs.next()) {
 				machinePK = machinePKs.getInt("MachinePK");
