@@ -1,7 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <watchLists>
     <watchList>
+        <watchFiles/>
+        <watchDirectories/>
+        <userGUID>22eb4fb3-0315-46b1-aa4b-3f33ecdd04fd</userGUID>
+    </watchList>
+    <watchList>
         <watchFiles>
+            <file>
+                <path>C:\Users\James\My Documents\School\test\test.txt</path>
+                <guid>c0157890-3835-4e64-a158-75b9145b146d</guid>
+                <priority>0</priority>
+            </file>
             <file>
                 <path>C:\Users\James\My Documents\School\test\test.txt</path>
                 <guid>1f45a4ef-b490-4dde-958a-de6587bc7a92</guid>
@@ -22,10 +32,5 @@
             </directory>
         </watchDirectories>
         <userGUID>1711566d-f3f0-4cce-ba9d-341c33531088</userGUID>
-    </watchList>
-    <watchList>
-        <watchFiles/>
-        <watchDirectories/>
-        <userGUID>22eb4fb3-0315-46b1-aa4b-3f33ecdd04fd</userGUID>
     </watchList>
 </watchLists>
