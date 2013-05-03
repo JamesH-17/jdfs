@@ -25,7 +25,7 @@ public final class User {
 	private UUID GUID;
 	private HashSet<UUID> MachineGUIDs;
 	//private static final char seperatorChar = '\n';
-	public User(){}
+	public User(){MachineGUIDs=new HashSet<UUID>();}
 	public User(String name, String email) throws UserException {
 		this(name, email, UUID.randomUUID());
 	}
