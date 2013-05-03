@@ -87,6 +87,10 @@ public final class User {
 		//return (username+seperatorChar+account).hashCode();
 		return GUID.hashCode();
 	} 
+	@Override
+	public String toString(){
+		return "{\n\tGUID: "+this.GUID+",\n\tUserName: "+this.username+",\n\tAccountEmail: "+this.account+"\n}";
+	}
 	
 	public String getUserName() {return username;}
 	public String getAccountEmail() {return account;}

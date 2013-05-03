@@ -22,7 +22,7 @@ public class UserUtil {
 	}
 	
 	public static int getUserPK(User user) {
-		try (ResultSet userPK = DBManager.getInstance().select("SELECT TOP 1 UserPK FROM Users WHERE User WHERE User.UserGUID LIKE '"+user.getGUID()+"'")) {
+		try (ResultSet userPK = DBManager.getInstance().select("SELECT TOP 1 UserPK FROM Users WHERE Users.UserGUID LIKE '"+user.getGUID()+"'")) {
 			if (userPK.next())
 				return userPK.getInt("UserPK");
 		}

@@ -88,6 +88,8 @@ public final class TalkerPooler {
 			
 			while (filesToCheck.next()) {
 				
+				Printer.log(filesToCheck);
+				
 				UUID fileGUID = null;
 				
 				//First, grab IPS and figure out if we're dealing with a regular file
@@ -115,6 +117,7 @@ public final class TalkerPooler {
 				//////////
 				fileToSend = Paths.get( filesToCheck.getString("LocalFilePath") );
 				
+				
 				if (Files.isDirectory(fileToSend)) {
 					Printer.log("Found directory in updates -- skipped");		
 				}
@@ -124,7 +127,7 @@ public final class TalkerPooler {
 					Timestamp lastModified = new Timestamp(Files.getLastModifiedTime(fileToSend).toMillis());
 					FileRetrieverRequest request;
 					
-					if (null == fileGUID) {
+					if (null != fileGUID) {
 						request = new FileRetrieverRequest(
 								fileGUID,
 								AccountManager.getInstance().getActiveUser().getGUID(),

@@ -26,7 +26,7 @@ public class UserInput {
 	}
 	
 	public String getNextString(String messageToDisplay){
-		Printer.println("Please enter a password for encryption/decryption of files:");
+		Printer.println(messageToDisplay);
 		return input.next();
 	}
 }

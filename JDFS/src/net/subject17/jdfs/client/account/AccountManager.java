@@ -105,6 +105,10 @@ public final class AccountManager {
 		} catch (DBManagerFatalException e) {
 			Printer.logErr(e);
 		}
+		
+		for (UUID machine : user.getRegisteredMachines()) {
+			ensureUserLinkedToMachine(user, machine);
+		}
 	}
 	
 	private void updateDatabase(ArrayList<User> users) throws DBManagerFatalException {
@@ -114,7 +118,70 @@ public final class AccountManager {
 		}
 	}
 	
+	private boolean ensureUserLinkedToMachine(User user, UUID machineGuid) {
+		try (ResultSet linksFound = DBManager.getInstance().select("SELECT * FROM Users INNER JOIN MachineUserLinks ON MachineUserLinks.UserPK = Users.UserPK INNER JOIN Machines ON Machines.MachinePK = MachineUserLinks.MachinePK WHERE Users.UserGUID LIKE '"+user.getGUID()+"' AND Machines.MachineGUID LIKE '"+machineGuid+"'")) {
+			if (linksFound.next()) {
+				return true; //already linked
+			}
+			else {
+				return linkUserToMachine(getUserPKSafe(user), getMachinePKSafe(machineGuid));
+			}
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr("Error ensuring user linked to machine "+machineGuid);
+			Printer.logErr(e);
+			return false;
+		}
+	}
 	
+	private boolean linkUserToMachine(int userPK, int machinePK) {
+		try (ResultSet linkAdded = DBManager.getInstance().upsert("INSERT INTO MachineUserLinks(UserPK, MachinePK) VALUES("+userPK+","+machinePK+")")) {
+			return true;
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr("Error linking user to machine");
+			Printer.logErr(e);
+			return false;
+		}
+	}
+	
+	private int getUserPKSafe(User user) {
+		try (ResultSet userFound = DBManager.getInstance().select("SELECT TOP 1 * FROM Users WHERE Users.UserGUID LIKE '"+user.getGUID()+"' AND Users.AccountEmail LIKE '"+user.getAccountEmail()+"' AND Users.UserName LIKE '"+user.getUserName()+"'")
+		) {
+			if (userFound.next()) {
+				return userFound.getInt("UserPK");
+			}
+			else {
+				try (ResultSet userAdded = DBManager.getInstance().upsert("INSERT INTO Users(UserName, AccountEmail, UserGUID) VALUES('"+user.getUserName()+"','"+user.getAccountEmail()+"','"+user.getGUID()+"')")
+				) {
+					userAdded.next();
+					return userAdded.getInt("UserPK");
+				}
+			}
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr("Error grabbing user PK, returning default of -1");
+			Printer.logErr(e);
+			return -1;
+		}
+	}
+	//TODO refactor into sperate class
+	private int getMachinePKSafe(UUID machineGUID) {
+		try (ResultSet machinesFound = DBManager.getInstance().select("SELECT TOP 1 * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGUID+"'")
+		) {
+			if (machinesFound.next()) {
+				return machinesFound.getInt("MachinePK");
+			}
+			else {
+				try (ResultSet machineAdded = DBManager.getInstance().upsert("INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')")
+				) {
+					machineAdded.next();
+					return machineAdded.getInt("MachinePK");
+				}
+			}
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr("Error grabbing machine PK, returning default of -1");
+			Printer.logErr(e);
+			return -1;
+		}
+	}
 	//////////////////////////////////////////////////////
 	//						XML							//
 	//////////////////////////////////////////////////////
@@ -306,28 +373,59 @@ public final class AccountManager {
 			if (user.getGUID().equals(guid))
 				return user;
 		}
-		return null;
+		return getUserInDbByGUID(guid);
 	}
 	
+	public User getUserInDbByGUID(UUID guid) {
+		try(ResultSet usersFound = DBManager.getInstance().select("SELECT DISTINCT * FROM Users WHERE Users.UserGUID LIKE '"+guid+"'")) {
+			usersFound.next();
+			
+			User temp = new User(
+					usersFound.getString("UserName"),
+					usersFound.getString("AccountEmail"),
+					UUID.fromString(usersFound.getString("UserGUID"))
+			); 
+			
+			if (!users.contains(temp)) {
+				users.add(temp);
+			}
+			
+			return temp;
+		}
+		catch (Exception e){
+			Printer.logErr("Exception encountered getting user from DB");
+			Printer.logErr(e);
+			return null;
+		}
+	}
+
 	public boolean guidExists(String guid){
 		return guidExists(guid.toString());
 	}
 	public boolean guidExists(UUID guid) {
-		Printer.log("GUID : "+guid);
-		Printer.log("Users : "+users);
-		
 		for (User user : users) {
 			Printer.log("User: "+user);
 			Printer.log("User GUID: "+user.getGUID());
 			if (user.getGUID().equals(guid))
 				return true;
 		}
-		return false;
+		return guidExistsInDB(guid);
 	}
 
 	
 	//Utility/Misc
 	
+	private boolean guidExistsInDB(UUID guid) {
+		try(ResultSet usersFound = DBManager.getInstance().select("SELECT DISTINCT * FROM Users WHERE Users.UserGUID LIKE '"+guid+"'")) {
+			return usersFound.next();
+		}
+		catch (Exception e){
+			Printer.logErr("Exception encountered getting user from DB");
+			Printer.logErr(e);
+			return false;
+		}
+	}
+
 	public ArrayList<User> getUsersFromDatabase() throws DBManagerFatalException {
 		HashSet<User> users = new HashSet<User>();
 		
@@ -356,6 +454,10 @@ public final class AccountManager {
 	
 	public boolean ensureAccountExists(User user) throws DBManagerFatalException {
 		try {
+			
+			if (null == user)
+				return false;
+			
 			if (!users.contains(user))
 				users.add(user);
 			

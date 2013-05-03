@@ -71,7 +71,7 @@ public class WatchSettingsReaderTest {
 			
 			Printer.log("Directories");
 			for (WatchDirectory dir : list.getDirectories().values()) {
-				Printer.log("GUID:"+dir.getGUID());
+				Printer.log("Directory GUID:"+dir.getGUID());
 				Printer.log("Tracks subdirectories: "+dir.followSubDirectories);
 				Printer.log("Enabling subdirectory tracking");
 				dir.enableSubdirectoryTracking();

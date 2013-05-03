@@ -1,11 +1,17 @@
-<?xml version="1.0" standalone="yes" ?>
-<watchList>
-	<userGUID>1711566d-f3f0-4cce-ba9d-341c33531088</userGUID>
-	<directory>
-		<path>C:\Users\James\Documents\School\test</path>
-		<followSubs>true</followSubs>
-	</directory>
-	<file>
-		<path>C:\Users\James\Documents\School\test\test.txt</path>
-	</file>
-</watchList>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<watchLists>
+    <watchList>
+        <watchFiles>
+            <file>
+                <path>C:\Users\James\workspace\jdfs\JDFS\Users.xml</path>
+                <guid>d5a85a77-36ed-4ee5-9266-26299e4dca86</guid>
+            </file>
+            <file>
+                <path>C:\Users\James\My Documents\School\test\test.txt</path>
+                <guid>02544126-9800-4248-9239-d851280009a0</guid>
+            </file>
+        </watchFiles>
+        <watchDirectories/>
+        <userGUID>1711566d-f3f0-4cce-ba9d-341c33531088</userGUID>
+    </watchList>
+</watchLists>

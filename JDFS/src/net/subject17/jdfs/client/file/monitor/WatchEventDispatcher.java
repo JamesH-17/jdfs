@@ -8,6 +8,8 @@ import java.nio.file.WatchService;
 import java.nio.file.StandardWatchEventKinds;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+
 import javax.crypto.NoSuchPaddingException;
 
 import net.subject17.jdfs.client.io.Printer;
@@ -23,9 +25,17 @@ public class WatchEventDispatcher implements Runnable {
 		private final WatchService watcher;
 		private final User user;
 		
-		public WatchEventDispatcher(WatchService watcher, User user) {
+		private final HashSet<Path> directoriesWithWatchedFile;
+		private final HashSet<Path> watchedDirectories;
+		private final HashSet<Path> watchedFiles;
+		
+		
+		public WatchEventDispatcher(WatchService watcher, User user, HashSet<Path> directoriesWithWatchedFile, HashSet<Path> watchedFiles, HashSet<Path> watchedDirectories) {
 			this.watcher = watcher;
 			this.user = user;
+			this.directoriesWithWatchedFile = directoriesWithWatchedFile;
+			this.watchedFiles = watchedFiles;
+			this.watchedDirectories = watchedDirectories;
 		}
 
 		@Override
@@ -36,6 +46,7 @@ public class WatchEventDispatcher implements Runnable {
 			    try {
 			    	//TODO may want to make this poll every 60 seconds or something.  Alternatively, place thread.sleep at end of loop
 			        key = watcher.take();
+			        Path dir = (Path)key.watchable();
 			        
 			        if (run && key.isValid()) {
 					    for (WatchEvent<?> event: key.pollEvents()) {
@@ -59,9 +70,21 @@ public class WatchEventDispatcher implements Runnable {
 					        try {
 					        	
 					        	//This is all this service ever does!
+					        	if (!directoriesWithWatchedFile.contains(dir)) {
+					        		//Can this ever happen?
+					        	}
 					        	
-								TalkerPooler.getInstance().UpdatePath(ev.context(), user);
-							} catch (InvalidKeyException
+					        	if (watchedFiles.contains(ev.context()) || watchedDirectories.contains(dir)) {
+					        		if (watchedDirectories.contains(dir)) {
+					        			FileWatcher.addFileToWatchList(ev.context());
+					        		}
+					        	
+					        	
+					        		TalkerPooler.getInstance().UpdatePath(ev.context(), user);
+					        	}
+					        	//Else:  It shares a directory with a watched file, but it is not a child of a watched directory
+							}
+					        catch (InvalidKeyException
 									| NoSuchAlgorithmException
 									| NoSuchPaddingException | IOException
 									| UserException e) {
@@ -75,6 +98,11 @@ public class WatchEventDispatcher implements Runnable {
 					    // the directory is inaccessible so exit the loop.
 					    boolean valid = key.reset();
 					    Printer.log("Valid:"+valid, Printer.Level.VeryLow);
+					    
+					    if (!key.isValid()) {
+					    	directoriesWithWatchedFile.remove(dir);
+					    	removeAllFilesWatchedInDir(dir);
+					    }
 				    }
 		        
 					Thread.sleep(timeBetweenHandlesInMillis);
@@ -87,6 +115,46 @@ public class WatchEventDispatcher implements Runnable {
 			}
 		}
 		
+		private void removeAllFilesWatchedInDir(Path dir) {
+			for (Path path : watchedDirectories)	{
+				
+				//There is no "canRelativize" functional equivalent in Path,
+				//So I'm more or less forced to use exception handling for 
+				//program control here
+				
+				try { 
+					dir.relativize(path);
+					watchedDirectories.remove(path);
+				}
+				catch (IllegalArgumentException e) {}
+			}
+			
+			for (Path path : watchedFiles)	{
+				
+				//There is no "canRelativize" functional equivalent in Path,
+				//So I'm more or less forced to use exception handling for 
+				//program control here
+				
+				try { 
+					dir.relativize(path);
+					watchedFiles.remove(path);
+				}
+				catch (IllegalArgumentException e) {}
+			}
+			
+			for(Path path : directoriesWithWatchedFile) {
+				//There is no "canRelativize" functional equivalent in Path,
+				//So I'm more or less forced to use exception handling for 
+				//program control here
+				
+				try { 
+					dir.relativize(path);
+					directoriesWithWatchedFile.remove(path);
+				}
+				catch (IllegalArgumentException e) {}
+			}
+		}
+
 		public void stop() {
 			run = false;
 		}

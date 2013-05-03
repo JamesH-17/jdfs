@@ -15,7 +15,9 @@ import java.util.UUID;
 import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
+import net.subject17.jdfs.client.file.monitor.FileWatcher;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.settings.Settings;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 import net.subject17.jdfs.client.user.User;
 import net.subject17.jdfs.client.user.UserUtil;
@@ -35,21 +37,24 @@ public final class WatchList {
 	
 	public WatchList(Element watchEle) throws DBManagerFatalException {
 		resetFilesAndDirectories();
-		readDirectories(watchEle.getElementsByTagName("directory"));
-		readFiles(watchEle.getElementsByTagName("file"));
+		
+		//Grab user info
 		try {
-			String userGUID = SettingsReader.GetFirstNodeValue(watchEle,"userGUID");
-			String userName = SettingsReader.GetFirstNodeValue(watchEle,"userAccount");
-			String userAccount = SettingsReader.GetFirstNodeValue(watchEle,"userName");
+			String userGUID = SettingsReader.GetFirstNodeValue(watchEle, "userGUID");
+			String userName = SettingsReader.GetFirstNodeValue(watchEle, "userAccount");
+			String userAccount = SettingsReader.GetFirstNodeValue(watchEle, "userName");
 			
 			if (!userGUID.equals("")) {
+				Printer.log("User GUID for watchlist: "+userGUID);
 				setUser(UUID.fromString(userGUID));	
 			}
 			else if (!userAccount.equals("")) {
-				AccountManager.getInstance().getUserByAccount(userAccount);
+				Printer.log("User Account for watchlist: "+userGUID);
+				setUser(AccountManager.getInstance().getUserByAccount(userAccount));
 			}
 			else if (!userName.equals("")) {
-				
+				Printer.log("User Name for watchlist: "+userGUID);
+				setUser(AccountManager.getInstance().getUserByUserName(userAccount));
 			}
 			else user = null;
 			
@@ -57,10 +62,26 @@ public final class WatchList {
 			Printer.logErr(e);
 			Printer.log("Watchlist user absent or invalid.  Setting user to null.");
 			
-			
+			System.exit(-1);
 			user = null;
 		}
-		AccountManager.getInstance().ensureAccountExists(user);
+		
+		
+		if (!AccountManager.getInstance().ensureAccountExists(user)) {
+			Printer.logErr("Could not ensure user exists.  User info not provided?", Printer.Level.High);
+		}
+		else {
+			//Can't add directories and Files since they insert to the DB
+			//get watch directories and files
+			Printer.log("Reading files and directories from tag");
+			
+			readDirectories(watchEle.getElementsByTagName("directory"));
+			readFiles(watchEle.getElementsByTagName("file"));
+		}
+		
+		
+		Printer.log("Directories found: "+directories.size(), Printer.Level.VeryLow);
+		Printer.log("Files found: "+files.size(), Printer.Level.VeryLow);
 	}
 	
 	public WatchList(User newUser) throws DBManagerFatalException {
@@ -84,6 +105,9 @@ public final class WatchList {
 	private final void setUser(UUID userGUID) {
 		if (AccountManager.getInstance().guidExists(userGUID))
 			user = AccountManager.getInstance().getUserByGUID(userGUID);
+		else {
+			Printer.logErr("User does not exist");
+		}
 	}
 	
 	private final void resetFilesAndDirectories(){
@@ -95,7 +119,10 @@ public final class WatchList {
 			try {
 				Element directoryTag = (Element)directoryNodes.item(i);
 				WatchDirectory watchDir = new WatchDirectory(directoryTag);
+				
 				directories.put(new Integer(watchDir.hashCode()), watchDir);
+				
+				addDirectoryToDB(watchDir);
 			}
 			catch (Exception e){
 				Printer.logErr("Could not read Watch List, number "+i+" in list.");
@@ -108,7 +135,9 @@ public final class WatchList {
 			try {
 				Element fileTag = (Element)fileNodes.item(i);
 				WatchFile watchFile = new WatchFile(fileTag);
+				
 				files.put(new Integer(watchFile.hashCode()), watchFile);
+				addFileToDB(watchFile);
 			}
 			catch (Exception e){
 				Printer.logErr("Could not read Watch List, number "+i+" in list.");
@@ -212,9 +241,9 @@ public final class WatchList {
 					"INSERT INTO UserFiles(FileGUID, LocalFileName, LocalFilePath, LastUpdatedLocal, ParentGUID, RelativeParentPath, Priority) "+
 					"VALUES('','"+
 					nonRelative.getFileName()+"','"+
-					nonRelative+"','"+
+					nonRelative+"',"+
 					getLastModifiedSafe(nonRelative)+
-					"','"+
+					",'"+
 					temp.getGUID()+"','"+
 					relative+"',"+
 					temp.priority+
@@ -259,9 +288,9 @@ public final class WatchList {
 					"INSERT INTO UserFiles(FileGUID, LocalFileName, LocalFilePath, LastUpdatedLocal, ParentGUID, RelativeParentPath, Priority) "+
 					"VALUES('"+temp.getGUID()+"','"+
 						temp.getPath().getFileName()+"','"+
-						temp.getPath()+"','"+
+						temp.getPath()+"',"+
 						getLastModifiedSafe(temp.getPath())+
-						"','','',"+
+						",'','',"+
 						temp.getPriority()+
 					")"
 				)) {
@@ -279,6 +308,10 @@ public final class WatchList {
 		}
 	}
 	
+	/**
+	 * @param p Path to get last modified time
+	 * @return Formatted string -- "null" or "'YYYY-MM-DD HH:MM:SS'"
+	 */
 	private final String getLastModifiedSafe(Path p) {
 		Timestamp lastMod = null;
 		try {
@@ -288,19 +321,19 @@ public final class WatchList {
 			Printer.logErr("Error adding watchfile to db");
 			Printer.logErr(e);
 		}
-		return (null == lastMod ? "" : lastMod.toString());
+		return (null == lastMod ? "null" : "'"+lastMod.toString()+"'");
 	}
 	
 	private final void linkFilePKToUser(int userFilePK) throws SQLException, DBManagerFatalException {
 		int userPK = UserUtil.getUserPK(user);
 		assert(userPK >= 0);
 		
-		DBManager.getInstance().upsert("INSERT INTO UserFileLinks (UserFilePK, UserPK) VALUES ("+userFilePK+","+userPK+")");
+		DBManager.getInstance().upsert("INSERT INTO UserFileLinks (UserFilePK, UserPK, MachinePK) VALUES ("+userFilePK+","+userPK+",'"+Settings.GetMachinePK()+"')");
 	}
 	
 	private final void ensureUserLinkedToFile(int userFilePK) throws SQLException, DBManagerFatalException {
 		try (ResultSet linkedFiles = DBManager.getInstance().select(
-				"SELECT DISTINCT UsersFiles.UserFilePK "+
+				"SELECT DISTINCT UserFiles.UserFilePK "+
 				"FROM UserFiles "+
 				"INNER JOIN UserFileLinks ON UserFiles.UserFilePK = UserFileLinks.UserFilePK "+
 				"INNER JOIN Users ON Users.UserPK = UserFileLinks.UserPK "+

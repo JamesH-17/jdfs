@@ -1,11 +1,15 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?xml version="1.0" standalone="yes" ?>
 <users>
-    <user active="true">
+	<user active="true">
         <email>dboyzetown@gmail.com</email>
         <userName>james</userName>
         <GUID>1711566d-f3f0-4cce-ba9d-341c33531088</GUID>
         <linkedMachines>
-            <machine>ef092bc0-d3c5-4deb-9ef2-050644bf04ee</machine>
+            <machine>4632b762-e9e6-4914-b6b8-9d623e54fe05</machine>
         </linkedMachines>
     </user>
+	<user>
+		<userName>inactive</userName>
+		<email>inactive@gmail.com</email>
+	</user>
 </users>

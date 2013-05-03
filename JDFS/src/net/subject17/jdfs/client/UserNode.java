@@ -15,6 +15,7 @@ import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
 import net.subject17.jdfs.client.file.monitor.FileWatcher;
 import net.subject17.jdfs.client.file.monitor.PeriodicFileUpdater;
 import net.subject17.jdfs.client.io.Printer;
+import net.subject17.jdfs.client.io.UserInput;
 import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.sender.Talker;
 import net.subject17.jdfs.client.net.server.Listener;
@@ -54,9 +55,20 @@ public class UserNode {
 			initializeSettingsAndHandlers();
 			//dispatchServer(); //Spawn child process here.  Will constantly listen for and manage the files for other peers
 			
-			//dispatchWatchService(); //Will get the directories and files to watch from configuration.
+			dispatchWatchService(); //Will get the directories and files to watch from configuration.
 									//upon change, spawns new child process that will attempt to connect to peers (eventually extended to a peer server)
 									//and send the modified files over.
+			dispatchFileMonitor();
+			
+			
+			String userIn;
+			do {
+				userIn = UserInput.getInstance().getNextString("Quit?");
+			}
+			while(!userIn.equals("exit"));
+			
+			updateChecker.stopChecking();
+			FileWatcher.stopWatchEventDispatcher();
 			//Now, how to close program?
 			/*
 			System.exit(0);
@@ -119,7 +131,7 @@ public class UserNode {
 			serverThread = new Thread(serv = new Listener());
 			serverThread.setDaemon(true);
 			
-			serv.run();
+			serverThread.start();
 		}
 		catch (Exception e) {
 			Printer.logErr("Could not start server");
@@ -159,28 +171,40 @@ public class UserNode {
 		}
 	}
 	
-	private static void dispatchWatchService() {
+	private static void dispatchWatchService() throws IOException, DBManagerFatalException {
+		FileWatcher.setActiveWatchList(AccountManager.getInstance().getActiveUser());
+		FileWatcher.startWatchEventDispatcher();
+		
+	}
+	
+	private static void dispatchFileMonitor() {
+		Printer.log("Distpatching FileMonitor");
+		
 		updateCheckerThread = new Thread(updateChecker = new PeriodicFileUpdater());
-		updateCheckerThread.run();
+		updateCheckerThread.start();
+		//updateCheckerThread.run();
+		//
+		Printer.log("Distpatched");
 	}
 	
 	private static void handleArgs(String[] args) {
 		//TODO: for args:  Allow to pass in a settings config file
 		for (String arg : args) {
-			if (arg.toLowerCase().startsWith("defaultserverport")) {
-				try {
-					String[] strs = arg.split("=");
-					if (strs.length > 1) {
-						int customDefaultPort = Integer.parseInt(strs[1]);
-						PortMgr.setDefaultPort(customDefaultPort);
+			try {
+				String[] strs = arg.split("=");
+				if (strs.length > 1) { 
+					if (strs[0].toLowerCase().contains("defaultserverport")) {
+								int customDefaultPort = Integer.parseInt(strs[1]);
+								PortMgr.setDefaultPort(customDefaultPort);
+					}
+					else if (strs[0].toLowerCase().contains("settingsPath")) {
+						//set settings path
 					}
 				}
-				catch (NumberFormatException e) {
-					Printer.logErr("Exception encountered trying to parse default port passed");
-					Printer.logErr(e);
-				}
-			} else if (arg.toLowerCase().startsWith("defaultserverport")) {
-				
+			}
+			catch (NumberFormatException e) {
+				Printer.logErr("Exception encountered trying to parse default port passed");
+				Printer.logErr(e);
 			}
 		}
 	}
@@ -239,9 +263,9 @@ public class UserNode {
 		//Write WatchFiles //TODO follow subdirectories hard set to true
 		try {
 			Printer.log("Shutting down file watcher");
-			Thread.sleep(1000);
 			FileWatcher.writeWatchListsToFile(WatchSettingsReader.getInstance().getWatchSettingsPath());
-		} catch (SettingsReaderException e) {
+		}
+		catch (SettingsReaderException e) {
 			Printer.logErr("A fatal error occured writing settings.");
 			Printer.logErr(e);
 		}
@@ -309,4 +333,10 @@ public class UserNode {
 			Printer.logErr(e);
 		}
 	}
+	
 }
+
+/*
+	KNOWN BUGS:
+	-Currently, we always assume they want directories tracked
+*/

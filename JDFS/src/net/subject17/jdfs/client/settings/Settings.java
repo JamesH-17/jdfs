@@ -3,10 +3,15 @@ package net.subject17.jdfs.client.settings;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.UUID;
 
 import net.subject17.jdfs.JDFSUtil;
+import net.subject17.jdfs.client.file.db.DBManager;
+import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
+import net.subject17.jdfs.client.io.Printer;
 
 public abstract class Settings {
 	private static UUID MachineGUID = null;
@@ -116,5 +121,48 @@ public abstract class Settings {
 			}
 		}
 		return MachineGUID;
+	}
+	
+	public static int GetMachinePK() {
+		UUID machineGUID = Settings.getMachineGUIDSafe();
+		int machinePK = -1;
+		Printer.log("Getting machine PK");
+		try (ResultSet machinePKs = DBManager.getInstance().select("Select Distinct * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGUID+"'")) {
+			if (machinePKs.next()) {
+				machinePK = machinePKs.getInt("MachinePK");
+				
+				if (machinePKs.next()) {
+					Printer.logErr("Warning [in FileWatcher]:  Multiple entries exist for MachinePK  for machine {GUID:"+machineGUID+"}.  Continuing with value of "+machinePK, Printer.Level.Low);
+				}
+			}
+			else { //Key for this machine does not yet exist, so add it
+				try (ResultSet newMachinePK = DBManager.getInstance().upsert(
+						"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
+					)
+				){
+					if (newMachinePK.next()) {
+						machinePK = newMachinePK.getInt("MachinePK");
+						//machinePK = DBManager.getInstance().upsert2(
+						//		"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
+						//	);
+					}
+					else {
+						Printer.logErr("There is an error in the program logic for adding the machine key.", Printer.Level.Extreme);
+						Printer.logErr("Call to add machine PK ran without exception, yet no value for PK returned.", Printer.Level.Extreme);
+						Printer.logErr("Forcibly closing program.", Printer.Level.Extreme);
+						System.exit(-1);
+					}
+				}
+			}
+		} catch (SQLException e) {
+			Printer.logErr("Warning [in FileWatcher]: SQLException encountered when grabbing PK for our machine {GUID:"+machineGUID+"}.  Potentially invalid program state", Printer.Level.High);
+			Printer.logErr(e);
+		} catch (DBManagerFatalException e) {
+			Printer.logErr("Fatal exception encountered running DB.  Terminating program", Printer.Level.Extreme);
+			Printer.logErr(e);
+			System.exit(-1);
+		} 
+		
+		return machinePK;
 	}
 }

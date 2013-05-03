@@ -81,4 +81,9 @@ public class minitest {
 		Printer.println(loc.relativize(loc));
 		Printer.println(loc.relativize(loc).toString().length());
 	}
+	
+	@Test
+	public void testFilePermissons() {
+		String file = "C:\\Users\\James\\My Documents\\School\\test\\test.txt";
+	}
 }

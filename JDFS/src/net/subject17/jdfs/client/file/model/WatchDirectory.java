@@ -112,6 +112,25 @@ public class WatchDirectory {
 		
 		return directories;
 	}
+	
+	
+	public final HashSet<Path> getOnlyDirectoriesToWatch() throws IOException {
+		return getOnlyDirectoriesToWatch(directory);
+	}
+	private final HashSet<Path> getOnlyDirectoriesToWatch(Path location) throws IOException {
+		HashSet<Path> directories = new HashSet<Path>();
+		directories.add(location);
+		
+		try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
+			
+			for (Path pathToCheck : canidatePaths) {
+				if (Files.isDirectory(pathToCheck) && followSubDirectories)
+					directories.addAll(getOnlyDirectoriesToWatch(pathToCheck));
+			}
+		}
+		
+		return directories;
+	}
 
 	//Overrides/Class implementation
 	public final int hashCode() { return directory.hashCode(); }

@@ -485,7 +485,8 @@ public class PeersHandler {
 				"SELECT TOP "+DBManager.maxRecordsToGrab+" "+
 				"MachineIP4Links.IP4 AS IP4 "+
 				"FROM Users "+
-				"INNER JOIN Machines ON Users.MachinePK = Machines.MachinePK "+
+				"INNER JOIN MachineUserLinks ON MachineUserLinks.UserPK = Users.UserPK "+
+				"INNER JOIN Machines ON MachineUserLinks.MachinePK = Machines.MachinePK "+
 				"INNER JOIN MachineIP4Links ON Machines.MachinePK = MachineIP4Links.MachinePK "+
 				"WHERE Machines.MachineGUID NOT LIKE '"+Settings.getMachineGUIDSafe()+"'"
 			);
@@ -493,7 +494,8 @@ public class PeersHandler {
 				"SELECT TOP "+DBManager.maxRecordsToGrab+" "+
 				"MachineIP6Links.IP6 AS IP6 "+
 				"FROM Users "+
-				"INNER JOIN Machines ON Users.MachinePK = Machines.MachinePK "+
+				"INNER JOIN MachineUserLinks ON MachineUserLinks.UserPK = Users.UserPK "+
+				"INNER JOIN Machines ON MachineUserLinks.MachinePK = Machines.MachinePK "+
 				"INNER JOIN MachineIP6Links ON Machines.MachinePK = MachineIP6Links.MachinePK "+
 				"WHERE Machines.MachineGUID NOT LIKE '"+Settings.getMachineGUIDSafe()+"'"
 			)

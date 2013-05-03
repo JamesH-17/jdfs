@@ -19,6 +19,8 @@ public final class WatchSettingsWriter extends SettingsWriter {
 	}
 	public static void writeWatchSettings(Path loc, Collection<WatchList> watchLists) {
 		try {
+			Printer.log("Write Watchlist to XML at location "+loc);
+			
 			Document doc = getNewDocBuilder();
 			doc = createDocument(doc, watchLists);
 			
@@ -36,6 +38,8 @@ public final class WatchSettingsWriter extends SettingsWriter {
 		
 		for (WatchList list : watchLists) { //Note that storing the users is redundant
 			//Peer settings
+			Printer.log("Writing watchlist");
+			
 			Element watchList = doc.createElement("watchList");
 			
 			Element watchFiles = doc.createElement("watchFiles");
@@ -45,10 +49,16 @@ public final class WatchSettingsWriter extends SettingsWriter {
 			watchList.appendChild(watchDirectories);
 			
 			Element userGUID = doc.createElement("userGUID");
-			userGUID.setTextContent(list.getUser().getGUID().toString());
+			userGUID.setTextContent( 
+					!(null == list.getUser() || null == list.getUser().getGUID()) ? 
+							list.getUser().getGUID().toString() 
+							: ""
+			);
 			watchList.appendChild(userGUID);
 			
 			for(WatchDirectory directory : list.getDirectories().values()){
+				Printer.log("Writing directory "+directory.getGUID());
+				
 				if (!directory.isEmpty()) {
 					Element directoryTag = directory.toElement(doc);
 					watchDirectories.appendChild(directoryTag);
@@ -56,6 +66,8 @@ public final class WatchSettingsWriter extends SettingsWriter {
 			}
 			
 			for(WatchFile file : list.getFiles().values()){
+				Printer.log("Writing file "+file.getGUID());
+				
 				if (!file.isEmpty()) {
 					Element fileTag = file.toElement(doc);
 					watchFiles.appendChild(fileTag);
@@ -65,6 +77,7 @@ public final class WatchSettingsWriter extends SettingsWriter {
 			root.appendChild(watchList);
 		}
 		
+		Printer.log("Done preparing watchlist document");
 		doc.appendChild(root);
 		
 		return doc;		

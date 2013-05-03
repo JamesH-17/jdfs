@@ -50,6 +50,12 @@ import org.xml.sax.SAXException;
  *
  *	Actually processing any events that occur are handled by the 
  *	WatchEventDispatcher thread, which this class starts.
+ *
+ *  This class should reallllly be a singleton.  So much has to happen
+ *  in the right order to avoid null pointers, state integrity, etc.
+ *  
+ *  
+ *  Good luck if you're here.  This class is a friggin mess.
  */
 public final class FileWatcher {
 
@@ -60,12 +66,16 @@ public final class FileWatcher {
 	private static User activeUser;
 	private static int userPK;
 	private static WatchList activeWatchList;
-	private static int machinePK = GetMachinePK();
+	private static int machinePK = Settings.GetMachinePK();
 	
 	//Keep in mind each watchList actually tracks some user data
 	private static HashMap<User,WatchList> watchLists; //I'm considering making a superclass that handles what to do with switching watchlists
 														//Actually, it would be pretty easy to just put a watch file location for each user, and pass in the list here
 	private static ConcurrentHashMap<WatchKey,Path> watchKeys; //The event we get back is a watchkey, so we index by that
+	private static HashSet<Path> directoriesWithWatchedFile;
+	private static HashSet<Path> watchedDirectories;
+	private static HashSet<Path> watchedFiles;
+	
 	
 	private static WatchService watcher;
 	private static Thread watchDispatcherThread;
@@ -77,12 +87,18 @@ public final class FileWatcher {
 			try {
 				WatchSettingsWriter.writeWatchSettings(target, watchLists.values());
 			} catch(Exception e) {
-				
+				Printer.log("File was not readable and we could not create a blank one");
+				Printer.logErr(e);
 			}
 		}
 		watchSettingsFile = target;
 		watchSettingsReader = new WatchSettingsReader(watchSettingsFile);
-		watchLists = watchSettingsReader.getAllWatchLists();		
+		watchLists = watchSettingsReader.getAllWatchLists();
+		
+		//registerAllWatchlistsToDB();  //Should be handled in each watchlist now
+		
+		Printer.log("FileWatcher reset to values found at path "+target);
+		Printer.log("Number of watchLists found: "+(null == watchLists ? "!!!!Null!!!!" : watchLists.size()));
 	}
 
 	public final static WatchList getWatchListByUser(User user){
@@ -102,20 +118,33 @@ public final class FileWatcher {
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/**
+	 * 
+	 * @param user Watchlist to 
+	 * @return
+	 * @throws IOException
+	 * @throws DBManagerFatalException
+	 */
 	public final static boolean setActiveWatchList(User user) throws IOException, DBManagerFatalException {
 		/* ----------------This is the magic function that inits everything else--------------------*/
+		Printer.log("Changing watchLists");
 		if (!UserUtil.isEmptyUser(user)){
+			deregisterWatchKeys();
 			commitChangesToWatchlist();
 			
 			activeWatchList = watchLists.get(activeUser = user); //could be set to null here
+			Printer.log("activeWatchList:"+activeWatchList);
+			
+			if (null == activeWatchList) { //This user doesn't have a watchlist!  Make a default!
+				Printer.log("Initializing default watchlist for user");
+				activeWatchList = new WatchList(user);
+				watchLists.put(activeUser,activeWatchList);
+			}
+			
 			setUserPK();
 			removeDbEntriesForUser();
 			AccountManager.getInstance().setActiveUser(user);
 			
-			if (null == activeWatchList) { //This user doesn't have a watchlist!  Make a default!
-				activeWatchList = new WatchList(user);
-				watchLists.put(activeUser,activeWatchList);
-			}
 			initWatchService();
 			registerAllFilesToWatchService();
 			return true;
@@ -135,9 +164,9 @@ public final class FileWatcher {
 		userPK = -1;
 		
 		try (ResultSet pk = DBManager.getInstance().select(
-				"SELECT UserPK FROM Users WHERE User.GUID LIKE '"+user.getGUID()+"'"+
-				" AND User.UserName LIKE '"+user.getUserName()+"'"+
-				" AND User.UserName LIKE '"+user.getAccountEmail()+"'"
+				"SELECT UserPK FROM Users WHERE Users.UserGUID LIKE '"+user.getGUID()+"'"+
+				" AND Users.UserName LIKE '"+user.getUserName()+"'"+
+				" AND Users.AccountEmail LIKE '"+user.getAccountEmail()+"'"
 			)
 		) {
 			if (pk.next()) {
@@ -195,10 +224,6 @@ public final class FileWatcher {
 		return addDirectoryToWatchList(watchLists, user, directory, trackSubdirectories);
 	}
 	
-	private final static void commitChangesToWatchlist(){
-		WatchSettingsWriter.writeWatchSettings(watchSettingsFile, watchLists.values());
-	}
-	
 	private final static boolean addDirectoryToWatchList(HashMap<User,WatchList> haystack, User user, Path directory, boolean trackSubdirectories) throws FileSystemException{
 		if 	(haystack==null || haystack.isEmpty() || user==null || user.isEmpty() || !haystack.containsKey(user))
 			return false;
@@ -208,35 +233,75 @@ public final class FileWatcher {
 		}
 	}
 	
+	private final static void commitChangesToWatchlist() {
+		WatchSettingsWriter.writeWatchSettings(watchSettingsFile, watchLists.values());
+	}
+	
 	private final static void initWatchService() throws IOException {
 		watcher = FileSystems.getDefault().newWatchService();
 	}
+	/*  This is being implemented in each watchlist instead
+	private final static void registerAllWatchlistsToDB() {				
+		try {
+			for (WatchList watchList : watchLists.values()) {
+				
+				for(WatchDirectory directory : watchList.getDirectories().values()){
+					//First, put the directory on.
+					HashSet<Path> directoriesToWatch = directory.getDirectoriesToWatch();
+						registerPathToDB(directoriesToWatch, directory);
+				}
+				
+				//Register files
+				for(WatchFile file : watchList.getFiles().values()){
+					registerPathToDB(file);
+				}	
+			}
+		} catch (DBManagerFatalException e) {
+			Printer.logErr("Error putting watchlists in DB");
+			Printer.logErr(e);
+		}
+	}*/
 		
 	private final static void registerAllFilesToWatchService() throws IOException, DBManagerFatalException {
 		assert(activeWatchList != null);
 		
 		//This function only handles the current watchlist
-		
+		Printer.log("Registering files to watch service");
 		//Register directories
 		for(WatchDirectory directory : activeWatchList.getDirectories().values()){
 			//First, put the directory on. (Keep in mind, we need to handle if new files are added to the directory, if the directory is deleted, or if it is moved)
-			HashSet<Path> directoriesToWatch = directory.getDirectoriesToWatch();
-			for (Path path : directoriesToWatch) {
-				watchKeys.put(
-						path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY),
-						path
-				);
+			
+			for (Path path : directory.getOnlyDirectoriesToWatch()) {
+				if (!directoriesWithWatchedFile.contains(path)) {
+					watchKeys.put(
+							path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY),
+							path
+					);
+					directoriesWithWatchedFile.add(path);
+				}
+				watchedDirectories.add(path);
 			}
 			
-			registerPathToDB(directoriesToWatch, directory);
+			registerPathToDB(directory.getDirectoriesToWatch(), directory);
+			//TODO maybe directory.getAllFilesToWatch() instead
 		}
 		
 		//Register files
 		for(WatchFile file : activeWatchList.getFiles().values()){
-			watchKeys.put(
-					file.getPath().register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
-					file.getPath()
-			);
+			Path loc = file.getPath();
+			if (!Files.isDirectory(loc))
+				loc = loc.getParent();
+			
+			if (!directoriesWithWatchedFile.contains(file.getPath().getParent())) {
+				watchKeys.put(
+						loc.register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
+						loc
+				);
+				directoriesWithWatchedFile.add(loc);
+			}
+			
+			watchedFiles.add(file.getPath());
+			
 			registerPathToDB(file);
 		}	
 	}
@@ -328,7 +393,7 @@ public final class FileWatcher {
 			if (pathsFound.next()) {
 				if (pathsFound.getInt("priority") != file.getPriority()) {
 					DBManager.getInstance().upsert("UPDATE UserFiles SET priority = "+file.getPriority()+
-							" WHERE UserFilePK LIKE '"+pathsFound.getString("UserFilePK")+"'"
+							" WHERE UserFilePK = "+pathsFound.getString("UserFilePK")
 					);
 				}
 				ensureUserFilePKLinked(pathsFound.getInt("UserFilePK"));
@@ -371,7 +436,7 @@ public final class FileWatcher {
 			
 			if (!linkedFiles.next()) {
 				//insert it
-				DBManager.getInstance().upsert("INSERT INTO UserFileLinks(UserPK, UserFilePK) VALUES ("+userPK+","+filePK+","+machinePK+")");
+				DBManager.getInstance().upsert("INSERT INTO UserFileLinks(UserPK, UserFilePK, MachinePK) VALUES ("+userPK+","+filePK+","+machinePK+")");
 				//not confirming if correct
 			}
 			
@@ -379,55 +444,10 @@ public final class FileWatcher {
 			Printer.logErr("SQLException encountered in FileWatcher whilst ensuring user file pk is linked");
 			Printer.logErr(e);
 		}
-	}
-
-	
-	private static int GetMachinePK() {
-		UUID machineGUID = Settings.getMachineGUIDSafe();
-		machinePK = -1;
-		Printer.log("Getting machine PK");
-		try (ResultSet machinePKs = DBManager.getInstance().select("Select Distinct * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGUID+"'")) {
-			if (machinePKs.next()) {
-				machinePK = machinePKs.getInt("MachinePK");
-				
-				if (machinePKs.next()) {
-					Printer.logErr("Warning [in FileWatcher]:  Multiple entries exist for MachinePK  for machine {GUID:"+machineGUID+"}.  Continuing with value of "+machinePK, Printer.Level.Low);
-				}
-			}
-			else { //Key for this machine does not yet exist, so add it
-				try (ResultSet newMachinePK = DBManager.getInstance().upsert(
-						"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
-					)
-				){
-					if (newMachinePK.next()) {
-						machinePK = newMachinePK.getInt("MachinePK");
-						//machinePK = DBManager.getInstance().upsert2(
-						//		"INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')"
-						//	);
-					}
-					else {
-						Printer.logErr("There is an error in the program logic for adding the machine key.", Printer.Level.Extreme);
-						Printer.logErr("Call to add machine PK ran without exception, yet no value for PK returned.", Printer.Level.Extreme);
-						Printer.logErr("Forcibly closing program.", Printer.Level.Extreme);
-						System.exit(-1);
-					}
-				}
-			}
-		} catch (SQLException e) {
-			Printer.logErr("Warning [in FileWatcher]: SQLException encountered when grabbing PK for our machine {GUID:"+machineGUID+"}.  Potentially invalid program state", Printer.Level.High);
-			Printer.logErr(e);
-		} catch (DBManagerFatalException e) {
-			Printer.logErr("Fatal exception encountered running DB.  Terminating program", Printer.Level.Extreme);
-			Printer.logErr(e);
-			System.exit(-1);
-		} 
-		
-		return machinePK;
-	}
-	
+	}	
 	
 	private static void removeAllFileLinks() throws SQLException, DBManagerFatalException {
-		//DBManager.getInstance().select("TRUNCATE TABLE UserFileLinks");
+		DBManager.getInstance().select("TRUNCATE TABLE UserFileLinks");
 	}
 	private static void removeDbEntriesForUser() throws DBManagerFatalException {
 		removeDbEntriesForUser(userPK);
@@ -446,32 +466,48 @@ public final class FileWatcher {
 		}
 	}
 
-	public void removeWatchedPath(Path pathToRemove) {
+	public static void removeWatchedPath(Path pathToRemove) {
 		for (WatchKey key : JDFSUtil.getKeysByValue(watchKeys, pathToRemove)) {
 			key.cancel();
 			watchKeys.remove(key);
 		}
 	}
 	
-	public void startWatchEventDispatcher() {
-		synchronized(watchDispatcherThread) {
-			cleanUp();
-			watchDispatcherThread = new Thread(watchDispatcher = new WatchEventDispatcher(watcher, activeUser));
+	public static void startWatchEventDispatcher() {
+		Printer.log("Dispatching watch service");
+		
+		if (null != watchDispatcherThread) {
+			synchronized(watchDispatcherThread) {
+				Printer.log("Overwriting old service");
+				
+				cleanUp();
+				watchDispatcherThread = new Thread(watchDispatcher = new WatchEventDispatcher(watcher, activeUser, directoriesWithWatchedFile, watchedFiles, watchedDirectories));
+				watchDispatcherThread.setDaemon(true);
+				watchDispatcherThread.start();
+			}
+		}
+		else {
+			Printer.log("Starting new service");
+			 
+			watchDispatcherThread = new Thread(watchDispatcher = new WatchEventDispatcher(watcher, activeUser, directoriesWithWatchedFile, watchedFiles, watchedDirectories));
 			watchDispatcherThread.setDaemon(true);
-			watchDispatcherThread.run();
+			watchDispatcherThread.start();
 		}
 	}
 	
-	public void cleanUp() {
-		synchronized(watchDispatcherThread) {
-			if (watchDispatcherThread != null) {
-				synchronized(watchDispatcher) {
-					if (null != watchDispatcher) {
-						watchDispatcher.stop();
-					}
-				}
+	public static void cleanUp() {
+		if (watchDispatcherThread != null) {
+			synchronized(watchDispatcherThread) {
+				
 			}
 			watchDispatcherThread = null;
+		}
+		
+		if (null != watchDispatcher) {
+			synchronized(watchDispatcher) {
+				watchDispatcher.stop();
+				watchDispatcher = null;
+			}
 		}
 	}
 
@@ -570,7 +606,7 @@ public final class FileWatcher {
 				" AND COALESCE(UserFiles.ParentGUID,'') LIKE ''"
 			)
 		) {
-			Printer.log("DB Files grab");
+			Printer.log("DB Files grab for user with PK "+userPK);
 			while (watchFiles.next()) {
 				Printer.log("next");
 				try {
@@ -598,5 +634,29 @@ public final class FileWatcher {
 			Printer.logErr(e);
 		}
 		return userWatchFiles;
+	}
+	
+	private static void deregisterWatchKeys() {
+		if (watchKeys != null) {
+			for (WatchKey key : watchKeys.keySet()) {
+				key.cancel();
+				watchKeys.remove(key);
+			}
+		}
+		watchKeys = new ConcurrentHashMap<WatchKey,Path>();
+		
+		directoriesWithWatchedFile = new HashSet<Path>();
+		watchedDirectories = new HashSet<Path>();
+		watchedFiles = new HashSet<Path>();
+	}
+
+	public static void stopWatchEventDispatcher() {
+		// TODO Auto-generated method stub
+		if (null != watchDispatcher) {
+			watchDispatcher.stop();
+		}
+		if (null != watchDispatcherThread) {
+			watchDispatcherThread.interrupt();
+		}
 	}
 }
