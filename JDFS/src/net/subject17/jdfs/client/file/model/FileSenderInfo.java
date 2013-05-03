@@ -16,7 +16,7 @@ public final class FileSenderInfo {
 	public final String AESInitializationVector;
 	
 	//Identification
-	public final Path fileLocation;
+	public final String fileLocation;
 	public final UUID fileGuid;
 	public final UUID userGuid;
 	public final UUID sendingMachineGuid;
@@ -29,10 +29,10 @@ public final class FileSenderInfo {
 	
 	//For directories only
 	public final UUID parentGUID;
-	public final Path locationRelativeToParent; //Resolved against TLD of watched dir 
+	public final String locationRelativeToParent; //Resolved against TLD of watched dir 
 	
 	@JsonIgnore
-	public final Path encryptedFileLocation; //Used by sender
+	public final String encryptedFileLocation; //Used by sender
 	
 	@JsonIgnore
 	public FileSenderInfo(	EncryptedFileInfoStruct info, 
@@ -45,7 +45,7 @@ public final class FileSenderInfo {
 							byte[] CheckSum
 	){
 		this.AESInitializationVector = ByteUtils.toHexString(info.IV);
-		this.fileLocation = fileLocation;
+		this.fileLocation = fileLocation.toString();
 		this.fileGuid = fileGuid;
 		this.userGuid = userGuid;
 		this.sendingMachineGuid = sendingMachineGuid;
@@ -55,7 +55,7 @@ public final class FileSenderInfo {
 		this.Checksum = ByteUtils.toHexString(CheckSum);
 		this.parentGUID = null;
 		this.locationRelativeToParent = null;
-		this.encryptedFileLocation = info.fileLocation;
+		this.encryptedFileLocation = info.fileLocation.toString();
 	}
 	
 	@JsonIgnore
@@ -70,7 +70,7 @@ public final class FileSenderInfo {
 							Path locationRelativeToParent
 	){
 		this.AESInitializationVector = ByteUtils.toHexString(info.IV);
-		this.fileLocation = fileLocation;
+		this.fileLocation = fileLocation.toString();
 		this.fileGuid = null;
 		this.userGuid = userGuid;
 		this.sendingMachineGuid = sendingMachineGuid;
@@ -79,8 +79,8 @@ public final class FileSenderInfo {
 		this.size = info.size;
 		this.Checksum = ByteUtils.toHexString(CheckSum);
 		this.parentGUID = parentGUID;
-		this.locationRelativeToParent = locationRelativeToParent;
-		this.encryptedFileLocation = info.fileLocation;
+		this.locationRelativeToParent = locationRelativeToParent.toString();
+		this.encryptedFileLocation = info.fileLocation.toString();
 	}
 	
 	@JsonIgnore

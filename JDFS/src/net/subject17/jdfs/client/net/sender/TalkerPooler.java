@@ -55,7 +55,7 @@ public final class TalkerPooler {
 			FileSenderInfo info = FileHandler.getInstance().prepareToSendFile(context);
 			
 			HashSet<String> peerIPs = (null == info.fileGuid) ? 
-					FileHandler.getInstance().getPeersToSendFileTo(info.parentGUID, info.locationRelativeToParent)
+					FileHandler.getInstance().getPeersToSendFileTo(info.parentGUID, Paths.get(info.locationRelativeToParent))
 					: FileHandler.getInstance().getPeersToSendFileTo(info.fileGuid);
 			
 			if (peerIPs.size() < 1) 
@@ -65,7 +65,7 @@ public final class TalkerPooler {
 				talkers = new Thread[peerIPs.size()];
 				int i = 0;
 				for (String ip : peerIPs) {
-					FileSender temp = new FileSender(info.encryptedFileLocation, info.getAsJSON());
+					FileSender temp = new FileSender(Paths.get(info.encryptedFileLocation), info.getAsJSON());
 					talkers[i] = new Thread(new Talker(ip, temp));
 					talkers[i].run();
 				}
