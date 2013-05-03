@@ -6,6 +6,7 @@ public class UserInput {
 	
 	private Scanner input;
 	private static Thread guiThread;
+	private static UserGUI gui;
 	
 	private static String nextInput = null;
 	
@@ -45,7 +46,7 @@ public class UserInput {
 
 	
 	private static void setUpGui(){
-		UserGUI gui = new UserGUI();
+		gui = new UserGUI();
 		guiThread = new Thread(gui);
 		guiThread.start();
 	}
@@ -54,5 +55,13 @@ public class UserInput {
 	}
 	public void setInput(String inputString) {
 		nextInput = inputString;
+	}
+	public static void closeGUI() {
+		try {
+			gui.cleanup();
+			guiThread.interrupt();
+		} catch(Exception e) {
+			
+		}
 	}
 }

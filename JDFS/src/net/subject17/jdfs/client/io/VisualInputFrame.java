@@ -23,13 +23,13 @@ public class VisualInputFrame  extends JFrame {
    public VisualInputFrame() {
 
       setTitle("JDFS -- Control panel");
-      setSize(900, 900);
+      setSize(900, 130);
       VisualInputPanel panel = new VisualInputPanel();
       panel.add(new JLabel("Input:"));
       userInput = new JTextField(40);
       panel.add(userInput);
 
-      add(panel, BorderLayout.CENTER);
+      add(panel, BorderLayout.SOUTH);
    }
 
    // !! create a public method to get JTextField's text
@@ -40,7 +40,7 @@ public class VisualInputFrame  extends JFrame {
 
    class VisualInputPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = -2681291298064133529L;
-	private Component frame;
+	//private Component frame;
 
       public VisualInputPanel() {
 

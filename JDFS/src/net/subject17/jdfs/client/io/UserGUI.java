@@ -11,6 +11,13 @@ public class UserGUI implements Runnable {
 
 		visInput.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		visInput.setVisible(true);
+		
+	}
+	
+	public void cleanup() {
+		visInput.removeAll();
+		visInput.setEnabled(false);
+		visInput.dispose();
 	}
 
 }

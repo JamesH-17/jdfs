@@ -338,6 +338,14 @@ public class UserNode {
 			Printer.logErr("A fatal error occured shutting down the file update checker.");
 			Printer.logErr(e);
 		}
+		
+		try {
+			UserInput.closeGUI();
+		}
+		catch(Exception e) {
+			Printer.logErr("A fatal error occured shutting down the GUI.");
+			Printer.logErr(e);
+		}
 	}
 
 	public static void exitProgram() {

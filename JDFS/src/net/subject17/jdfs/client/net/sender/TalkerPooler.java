@@ -118,7 +118,10 @@ public final class TalkerPooler {
 				fileToSend = Paths.get( filesToCheck.getString("LocalFilePath") );
 				
 				
-				if (Files.isDirectory(fileToSend)) {
+				if (!Files.exists(fileToSend) ) {
+					Printer.log("File ["+fileToSend+"] does not exist -- skipped");
+				}
+				else if ( Files.isDirectory(fileToSend)) {
 					Printer.log("Found directory in updates -- skipped");		
 				}
 				else {

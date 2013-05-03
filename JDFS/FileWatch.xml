@@ -1,26 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <watchLists>
     <watchList>
-        <watchFiles>
-            <file>
-                <path>C:\Users\James\workspace\jdfs\JDFS\Users.xml</path>
-                <guid>fc3211b3-2375-451b-b0d4-d666e9efe999</guid>
-                <priority>0</priority>
-            </file>
-            <file>
-                <path>C:\Users\James\My Documents\School\test\test.txt</path>
-                <guid>8f326e7e-60ab-4ea2-977e-248450d3bd04</guid>
-                <priority>0</priority>
-            </file>
-        </watchFiles>
-        <watchDirectories>
-            <directory>
-                <path>C:\Users\James\My Documents\School\test</path>
-                <guid>5d3b691f-23a1-4cbe-8461-b48b35017fca</guid>
-                <priority>0</priority>
-                <followSubDirectories>true</followSubDirectories>
-            </directory>
-        </watchDirectories>
+        <watchFiles/>
+        <watchDirectories/>
         <userGUID>1711566d-f3f0-4cce-ba9d-341c33531088</userGUID>
     </watchList>
     <watchList>
