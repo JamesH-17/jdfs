@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import javax.crypto.NoSuchPaddingException;
 
+import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.account.AccountManager;
 import net.subject17.jdfs.client.file.FileUtil;
 import net.subject17.jdfs.client.file.db.DBManager;
@@ -47,6 +48,7 @@ public final class TalkerPooler {
 	public final void UpdatePath(Path context, User user) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException, IOException, UserException {
 		//TODO Design choice:  Only update this user, or all users that modify that file?  
 		//TODO implement the directory handling as well
+		Printer.log("TALKER POOLER Sending file "+context);
 		try {
 			Thread[] talkers;
 			
@@ -146,7 +148,7 @@ public final class TalkerPooler {
 								Paths.get( filesToCheck.getString("RelativeParentPath") )
 						);
 					}
-					
+					Printer.log("------------------------------"+JDFSUtil.toJSON(request));
 					
 					//Finally, request the file from the peers we found
 					//We're just grabbing everything now, which is horribly inefficient.
@@ -160,7 +162,7 @@ public final class TalkerPooler {
 							talkers[i] = new Thread(new Talker(ip, temp));
 							talkers[i].run();
 						}
-						
+						Printer.log("File sent!");
 					}
 					else {
 						Printer.log("File not sent, no peers found");

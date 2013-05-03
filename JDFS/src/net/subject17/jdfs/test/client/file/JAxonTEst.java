@@ -1,8 +1,14 @@
 package net.subject17.jdfs.test.client.file;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.UUID;
 
+import net.subject17.jdfs.JDFSUtil;
+import net.subject17.jdfs.client.file.model.FileRetrieverRequest;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.net.model.MachineInfo;
 import net.subject17.jdfs.client.user.User;
@@ -25,7 +31,8 @@ public class JAxonTEst {
 			
 			ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, Visibility.ANY);;
 			mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-			String jsonString = mapper.writeValueAsString(temp);
+			String jsonString = "";
+			jsonString = mapper.writeValueAsString(temp);
 			Printer.log(jsonString);
 			
 			User temp2 = mapper.readValue(jsonString, User.class);
@@ -39,9 +46,18 @@ public class JAxonTEst {
 			Printer.log(jsonString);
 			
 			MachineInfo tempInfo2 = mapper.readValue(jsonString, MachineInfo.class);
-			Printer.log(tempInfo2);
+			Printer.log(tempInfo2.toString());
+			Path p = Paths.get(JDFSUtil.defaultDirectory).toRealPath();
+			FileRetrieverRequest request = new FileRetrieverRequest(UUID.randomUUID(), UUID.randomUUID(), new Timestamp(new Date().getTime()), ">", UUID.randomUUID(), p);
+			Printer.log(JDFSUtil.toJSON(request));
+			Printer.log(request.toString());/*
+			jsonString = mapper.writeValueAsString(request);
+			Printer.log(jsonString);
 			
-		} catch (UserException | IOException e) {
+			FileRetrieverRequest request2 = mapper.readValue(jsonString, FileRetrieverRequest.class);
+			Printer.log(request2);*/
+			
+		} catch (UserException  | IOException e) {
 			Printer.logErr(e);
 		}
 		

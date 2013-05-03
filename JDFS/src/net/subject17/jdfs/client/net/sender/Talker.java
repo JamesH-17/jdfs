@@ -9,6 +9,7 @@ import java.util.Scanner;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
+import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.file.handler.FileHandler;
 import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
 import net.subject17.jdfs.client.io.Printer;
@@ -170,7 +171,7 @@ public final class Talker implements Runnable {
 		
 		if (null != response && response.equals(LanguageProtocol.ACK)) { 
 
-			output.println(fileRetriever.criteria.toJSON());
+			output.println( JDFSUtil.toJSON(fileRetriever.criteria) );
 			response = in.readLine();
 			
 			if (null != response && response.equals(LanguageProtocol.ACCEPT_FILE_TRANS)) {

@@ -1,14 +1,10 @@
 package net.subject17.jdfs.client.file.model;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.annotate.JsonIgnore;
-import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 
 public final class FileRetrieverRequest {
 	
@@ -16,24 +12,33 @@ public final class FileRetrieverRequest {
 	//Had to remove final modifiers for json parsing
 	///
 	
-	
-	@JsonIgnore
 	private final String defaultComparison = ">";
 	
 	//Identification
-	public UUID fileGuid;
-	public UUID userGuid;
-	public UUID sendingMachineGuid;
+	public final UUID fileGuid;
+	public final UUID userGuid;
+	public final UUID sendingMachineGuid;
 
-	public Timestamp lastUpdatedDate;
-	public String comparison;
+	public final Timestamp lastUpdatedDate;
+	public final String comparison;
 	
 	//For directories only
-	public UUID parentGUID;
-	public Path relativeParentLoc; //Resolved against TLD of watched dir
+	public final UUID parentGUID;
+	public final String relativeParentLoc; //Resolved against TLD of watched dir
 	
-	
-	public FileRetrieverRequest(){}
+	@JsonIgnore
+	public FileRetrieverRequest() {
+		fileGuid = null;
+		userGuid = null;
+		sendingMachineGuid = null;
+
+		lastUpdatedDate = null;
+		comparison = null;
+		
+		//For directories only
+		parentGUID = null;
+		relativeParentLoc = null; //Resolved against TLD of watched dir
+	}
 	
 	@JsonIgnore
 	public FileRetrieverRequest(UUID userGuid, UUID sendingMachineGuid, Timestamp lastUpdated, String comparison, UUID parentGUID, Path parentLocation) {
@@ -51,7 +56,7 @@ public final class FileRetrieverRequest {
 		}
 		this.comparison = comparison;
 		this.parentGUID = parentGUID;
-		this.relativeParentLoc = parentLocation;
+		this.relativeParentLoc = parentLocation.toString();
 	}
 	
 	@JsonIgnore
@@ -109,7 +114,7 @@ public final class FileRetrieverRequest {
 		}
 		this.comparison = comparison;
 		this.parentGUID = ParentGUID;
-		this.relativeParentLoc = RelToParent;
+		this.relativeParentLoc = RelToParent.toString();
 	}
 	
 	//No comparisons
@@ -132,7 +137,7 @@ public final class FileRetrieverRequest {
 		this.lastUpdatedDate = null;
 		this.comparison = null;
 		this.parentGUID = ParentGUID;
-		this.relativeParentLoc = RelToParent;
+		this.relativeParentLoc = RelToParent.toString();
 	}
 	
 	//No machine or comparisons
@@ -154,7 +159,7 @@ public final class FileRetrieverRequest {
 		this.lastUpdatedDate = null;
 		this.comparison = null;
 		this.parentGUID = parentGUID;
-		this.relativeParentLoc = parentLocation;
+		this.relativeParentLoc = parentLocation.toString();
 	}
 	
 	//User only
@@ -168,11 +173,10 @@ public final class FileRetrieverRequest {
 		this.parentGUID = null;
 		this.relativeParentLoc = null;
 	}
-	
-	//Utility
+
 	@JsonIgnore
-	public String toJSON() throws JsonGenerationException, JsonMappingException, IOException {
-		ObjectMapper mapper = new ObjectMapper();
-		return mapper.writeValueAsString(this);
+	@Override
+	public String toString(){
+		return "{fileGUID:"+this.fileGuid+", machineGUID: "+this.sendingMachineGuid+", parentGUID: "+this.parentGUID+", relativeParentLoc:"/*+this.relativeParentLoc*/+", comparison:"+this.comparison+", lastUpdatedDate:"+this.lastUpdatedDate+", userGuid:"+this.userGuid+"}";		
 	}
 }

@@ -86,7 +86,7 @@ public class JDFSUtil {
 	    return null;
 	}
 	
-	public String toJSON(Object obj) throws JsonGenerationException, JsonMappingException, IOException {
+	public static String toJSON(Object obj) throws JsonGenerationException, JsonMappingException, IOException {
 		ObjectMapper mapper = new ObjectMapper();
 		return mapper.writeValueAsString(obj);
 	}
