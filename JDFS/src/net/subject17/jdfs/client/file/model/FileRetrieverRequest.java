@@ -17,7 +17,7 @@ public final class FileRetrieverRequest {
 	///
 	
 	
-	@JsonIgnore
+	
 	private final String defaultComparison = ">";
 	
 	//Identification
@@ -35,7 +35,7 @@ public final class FileRetrieverRequest {
 	
 	public FileRetrieverRequest(){}
 	
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID userGuid, UUID sendingMachineGuid, Timestamp lastUpdated, String comparison, UUID parentGUID, Path parentLocation) {
 		this.fileGuid = null;
 		this.userGuid = userGuid;
@@ -54,7 +54,7 @@ public final class FileRetrieverRequest {
 		this.relativeParentLoc = parentLocation;
 	}
 	
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID fileGuid, UUID userGuid, UUID sendingMachineGuid, Timestamp lastUpdated, String comparison) {
 		this.fileGuid = fileGuid;
 		this.userGuid = userGuid;
@@ -74,7 +74,7 @@ public final class FileRetrieverRequest {
 	}
 	
 	//No machines
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID fileGuid, UUID userGuid, Timestamp lastUpdated, String comparison) {
 		this.fileGuid = fileGuid;
 		this.userGuid = userGuid;
@@ -93,7 +93,7 @@ public final class FileRetrieverRequest {
 		this.relativeParentLoc = null;
 	}
 	
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID userGuid, Timestamp lastUpdated, String comparison, UUID ParentGUID, Path RelToParent) {
 		this.fileGuid = null;
 		this.userGuid = userGuid;
@@ -113,7 +113,7 @@ public final class FileRetrieverRequest {
 	}
 	
 	//No comparisons
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID fileGuid, UUID userGuid, UUID sendingMachineGuid) {
 		this.fileGuid = fileGuid;
 		this.userGuid = userGuid;
@@ -124,7 +124,7 @@ public final class FileRetrieverRequest {
 		this.relativeParentLoc = null;
 	}
 	
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID userGuid, UUID sendingMachineGuid, UUID ParentGUID, Path RelToParent) {
 		this.fileGuid = null;
 		this.userGuid = userGuid;
@@ -136,7 +136,7 @@ public final class FileRetrieverRequest {
 	}
 	
 	//No machine or comparisons
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID fileGuid, UUID userGuid) {
 		this.fileGuid = fileGuid;
 		this.userGuid = userGuid;
@@ -146,7 +146,7 @@ public final class FileRetrieverRequest {
 		this.parentGUID = null;
 		this.relativeParentLoc = null;
 	}
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID userGuid, UUID parentGUID, Path parentLocation) {
 		this.fileGuid = null;
 		this.userGuid = userGuid;
@@ -158,7 +158,7 @@ public final class FileRetrieverRequest {
 	}
 	
 	//User only
-	@JsonIgnore
+	
 	public FileRetrieverRequest(UUID userGuid) {
 		this.fileGuid = null;
 		this.userGuid = userGuid;

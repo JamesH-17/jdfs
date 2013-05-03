@@ -16,6 +16,8 @@ import java.util.UUID;
 import javax.crypto.NoSuchPaddingException;
 
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
 
 import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.account.AccountManager;
@@ -452,7 +454,11 @@ public final class FileHandler {
 	}
 
 	public FileRetrieverInfo getFileStoredOnMachine(FileRetrieverRequest criteria) throws DBManagerFatalException {
-		
+		try {
+			Printer.log("Criteria :"+criteria.toJSON());
+		} catch (IOException e) {
+			Printer.logErr(e);
+		}
 		String criteriaRequestString = "SELECT DISTINCT PeerFiles.* FROM PeerFiles "+
 				"INNER JOIN PeerFileLinks ON PeerFiles.FilePK = PeerFileLinks.PeerFilePK "+
 				"INNER JOIN Peers ON Peers.PeerPK = PeerFileLinks.PeerPK "+
