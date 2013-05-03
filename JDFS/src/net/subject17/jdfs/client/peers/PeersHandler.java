@@ -276,6 +276,7 @@ public class PeersHandler {
 							"'"+peer.getUsername()+"',"+
 							"'"+peer.getEmail()+"'"+
 					")")){
+						pk.next();
 						peerPK = pk.getInt("PeerPK");
 					}
 					
@@ -289,36 +290,40 @@ public class PeersHandler {
 			
 			//Add to peers and machines table first
 			HashSet<UUID> machineIds = peer.getMachineGUIDs();
+
+			HashSet<Integer> machinePks = new HashSet<Integer>();
 			
 			if (machineIds.size() > 0) {
-				try (ResultSet existingPeers = DBManager.getInstance().select("SELECT DISTINCT Machines.MachinePK, MachineGUID FROM Peers INNER JOIN MachinePeerLinks ON MachinePeerLinks.PeerPK = Peers.PeerPK INNER JOIN Machines ON Machines.MachinePK = MachinePeerLinks.MachinePK WHERE "+
+				try (ResultSet existingMachines = DBManager.getInstance().select("SELECT DISTINCT Machines.MachinePK, MachineGUID FROM Peers INNER JOIN MachinePeerLinks ON MachinePeerLinks.PeerPK = Peers.PeerPK INNER JOIN Machines ON Machines.MachinePK = MachinePeerLinks.MachinePK WHERE "+
 						"Peers.PeerPK = "+peerPK+" AND Machines.MachineGUID IN ('"+JDFSUtil.stringJoin(machineIds)+"')"
 				)){
 	
 					//Grab all machine ids this peer has, and remove any that already exist in our db
-					while (existingPeers.next()) {
-						machineIds.remove(UUID.fromString(existingPeers.getObject("MachineGUID").toString()));
+					while (existingMachines.next()) {
+						machinePks.add(new Integer(existingMachines.getInt("MachinePK")));
+						machineIds.remove(UUID.fromString(existingMachines.getString("MachineGUID").toString()));
 					}
 	
 					//Now, add any new ids
 					for (UUID machineId : machineIds) {
 						
-						int machinePK;
+						//int machinePK;
+						/*
 						try (ResultSet existingMachines = DBManager.getInstance().select("SELECT TOP 1 * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineId+"'")
 						) {
 							if (existingMachines.next()) {
 								machinePK = existingMachines.getInt("MachinePK");
 							}
 							else {
-	
+						 	*/
 								try (ResultSet pk = DBManager.getInstance().upsert("INSERT INTO Machines (MachineGUID) VALUES ("+
 										"'"+machineId+"'"+
 								")")){
 									pk.next();
-									machinePK = pk.getInt("MachinePK");
+									machinePks.add(new Integer(pk.getInt("MachinePK")));
 								}
-							}
-						}
+							/*}
+						}*/
 						
 					}
 					
@@ -330,6 +335,7 @@ public class PeersHandler {
 			///////////////////////////////////////
 			
 			//Next up, link the ips if they aren't already
+			/*
 			HashSet<UUID> machineGuids = peer.getMachineGUIDs();
 			if (machineGuids.size() > 0) {
 				try (ResultSet MachinePKset = DBManager.getInstance().select("SELECT MachinePK FROM Machines WHERE "+
@@ -337,36 +343,46 @@ public class PeersHandler {
 				)){
 					
 					while (MachinePKset.next()) {
-						
+						*/
+			//We just assume every machine has connected from every ip for each peer
+			//So, in our minds, your laptop and desktop have the same ip address sets
+			for (Integer pk : machinePks) {
 						try (ResultSet ip4sToRemove = DBManager.getInstance().select("SELECT DISTINCT IP4 FROM MachineIP4Links WHERE "+
-								" MachinePK = "+MachinePKset.getInt("MachinePK")
+								" MachinePK = "+pk//MachinePKset.getInt("MachinePK")
 						);
 						ResultSet ip6sToRemove = DBManager.getInstance().select("SELECT DISTINCT IP6 FROM MachineIP6Links WHERE "+
-								" MachinePK = "+MachinePKset.getInt("MachinePK")
+								" MachinePK = "+pk//MachinePKset.getInt("MachinePK")
 						)) {
 							
 							
+							//Do for each loop since a machine can move locations
 							//Grab every ip4 and ip6 this guy has, then remove 
 							HashSet<String> ip4s = peer.getIp4s();
 							HashSet<String> ip6s = peer.getIp6s();
 							
 							while (ip4sToRemove.next())
-								ip4s.remove(ip4sToRemove.getObject("IP4"));
+								ip4s.remove(ip4sToRemove.getString("IP4"));
 							
 							while (ip6sToRemove.next())
-								ip6s.remove(ip6sToRemove.getObject("IP6"));
+								ip6s.remove(ip6sToRemove.getString("IP6"));
 							
 							for(String ip4 : ip4s) {
 								DBManager.getInstance().upsert(
 										"INSERT INTO MachineIP4Links(MachinePK, IP4) "+
-										"VALUES ("+MachinePKset.getInt("MachinePK")+",'"+ip4+"')"
+										"VALUES ("+
+											pk+//MachinePKset.getInt("MachinePK")+
+											",'"+ip4+
+										"')"
 								);
 							}
 							
 							for(String ip6 : ip6s) {
 								DBManager.getInstance().upsert(
 										"INSERT INTO MachineIP6Links(MachinePK, IP6) "+
-										"VALUES ("+MachinePKset.getInt("MachinePK")+",'"+ip6+"')"
+										"VALUES ("+pk+
+											//MachinePKset.getInt("MachinePK")+
+											",'"+ip6+
+										"')"
 								);
 							}
 							
@@ -374,12 +390,13 @@ public class PeersHandler {
 	
 							Printer.logErr(e);
 						}
-					}
+
+			}
+					/*}
 					
 				} catch (SQLException e) {
 					Printer.logErr(e);
-				}
-			}
+				}*/
 		}
 	}
 	
