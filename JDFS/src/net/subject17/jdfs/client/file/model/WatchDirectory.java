@@ -5,6 +5,7 @@ import java.nio.file.DirectoryIteratorException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -89,16 +90,18 @@ public class WatchDirectory {
 	private final HashSet<Path> getAllFilesToWatch(Path loc) throws IOException { //TODO may have to extend this to take a level parameter
 		final HashSet<Path> filesToWatch = new HashSet<Path>();
 		//TODO watch out for symlinks!
-		try (DirectoryStream<Path> stream = Files.newDirectoryStream(loc)){
-			for(Path path : stream){
-				if(Files.isRegularFile(path))
-					filesToWatch.add(path);
-				else if (Files.isDirectory(path) && followSubDirectories)
-					filesToWatch.addAll(getAllFilesToWatch(path)); //recurse
-			} 
-		} catch(DirectoryIteratorException e) {
-			Printer.logErr("Error gettings paths in directory");
-			Printer.logErr(e);
+		if (Files.exists(loc)) {
+			try (DirectoryStream<Path> stream = Files.newDirectoryStream(loc)){
+				for(Path path : stream){
+					if(Files.isRegularFile(path))
+						filesToWatch.add(path);
+					else if (Files.isDirectory(path) && followSubDirectories)
+						filesToWatch.addAll(getAllFilesToWatch(path)); //recurse
+				} 
+			} catch(DirectoryIteratorException e) {
+				Printer.logErr("Error gettings paths in directory");
+				Printer.logErr(e);
+			}
 		}
 		return filesToWatch;
 	}
@@ -116,14 +119,16 @@ public class WatchDirectory {
 		HashSet<Path> directories = new HashSet<Path>();
 		directories.add(location);
 		
-		try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
-			
-			for (Path pathToCheck : canidatePaths) {
-				Printer.log("Adding path/directory ["+pathToCheck+"]", Printer.Level.VeryLow);
-				if (Files.isDirectory(pathToCheck) && followSubDirectories)
-					directories.addAll(getDirectoriesToWatch(pathToCheck));
-				else
-					directories.add(pathToCheck);
+		if (Files.exists(location)) {
+			try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
+				
+				for (Path pathToCheck : canidatePaths) {
+					Printer.log("Adding path/directory ["+pathToCheck+"]", Printer.Level.VeryLow);
+					if (Files.isDirectory(pathToCheck) && followSubDirectories)
+						directories.addAll(getDirectoriesToWatch(pathToCheck));
+					else
+						directories.add(pathToCheck);
+				}
 			}
 		}
 		
@@ -137,13 +142,26 @@ public class WatchDirectory {
 	private final HashSet<Path> getOnlyDirectoriesToWatch(Path location) throws IOException {
 		HashSet<Path> directories = new HashSet<Path>();
 		directories.add(location);
-		
-		try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
-			
-			for (Path pathToCheck : canidatePaths) {
-				if (Files.isDirectory(pathToCheck) && followSubDirectories)
-					directories.addAll(getOnlyDirectoriesToWatch(pathToCheck));
+		try {
+			if (Files.exists(location)) {
+				try (DirectoryStream<Path> canidatePaths = Files.newDirectoryStream(location)) {
+					
+					for (Path pathToCheck : canidatePaths) {
+						if (Files.isDirectory(pathToCheck) && followSubDirectories)
+							directories.addAll(getOnlyDirectoriesToWatch(pathToCheck));
+					}
+				}
+				catch (NoSuchFileException e) {
+					Printer.logErr("Error getting directory stream for "+location+": no such file");
+					Printer.logErr(e);
+				} catch (Exception e) {
+					Printer.logErr("Error getting directory stream for "+location);
+					Printer.logErr(e);
+				}
 			}
+		} catch(Exception e) {
+			Printer.logErr(e);
+			Printer.log("Suppressed error");
 		}
 		
 		return directories;

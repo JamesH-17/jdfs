@@ -22,15 +22,15 @@ public class ResetState {
 	@Test
 	public void runSuite() {
 		truncateDB();
-		//resetFileWatchXML();
-		//resetUserXML();
+		resetFileWatchXML();
+		resetUserXML();
 		resetPeerXML();
 	}
 	
 	public void truncateDB() {
 		try {
-			DBManager.getInstance().truncateEverything2();
 			DBManager.getInstance().dropEverything2();
+			//DBManager.getInstance().truncateEverything2();
 		} catch (SQLException | DBManagerFatalException e) {
 			fail("Could not truncate db");
 		}

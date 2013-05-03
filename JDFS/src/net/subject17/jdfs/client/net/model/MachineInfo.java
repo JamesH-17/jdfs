@@ -16,7 +16,6 @@ import net.subject17.jdfs.client.user.User;
 public class MachineInfo {
 	public final ArrayList<User> users;
 	public final UUID MachineGUID;
-	
 
 	public MachineInfo(){
 		users = AccountManager.getInstance().getUsers();

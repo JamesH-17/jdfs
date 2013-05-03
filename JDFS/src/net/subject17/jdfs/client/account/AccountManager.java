@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
+import net.subject17.jdfs.client.file.handler.DBInterface;
 import net.subject17.jdfs.client.io.Printer;
 import net.subject17.jdfs.client.io.UserInput;
 import net.subject17.jdfs.client.settings.reader.UserSettingsReader;
@@ -124,7 +125,7 @@ public final class AccountManager {
 				return true; //already linked
 			}
 			else {
-				return linkUserToMachine(getUserPKSafe(user), getMachinePKSafe(machineGuid));
+				return linkUserToMachine(getUserPKSafe(user), DBInterface.getMachinePKSafe(machineGuid));
 			}
 		} catch (SQLException | DBManagerFatalException e) {
 			Printer.logErr("Error ensuring user linked to machine "+machineGuid);
@@ -143,7 +144,7 @@ public final class AccountManager {
 		}
 	}
 	
-	private int getUserPKSafe(User user) {
+	public static int getUserPKSafe(User user) {
 		try (ResultSet userFound = DBManager.getInstance().select("SELECT TOP 1 * FROM Users WHERE Users.UserGUID LIKE '"+user.getGUID()+"' AND Users.AccountEmail LIKE '"+user.getAccountEmail()+"' AND Users.UserName LIKE '"+user.getUserName()+"'")
 		) {
 			if (userFound.next()) {
@@ -163,25 +164,7 @@ public final class AccountManager {
 		}
 	}
 	//TODO refactor into sperate class
-	private int getMachinePKSafe(UUID machineGUID) {
-		try (ResultSet machinesFound = DBManager.getInstance().select("SELECT TOP 1 * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGUID+"'")
-		) {
-			if (machinesFound.next()) {
-				return machinesFound.getInt("MachinePK");
-			}
-			else {
-				try (ResultSet machineAdded = DBManager.getInstance().upsert("INSERT INTO Machines(MachineGUID) VALUES('"+machineGUID+"')")
-				) {
-					machineAdded.next();
-					return machineAdded.getInt("MachinePK");
-				}
-			}
-		} catch (SQLException | DBManagerFatalException e) {
-			Printer.logErr("Error grabbing machine PK, returning default of -1");
-			Printer.logErr(e);
-			return -1;
-		}
-	}
+	
 	//////////////////////////////////////////////////////
 	//						XML							//
 	//////////////////////////////////////////////////////

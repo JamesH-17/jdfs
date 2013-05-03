@@ -209,18 +209,23 @@ public final class WatchList {
 						if (relativeAndAbsolutePathsToAdd.containsKey(resultPath)) {
 							
 							//Not doing an integrity check on LocalFileName column
-							if (!relativeAndAbsolutePathsToAdd.get(resultPath).equals(Paths.get(existingPaths.getString("LocalFilePath")))) {
-								//Gotta update DB
-								DBManager.getInstance().upsert("UPDATE UserFiles SET LocalFilePath = '"+relativeAndAbsolutePathsToAdd.get(resultPath)+
-										"', LocalFileName = '"+relativeAndAbsolutePathsToAdd.get(resultPath).getFileName()+
-										"' WHERE UserFiles.UserFilePK = "+existingPaths.getInt("UserFilePK"));
+							try {
+								if (!relativeAndAbsolutePathsToAdd.get(resultPath).equals(Paths.get(existingPaths.getString("LocalFilePath")))) {
+									//Gotta update DB
+									DBManager.getInstance().upsert("UPDATE UserFiles SET LocalFilePath = '"+relativeAndAbsolutePathsToAdd.get(resultPath)+
+											"', LocalFileName = '"+relativeAndAbsolutePathsToAdd.get(resultPath).getFileName()+
+											"' WHERE UserFiles.UserFilePK = "+existingPaths.getInt("UserFilePK"));
+								}
+								
+								
+								ensureUserLinkedToFile(existingPaths.getInt("UserFilePK"));
+								
+								
+								relativeAndAbsolutePathsToAdd.remove(resultPath);
 							}
-							
-							
-							ensureUserLinkedToFile(existingPaths.getInt("UserFilePK"));
-							
-							
-							relativeAndAbsolutePathsToAdd.remove(resultPath);
+							catch(Exception e) {
+								Printer.logErr(e);
+							}
 						}
 					}
 					
