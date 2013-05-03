@@ -269,47 +269,56 @@ public final class FileWatcher {
 		Printer.log("Registering files to watch service");
 		//Register directories
 		
-		
-		for(WatchDirectory directory : activeWatchList.getDirectories().values()){
-			//First, put the directory on. (Keep in mind, we need to handle if new files are added to the directory, if the directory is deleted, or if it is moved)
-
-			//TODO this may fix our assumption of always track if we also register any returned subs
-			//Well, not fix, but suck less
-			ensureDirectoryRegistered(directory);
-			
-			for (Path path : directory.getOnlyDirectoriesToWatch()) {
-				if (!directoriesWithWatchedFile.contains(path)) {
-					watchKeys.put(
-							path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY),
-							path
-					);
-					directoriesWithWatchedFile.add(path);
+		try {
+			for(WatchDirectory directory : activeWatchList.getDirectories().values()){
+				//First, put the directory on. (Keep in mind, we need to handle if new files are added to the directory, if the directory is deleted, or if it is moved)
+	
+				//TODO this may fix our assumption of always track if we also register any returned subs
+				//Well, not fix, but suck less
+				ensureDirectoryRegistered(directory);
+				
+				for (Path path : directory.getOnlyDirectoriesToWatch()) {
+					if (!directoriesWithWatchedFile.contains(path)) {
+						watchKeys.put(
+								path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY),
+								path
+						);
+						directoriesWithWatchedFile.add(path);
+					}
+					watchedDirectories.add(path);
 				}
-				watchedDirectories.add(path);
+				
+				registerPathToDB(directory.getAllFilesToWatch(), directory);
+				//TODO was directory.getDirectoriesToWatch()
 			}
-			
-			registerPathToDB(directory.getAllFilesToWatch(), directory);
-			//TODO was directory.getDirectoriesToWatch()
+		} catch(Exception e) {
+			Printer.logErr("Error registering watchlist directories");
+			Printer.logErr(e);
 		}
 		
 		//Register files
-		for(WatchFile file : activeWatchList.getFiles().values()){
-			Path loc = file.getPath();
-			if (!Files.isDirectory(loc))
-				loc = loc.getParent();
-			
-			if (!directoriesWithWatchedFile.contains(file.getPath().getParent())) {
-				watchKeys.put(
-						loc.register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
-						loc
-				);
-				directoriesWithWatchedFile.add(loc);
-			}
-			
-			watchedFiles.add(file.getPath());
-			
-			registerPathToDB(file);
-		}	
+		try {
+			for(WatchFile file : activeWatchList.getFiles().values()){
+				Path loc = file.getPath();
+				if (!Files.isDirectory(loc))
+					loc = loc.getParent();
+				
+				if (!directoriesWithWatchedFile.contains(file.getPath().getParent())) {
+					watchKeys.put(
+							loc.register(watcher, ENTRY_CREATE,ENTRY_DELETE,ENTRY_MODIFY),
+							loc
+					);
+					directoriesWithWatchedFile.add(loc);
+				}
+				
+				watchedFiles.add(file.getPath());
+				
+				registerPathToDB(file);
+			}	
+		} catch (Exception e) {
+			Printer.logErr("Error registering watchlist files");
+			Printer.logErr(e);
+		}
 	}
 	
 	private static void ensureDirectoryRegistered(WatchDirectory directory) {
@@ -382,28 +391,34 @@ public final class FileWatcher {
 				Path rowPath = Paths.get(pathsFound.getString("RelativeParentPath"));
 				
 				if (relativePathsToAdd.contains(rowPath)) {
-					if (pathsFound.getInt("priority") != directories.priority) {
-						DBManager.getInstance().upsert("UPDATE UserFiles SET priority = "+directories.priority+
-								" WHERE UserFilePK LIKE '"+pathsFound.getString("UserFilePK")+"'"
-						);
+					try {
+						if (pathsFound.getInt("priority") != directories.priority) {
+							DBManager.getInstance().upsert("UPDATE UserFiles SET priority = "+directories.priority+
+									" WHERE UserFilePK LIKE '"+pathsFound.getString("UserFilePK")+"'"
+							);
+						}
+						
+						if (!pathsFound.getString("LocalFileName").equals(directories.getDirectory().resolve(rowPath).getFileName().toString())) {
+							DBManager.getInstance().upsert("UPDATE UserFiles SET LocalFileName = '"+directories.getDirectory().resolve(rowPath).getFileName().toString()+"'"+
+									" WHERE UserFilePK LIKE '"+pathsFound.getString("UserFilePK")+"'"
+							);
+						}
+						
+						if (!pathsFound.getString("LocalFilePath").equals(directories.getDirectory().resolve(rowPath).toString())) {
+							DBManager.getInstance().upsert("UPDATE UserFiles SET LocalFilePath = '"+directories.getDirectory().resolve(rowPath).toString()+"'"+
+									" WHERE UserFilePK LIKE '"+pathsFound.getString("UserFilePK")+"'"
+							);
+						}
+	
+						ensureUserFilePKLinked(pathsFound.getInt("UserFilePK"));
+						
+						//Since it already exists, remove it from the set of paths to insert
+						relativePathsToAdd.remove(rowPath);
 					}
-					
-					if (!pathsFound.getString("LocalFileName").equals(directories.getDirectory().resolve(rowPath).getFileName().toString())) {
-						DBManager.getInstance().upsert("UPDATE UserFiles SET LocalFileName = '"+directories.getDirectory().resolve(rowPath).getFileName().toString()+"'"+
-								" WHERE UserFilePK LIKE '"+pathsFound.getString("UserFilePK")+"'"
-						);
+					catch (Exception e) {
+						Printer.logErr("Error in file integrity check");
+						Printer.logErr(e);
 					}
-					
-					if (!pathsFound.getString("LocalFilePath").equals(directories.getDirectory().resolve(rowPath).toString())) {
-						DBManager.getInstance().upsert("UPDATE UserFiles SET LocalFilePath = '"+directories.getDirectory().resolve(rowPath).toString()+"'"+
-								" WHERE UserFilePK LIKE '"+pathsFound.getString("UserFilePK")+"'"
-						);
-					}
-
-					ensureUserFilePKLinked(pathsFound.getInt("UserFilePK"));
-					
-					//Since it already exists, remove it from the set of paths to insert
-					relativePathsToAdd.remove(rowPath);
 				}
 			}
 		} catch (SQLException e) {

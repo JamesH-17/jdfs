@@ -22,8 +22,8 @@ public class ResetState {
 	@Test
 	public void runSuite() {
 		truncateDB();
-		//resetFileWatchXML();
-		//resetUserXML();
+		resetFileWatchXML();
+		resetUserXML();
 		resetPeerXML();
 	}
 	
