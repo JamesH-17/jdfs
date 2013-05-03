@@ -21,19 +21,19 @@ public final class User {
 	}
 	
 	private String userName;
-	private String account;
-	private UUID GUID;
+	private String accountEmail;
+	private UUID guid;
 	private HashSet<UUID> MachineGUIDs;
 	//private static final char seperatorChar = '\n';
-	public User(){}
+	public User(){MachineGUIDs=new HashSet<UUID>();}
 	public User(String name, String email) throws UserException {
 		this(name, email, UUID.randomUUID());
 	}
 	public User(String name, String email, UUID GUID) throws UserException {
 		if (UserUtil.isValidEmail(email) && UserUtil.isValidUsername(email)) {
 			this.userName = name;
-			this.account = email;
-			this.GUID = GUID;
+			this.accountEmail = email;
+			this.guid = GUID;
 			
 			MachineGUIDs = new HashSet<UUID>();
 			MachineGUIDs.add(Settings.getMachineGUIDSafe());
@@ -50,17 +50,17 @@ public final class User {
 			throw new UserException("Invalid data for element " + node == null ? "[null]" : node.toString());
 
 		userName = SettingsReader.GetFirstNodeValue(node, "userName");
-		account = SettingsReader.GetFirstNodeValue(node, "email");
-		String guid = SettingsReader.GetFirstNodeValue(node, "GUID");
+		accountEmail = SettingsReader.GetFirstNodeValue(node, "email");
+		String guidString = SettingsReader.GetFirstNodeValue(node, "GUID");
 		
-		this.GUID = guid.equals("") ? UUID.randomUUID() : UUID.fromString(guid);
+		this.guid = guidString.equals("") ? UUID.randomUUID() : UUID.fromString(guidString);
 		
 		//Validate that this is an actual user before continuing 
-		if (!UserUtil.isValidEmail(account) || !UserUtil.isValidUsername(userName)) {
-			this.account = null;
+		if (!UserUtil.isValidEmail(accountEmail) || !UserUtil.isValidUsername(userName)) {
+			this.accountEmail = null;
 			this.userName = null;
-			this.GUID = null;
-			throw new UserException("Invalid data for user -- provided email:["+account+"], name: ["+userName+"], GUID:["+GUID.toString()+"]");
+			this.guid = null;
+			throw new UserException("Invalid data for user -- provided email:["+accountEmail+"], name: ["+userName+"], GUID:["+guid.toString()+"]");
 			
 		} else { //Now, add on the GUIDs.  This is done here instead of above since this program does things like I do:
 				 //As lazy as possible.
@@ -84,29 +84,33 @@ public final class User {
 		return cmp != null 
 				&& cmp instanceof User 
 				&& this.userName.equals(((User)cmp).userName)
-				&& this.account.equals(((User)cmp).account)
-				&& this.GUID.equals(((User)cmp).GUID);
+				&& this.accountEmail.equals(((User)cmp).accountEmail)
+				&& this.guid.equals(((User)cmp).guid);
 	}
 	
 	@Override
 	public int hashCode() { //Note how our equals method is more restrictive than our hashcode method
 		//return (username+seperatorChar+account).hashCode();
-		return GUID.hashCode();
+		return guid.hashCode();
 	} 
 	@Override
 	public String toString(){
-		return "{\n\tGUID: "+this.GUID+",\n\tUserName: "+this.userName+",\n\tAccountEmail: "+this.account+"\n}";
+		return "{\n\tGUID: "+this.guid+",\n\tUserName: "+this.userName+",\n\tAccountEmail: "+this.accountEmail+"\n}";
 	}
 	
 	public String getUserName() {return userName;}
-	public String getAccountEmail() {return account;}
-	public UUID getGUID() {return GUID;}
+	public String getAccountEmail() {return accountEmail;}
+	public UUID getGUID() {return guid;}
 	@JsonIgnore
-	public HashSet<UUID> getRegisteredMachines(){return MachineGUIDs;}
+	public HashSet<UUID> getRegisteredMachines() {
+		if (null == MachineGUIDs)
+			MachineGUIDs = new HashSet<UUID>();
+		return MachineGUIDs;
+	}
 	
 	@JsonIgnore
 	public final boolean isEmpty(){ //Really, not needed, but just in case
-		return (userName == null || userName.isEmpty())||(account == null || account.isEmpty());
+		return (userName == null || userName.isEmpty())||(accountEmail == null || accountEmail.isEmpty());
 	}
 	@JsonIgnore
 	public final void registerUserToMachine(UUID newMachineGUID){

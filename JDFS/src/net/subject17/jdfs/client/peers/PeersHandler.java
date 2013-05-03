@@ -7,12 +7,14 @@ import java.nio.file.Path;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.UUID;
 
 import net.subject17.jdfs.JDFSUtil;
 import net.subject17.jdfs.client.file.db.DBManager;
 import net.subject17.jdfs.client.file.db.DBManager.DBManagerFatalException;
+import net.subject17.jdfs.client.file.handler.DBInterface;
 import net.subject17.jdfs.client.file.model.FileRetrieverInfo;
 import net.subject17.jdfs.client.file.model.FileRetrieverRequest;
 import net.subject17.jdfs.client.io.Printer;
@@ -75,10 +77,10 @@ public class PeersHandler {
 	
 	//returns true if the machine was successfully added to the db, false if it already exists or the operation failed
 	private static boolean addMachine(UUID machineGuid) throws DBManagerFatalException {
-		try (ResultSet machinesExist = DBManager.getInstance().select("SELECT MachineGUID FROM Machines WHERE Machines.MachineGUID LIKE '"+"'")
+		try (ResultSet machinesExist = DBManager.getInstance().select("SELECT MachineGUID FROM Machines WHERE Machines.MachineGUID LIKE '"+machineGuid+"'")
 		) {
 			if (!machinesExist.next()) { //If no next, result set was empty => MachineGUID not in our DB.  So, add it
-				DBManager.getInstance().upsert("INSERT INTO Machines(MachineGUID) VALUES ('"+machineGuid.toString()+"')");
+				DBManager.getInstance().upsert("INSERT INTO Machines(MachineGUID) VALUES ('"+machineGuid+"')");
 				return true;
 			}
 			
@@ -91,8 +93,10 @@ public class PeersHandler {
 
 	private static void addPeersToMachine(ArrayList<User> usersToAdd, UUID machineGuid) throws DBManagerFatalException, SQLException {
 		
+		int machinePK = DBInterface.getMachinePKSafe(machineGuid);
+		
 		try (ResultSet peersRegisteredToMachine = DBManager.getInstance().select(
-				"SELECT PeerPK, PeerGUID, UserName, AccountEmail FROM Peers WHERE Peers.MachineGUID = '"+machineGuid+"'"
+				"SELECT PeerPK, PeerGUID, UserName, AccountEmail FROM Peers INNER JOIN MachinePeerLinks ON MachinePeerLinks.PeerPK = Peers.PeerPK "+" WHERE MachinePeerLinks.MachinePK = "+machinePK//"INNER JOIN Machines ON MachinePeerLinks.MachinePK = Machines.MachinePK WHERE Machines.MachineGUID LIKE '"+machineGuid+"'"
 		)) {
 			
 			while (peersRegisteredToMachine.next()) {
@@ -102,14 +106,25 @@ public class PeersHandler {
 				String userName = peersRegisteredToMachine.getString("UserName");
 				String email = peersRegisteredToMachine.getString("AccountEmail");
 				
-				for (User user : usersToAdd) {
-					if (peerGUID.equals(user.getGUID().toString()) &&
-						email.equals(user.getAccountEmail()) &&
-						userName.equals(user.getUserName())
-					) {
-						usersToAdd.remove(user);
+				if (null != usersToAdd) {
+					synchronized(usersToAdd) {
+						try {
+							for (User user : usersToAdd) {
+								if (peerGUID.equals(user.getGUID().toString()) &&
+									email.equals(user.getAccountEmail()) &&
+									userName.equals(user.getUserName())
+								) {
+									usersToAdd.remove(user);
+								}
+							}
+						} catch(ConcurrentModificationException e) {
+							Printer.logErr("Oy, how is this possible?  We're in a synchronized block..");
+							Printer.logErr(e);
+						}
 					}
+				
 				}
+				
 			} 
 			
 		}
@@ -117,22 +132,36 @@ public class PeersHandler {
 		
 		//Step 2: Assign any remaining peers to this machine
 		for (User peer : usersToAdd) {
-			try {
-				DBManager.getInstance().upsert("INSERT INTO Peers (PeerGUID, UserName, AccountEmail, MachineGUID) "+
+			try (ResultSet pks =
+				DBManager.getInstance().upsert("INSERT INTO Peers (PeerGUID, UserName, AccountEmail) "+
 						"VALUES ('"+
 							peer.getGUID()+"','"+
 							peer.getUserName()+"','"+
-							peer.getAccountEmail()+"','"+
-							machineGuid+
-						"')"	
-				);
+							peer.getAccountEmail()+"'"+
+						")"	
+				)){
+				
+				pks.next();
+				linkMachineToPeer(machinePK, pks.getInt("PeerPK"));
 				
 			} catch (SQLException e) {
 				Printer.logErr("Error assigning peer "+peer+" to machine "+machineGuid);
 				throw e;
 			}
 		}
+		
 	}
+
+	private static void linkMachineToPeer(int machinePK, int peerPK) {
+		try {
+			DBManager.getInstance().upsert("INSERT INTO MachinePeerLinks(MachinePK, PeerPK) VALUES("+machinePK+","+peerPK+")");
+		} catch (SQLException | DBManagerFatalException e) {
+			Printer.logErr("Error linking machine to peer");
+			Printer.logErr(e);
+		}
+	}
+
+
 
 	private static void addIpToMachine(UUID machineGuid, String ip) throws DBManagerFatalException, SQLException {
 		if (IPUtil.isValidIP6Address(ip)) {
@@ -144,11 +173,13 @@ public class PeersHandler {
 	}
 
 	private static void addIP6ToMachine(UUID machineGuid, String validIP6String) throws DBManagerFatalException, SQLException {
-		try (ResultSet ip6s = DBManager.getInstance().select("SELECT IP6 FROM MachineIP6Links WHERE MachineGUID LIKE '"+machineGuid+"'")) {
+		int machinePK = DBInterface.getMachinePKSafe(machineGuid);
+		
+		try (ResultSet ip6s = DBManager.getInstance().select("SELECT IP6 FROM MachineIP6Links WHERE MachinePK = "+machinePK)) {
 			
 			if (!ip6s.next()) {
-				DBManager.getInstance().upsert("INSERT INTO MachineIP6Links(MachineGUID, IP6) "+
-					"VALUES ('"+machineGuid+"','"+validIP6String+"')"
+				DBManager.getInstance().upsert("INSERT INTO MachineIP6Links(MachinePK, IP6) "+
+					"VALUES ('"+machinePK+"','"+validIP6String+"')"
 				);
 			}
 			
@@ -156,11 +187,13 @@ public class PeersHandler {
 	}
 
 	private static void addIP4ToMachine(UUID machineGuid, String validIP4String) throws DBManagerFatalException, SQLException {
-		try (ResultSet ip4s = DBManager.getInstance().select("SELECT IP4 FROM MachineIP4Links WHERE MachineGUID LIKE '"+machineGuid+"'")) {
+		int machinePK = DBInterface.getMachinePKSafe(machineGuid);
+		
+		try (ResultSet ip4s = DBManager.getInstance().select("SELECT IP4 FROM MachineIP4Links WHERE MachinePK = "+machinePK)){
 			
 			if (!ip4s.next()) {
-				DBManager.getInstance().upsert("INSERT INTO MachineIP4Links(MachineGUID, IP4) "+
-					"VALUES ('"+machineGuid+"','"+validIP4String+"')"
+				DBManager.getInstance().upsert("INSERT INTO MachineIP4Links(MachinePK, IP4) "+
+					"VALUES ('"+machinePK+"','"+validIP4String+"')"
 				);
 			}
 			

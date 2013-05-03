@@ -12,20 +12,28 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 public final class FileRetrieverRequest {
 	
+	///
+	//Had to remove final modifiers for json parsing
+	///
+	
+	
 	@JsonIgnore
 	private final String defaultComparison = ">";
 	
 	//Identification
-	public final UUID fileGuid;
-	public final UUID userGuid;
-	public final UUID sendingMachineGuid;
+	public UUID fileGuid;
+	public UUID userGuid;
+	public UUID sendingMachineGuid;
 
-	public final Timestamp lastUpdatedDate;
-	public final String comparison;
+	public Timestamp lastUpdatedDate;
+	public String comparison;
 	
 	//For directories only
-	public final UUID parentGUID;
-	public final Path relativeParentLoc; //Resolved against TLD of watched dir
+	public UUID parentGUID;
+	public Path relativeParentLoc; //Resolved against TLD of watched dir
+	
+	
+	public FileRetrieverRequest(){}
 	
 	@JsonIgnore
 	public FileRetrieverRequest(UUID userGuid, UUID sendingMachineGuid, Timestamp lastUpdated, String comparison, UUID parentGUID, Path parentLocation) {
