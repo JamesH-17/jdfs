@@ -72,7 +72,7 @@ public final class Talker implements Runnable {
 			Printer.log("Connected to server "+sock.getInetAddress());
 			
 			String serverMessage = "";
-			output.println(LanguageProtocol.SYN);
+			//output.println(LanguageProtocol.SYN);
 			
 			if (jdfsRunningOnServer(output, in)) {
 				
