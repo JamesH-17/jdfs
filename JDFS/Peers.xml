@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <peers>
-	<peer>
-		<userName>test</userName>
-		<accountEmail>jdfs-test@mailinator.net</accountEmail>
-		<ip4>1.1.1.1</ip4>
-		<ip6>2001:0db8:85a3:0042:1000:8a2e:0370:7334</ip6>
-	</peer>
-	<peer>
-		<userName>James-Laptop</userName>
-		<accountEmail>17subject@gmail.com</accountEmail>
-		<ip4>10.1.48.139</ip4>
-		<machine>97b22885-f491-4e6a-b45b-831c1e7acf68</machine>
-	</peer>
+    <peer>
+        <accountEmail>test</accountEmail>
+        <userName>jdfs-test@mailinator.net</userName>
+        <peerGUID>d54482f9-7aa0-41f0-9d0c-183f1301bcac</peerGUID>
+    </peer>
+    <peer>
+        <accountEmail>James-Laptop</accountEmail>
+        <userName>17subject@gmail.com</userName>
+        <peerGUID>fd5b8ebd-7747-47bd-a94b-569ed5dd9ad0</peerGUID>
+    </peer>
 </peers>
