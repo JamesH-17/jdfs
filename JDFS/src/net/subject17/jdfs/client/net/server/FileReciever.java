@@ -15,6 +15,9 @@ import net.subject17.jdfs.client.file.model.FileSenderInfo;
 import net.subject17.jdfs.client.io.Printer;
 
 import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -30,7 +33,9 @@ public final class FileReciever implements Runnable {
 	
 	public FileReciever(int port, String json) throws JsonParseException, JsonMappingException, IOException {
 		this.port = port;
-		ObjectMapper mapper = new ObjectMapper();
+
+		ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, Visibility.ANY);;
+		mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		this.info = mapper.readValue(json, FileSenderInfo.class);
 	}
 

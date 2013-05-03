@@ -17,6 +17,9 @@ import net.subject17.jdfs.client.net.PortMgr;
 import net.subject17.jdfs.client.net.PortMgrException;
 import net.subject17.jdfs.client.peers.PeersHandler;
 
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 
 
@@ -160,7 +163,9 @@ public final class ListenConnectionHandler implements Runnable {
 				toClient.println(LanguageProtocol.UNKNOWN);
 			} else {
 
-				ObjectMapper mapper = new ObjectMapper();
+
+				ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, Visibility.ANY);;
+				mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 				//See if we have the file, if so, send it
 				FileRetrieverRequest criteria = mapper.readValue(json, FileRetrieverRequest.class);
 				FileRetrieverInfo info = FileHandler.getInstance().getFileStoredOnMachine(criteria);

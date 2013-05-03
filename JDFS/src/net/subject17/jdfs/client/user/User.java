@@ -7,28 +7,33 @@ import java.util.UUID;
 import net.subject17.jdfs.client.settings.Settings;
 import net.subject17.jdfs.client.settings.reader.SettingsReader;
 
+import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public final class User {
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class UserException extends Exception {
 		private static final long serialVersionUID = 1L;
 		UserException(String msg){super(msg);}
 		UserException(String msg, Throwable thrw){super(msg,thrw);}
 	}
-	private String username;
+	
+	private String userName;
 	private String account;
 	private UUID GUID;
 	private HashSet<UUID> MachineGUIDs;
 	//private static final char seperatorChar = '\n';
+	public User(){}
 	public User(String name, String email) throws UserException {
 		this(name, email, UUID.randomUUID());
 	}
-	public User(String name, String email, UUID guid) throws UserException {
+	public User(String name, String email, UUID GUID) throws UserException {
 		if (UserUtil.isValidEmail(email) && UserUtil.isValidUsername(email)) {
-			username = name;
-			account = email;
-			GUID = guid;
+			this.userName = name;
+			this.account = email;
+			this.GUID = GUID;
 			
 			MachineGUIDs = new HashSet<UUID>();
 			MachineGUIDs.add(Settings.getMachineGUIDSafe());
@@ -39,22 +44,23 @@ public final class User {
 			throw new UserException("Invalid data for user -- provided email:["+email+"], name: ["+name+"]");
 		}
 	}
+	@JsonIgnore
 	public User(Element node) throws UserException {
 		if (node == null || !node.getTagName().equals("user"))
 			throw new UserException("Invalid data for element " + node == null ? "[null]" : node.toString());
 
-		username = SettingsReader.GetFirstNodeValue(node, "userName");
+		userName = SettingsReader.GetFirstNodeValue(node, "userName");
 		account = SettingsReader.GetFirstNodeValue(node, "email");
 		String guid = SettingsReader.GetFirstNodeValue(node, "GUID");
 		
-		GUID = guid.equals("") ? UUID.randomUUID() : UUID.fromString(guid);
+		this.GUID = guid.equals("") ? UUID.randomUUID() : UUID.fromString(guid);
 		
 		//Validate that this is an actual user before continuing 
-		if (!UserUtil.isValidEmail(account) || !UserUtil.isValidUsername(username)) {
+		if (!UserUtil.isValidEmail(account) || !UserUtil.isValidUsername(userName)) {
 			this.account = null;
-			this.username = null;
+			this.userName = null;
 			this.GUID = null;
-			throw new UserException("Invalid data for user -- provided email:["+account+"], name: ["+username+"], GUID:["+GUID.toString()+"]");
+			throw new UserException("Invalid data for user -- provided email:["+account+"], name: ["+userName+"], GUID:["+GUID.toString()+"]");
 			
 		} else { //Now, add on the GUIDs.  This is done here instead of above since this program does things like I do:
 				 //As lazy as possible.
@@ -77,7 +83,7 @@ public final class User {
 	public boolean equals(Object cmp) {
 		return cmp != null 
 				&& cmp instanceof User 
-				&& this.username.equals(((User)cmp).username)
+				&& this.userName.equals(((User)cmp).userName)
 				&& this.account.equals(((User)cmp).account)
 				&& this.GUID.equals(((User)cmp).GUID);
 	}
@@ -89,25 +95,29 @@ public final class User {
 	} 
 	@Override
 	public String toString(){
-		return "{\n\tGUID: "+this.GUID+",\n\tUserName: "+this.username+",\n\tAccountEmail: "+this.account+"\n}";
+		return "{\n\tGUID: "+this.GUID+",\n\tUserName: "+this.userName+",\n\tAccountEmail: "+this.account+"\n}";
 	}
 	
-	public String getUserName() {return username;}
+	public String getUserName() {return userName;}
 	public String getAccountEmail() {return account;}
 	public UUID getGUID() {return GUID;}
-	public boolean isEmpty(){ //Really, not needed, but just in case
-		return (username == null || username.isEmpty())||(account == null || account.isEmpty());
-	}
+	public HashSet<UUID> getRegisteredMachines(){return MachineGUIDs;}
 	
+	@JsonIgnore
+	public final boolean isEmpty(){ //Really, not needed, but just in case
+		return (userName == null || userName.isEmpty())||(account == null || account.isEmpty());
+	}
+	@JsonIgnore
 	public final void registerUserToMachine(UUID newMachineGUID){
 		MachineGUIDs.add(newMachineGUID);
 	}
-	public void registerUserToMachine(Collection<UUID> newMachineGUIDs){
+	@JsonIgnore
+	public final void registerUserToMachine(Collection<UUID> newMachineGUIDs){
 		MachineGUIDs.addAll(newMachineGUIDs);
 	}
-	public boolean delistUserFromMachine(UUID machineGUIDToRemove){
+	@JsonIgnore
+	public final boolean delistUserFromMachine(UUID machineGUIDToRemove){
 		return MachineGUIDs.remove(machineGUIDToRemove);
 	}
 	
-	public HashSet<UUID> getRegisteredMachines(){return MachineGUIDs;}
 }
