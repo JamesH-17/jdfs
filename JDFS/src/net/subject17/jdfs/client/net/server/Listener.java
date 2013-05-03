@@ -64,12 +64,15 @@ public final class Listener implements Runnable {
 					Printer.logErr(e);
 				}
 			}
-		} catch(IOException e) {
-			Printer.log("IO exception: "+e.getMessage());
+		}
+		catch(IOException e) {
+			Printer.log("IO exception in server:");
+			Printer.logErr(e);
 			Printer.log("Port in use:"+port);
 		}
 		catch (Exception e) {
-			Printer.log("Exception: "+e.getMessage());
+			Printer.log("Exception in server: ");
+			Printer.logErr(e);
 			Printer.log("Port in use:"+port);
 		}
 	}
