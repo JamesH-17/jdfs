@@ -260,36 +260,71 @@ public class PeersHandler {
 			
 			//////////////////////////////////////
 			
-			//Add to peers and machines table first
-			try (ResultSet resSet = DBManager.getInstance().select("SELECT DISTINCT MachineGUID FROM Peers WHERE "+
+			int peerPK = -1;
+			
+			try (ResultSet existingPeers = DBManager.getInstance().select("SELECT DISTINCT * FROM PEERS WHERE "+
 					"Peers.PeerGUID LIKE '"+peer.getGUID().toString()+"' AND "+
 					"Peers.UserName LIKE '"+peer.getUsername()+"' AND "+
-					"Peers.AccountEmail LIKE '"+peer.getEmail()+"'"
-			)){
-				
-				//Grab all machine ids this peer has, and remove any that already exist in our db
-				HashSet<UUID> machineIds = peer.getMachineGUIDs();
-				while (resSet.next()) {
-					machineIds.remove(UUID.fromString(resSet.getObject("MachineGUID").toString()));
+					"Peers.AccountEmail LIKE '"+peer.getEmail()+"'")
+			){
+				if (existingPeers.next()) {
+					peerPK = existingPeers.getInt("PeerPK");
 				}
-				
-				//Now, add any new ids
-				for (UUID machineId : machineIds) {
-					DBManager.getInstance().upsert("INSERT INTO Peers (PeerGUID, UserName, AccountEmail, MachineGUID) VALUES ("+
+				else {
+					try (ResultSet pk = DBManager.getInstance().upsert("INSERT INTO Peers (PeerGUID, UserName, AccountEmail) VALUES ("+
 							"'"+peer.getGUID().toString()+"',"+
 							"'"+peer.getUsername()+"',"+
-							"'"+peer.getEmail()+"',"+
-							"'"+machineId.toString()+"'"+
-					")");
-					
-					DBManager.getInstance().upsert("INSERT INTO Machines (MachineGUID) VALUES ("+
-							"'"+machineId.toString()+"'"+
-					")");
+							"'"+peer.getEmail()+"'"+
+					")")){
+						peerPK = pk.getInt("PeerPK");
+					}
 					
 				}
 				
 			} catch (SQLException e) {
+				Printer.log("Error grabbing/adding peer, possible primary key violation: "+peerPK);
 				Printer.logErr(e);
+			}
+
+			
+			//Add to peers and machines table first
+			HashSet<UUID> machineIds = peer.getMachineGUIDs();
+			
+			if (machineIds.size() > 0) {
+				try (ResultSet existingPeers = DBManager.getInstance().select("SELECT DISTINCT Machines.MachinePK, MachineGUID FROM Peers INNER JOIN MachinePeerLinks ON MachinePeerLinks.PeerPK = Peers.PeerPK INNER JOIN Machines ON Machines.MachinePK = MachinePeerLinks.MachinePK WHERE "+
+						"Peers.PeerPK = "+peerPK+" AND Machines.MachineGUID IN ('"+JDFSUtil.stringJoin(machineIds)+"')"
+				)){
+	
+					//Grab all machine ids this peer has, and remove any that already exist in our db
+					while (existingPeers.next()) {
+						machineIds.remove(UUID.fromString(existingPeers.getObject("MachineGUID").toString()));
+					}
+	
+					//Now, add any new ids
+					for (UUID machineId : machineIds) {
+						
+						int machinePK;
+						try (ResultSet existingMachines = DBManager.getInstance().select("SELECT TOP 1 * FROM Machines WHERE Machines.MachineGUID LIKE '"+machineId+"'")
+						) {
+							if (existingMachines.next()) {
+								machinePK = existingMachines.getInt("MachinePK");
+							}
+							else {
+	
+								try (ResultSet pk = DBManager.getInstance().upsert("INSERT INTO Machines (MachineGUID) VALUES ("+
+										"'"+machineId+"'"+
+								")")){
+									pk.next();
+									machinePK = pk.getInt("MachinePK");
+								}
+							}
+						}
+						
+					}
+					
+				} catch (SQLException e) {
+					Printer.logErr(e);
+				}
 			}
 			
 			///////////////////////////////////////
@@ -298,7 +333,7 @@ public class PeersHandler {
 			HashSet<UUID> machineGuids = peer.getMachineGUIDs();
 			if (machineGuids.size() > 0) {
 				try (ResultSet MachinePKset = DBManager.getInstance().select("SELECT MachinePK FROM Machines WHERE "+
-						"MachineGUID IN ("+JDFSUtil.stringJoin(machineGuids,",")+")"
+						"MachineGUID IN ('"+JDFSUtil.stringJoin(machineGuids,"','")+"')"
 				)){
 					
 					while (MachinePKset.next()) {
@@ -324,14 +359,14 @@ public class PeersHandler {
 							for(String ip4 : ip4s) {
 								DBManager.getInstance().upsert(
 										"INSERT INTO MachineIP4Links(MachinePK, IP4) "+
-										"VALUES ("+MachinePKset.getInt("MachinePK")+","+ip4+")"
+										"VALUES ("+MachinePKset.getInt("MachinePK")+",'"+ip4+"')"
 								);
 							}
 							
 							for(String ip6 : ip6s) {
 								DBManager.getInstance().upsert(
 										"INSERT INTO MachineIP6Links(MachinePK, IP6) "+
-										"VALUES ("+MachinePKset.getInt("MachinePK")+","+ip6+")"
+										"VALUES ("+MachinePKset.getInt("MachinePK")+",'"+ip6+"')"
 								);
 							}
 							

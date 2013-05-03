@@ -95,6 +95,8 @@ public class Peer {
 			if (!ip6.isEmpty())
 				ip6s.add(ip6);
 		}
+		
+		Printer.log("Peer constructed from xml: "+this.toString());
 	}
 	
 	
@@ -229,6 +231,12 @@ public class Peer {
 				&& this.GUID.equals(((Peer)cmp).GUID)
 				&& this.userName.equals(((Peer)cmp).userName)
 				&& this.accountEmail.equals(((Peer)cmp).accountEmail);
+	}
+	
+	@JsonIgnore
+	@Override
+	public String toString(){
+		return "{GUID:"+GUID.toString()+", userName:"+this.userName+", accountEmail:"+this.accountEmail+", machinesTostring:"+this.machineGUIDs.toString()+"}";
 	}
 	
 	@JsonIgnore

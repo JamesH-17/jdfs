@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<users>
+    <user>
+        <email>inactive@gmail.com</email>
+        <userName>inactive</userName>
+        <GUID>2306cfcd-0aaa-43ef-9c02-8de542a867df</GUID>
+        <linkedMachines>
+            <machine>388db1b5-b63c-4e71-ac72-89c0a9960cc8</machine>
+            <machine>fe36e5d7-dac0-4853-a304-98d351f97166</machine>
+        </linkedMachines>
+    </user>
+    <user active = "true">
+        <email>17subject@gmail.com</email>
+        <userName>James-Laptop</userName>
+        <linkedMachines>
+            <machine>388db1b5-b63c-4e71-ac72-89c0a9960cc8</machine>
+            <machine>fe36e5d7-dac0-4853-a304-98d351f97166</machine>
+        </linkedMachines>
+    </user>
+</users>

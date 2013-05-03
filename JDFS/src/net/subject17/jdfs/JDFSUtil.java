@@ -47,10 +47,19 @@ public class JDFSUtil {
 	}
 	public static String stringJoin(Iterable<?> Parts, Object seperator){
 		StringBuilder builder = new StringBuilder();
+		
+		boolean firstRun = true;
+		
 		for(Object part : Parts){
+			if (firstRun){
+				firstRun = false;
+			}
+			else {
+				builder.append(seperator.toString());
+			}
 			builder.append(part.toString());
-			builder.append(seperator.toString());
 		}
+		
 		return builder.toString();
 	}
 	

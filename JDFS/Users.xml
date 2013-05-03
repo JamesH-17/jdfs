@@ -5,15 +5,15 @@
         <userName>james</userName>
         <GUID>1711566d-f3f0-4cce-ba9d-341c33531088</GUID>
         <linkedMachines>
-            <machine>e60cf471-b805-4f9d-accc-05d8e1588707</machine>
+            <machine>3d3b1ec6-f1dc-4348-a061-6349977d6a71</machine>
         </linkedMachines>
     </user>
     <user>
         <email>inactive@gmail.com</email>
         <userName>inactive</userName>
-        <GUID>2306cfcd-0aaa-43ef-9c02-8de542a867df</GUID>
+        <GUID>22eb4fb3-0315-46b1-aa4b-3f33ecdd04fd</GUID>
         <linkedMachines>
-            <machine>e60cf471-b805-4f9d-accc-05d8e1588707</machine>
+            <machine>3d3b1ec6-f1dc-4348-a061-6349977d6a71</machine>
         </linkedMachines>
     </user>
 </users>

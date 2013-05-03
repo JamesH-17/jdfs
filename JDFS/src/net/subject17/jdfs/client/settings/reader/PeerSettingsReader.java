@@ -62,7 +62,7 @@ public class PeerSettingsReader extends SettingsReader {
 			Printer.log("Found "+peerTags.getLength()+" potential peers");
 		
 			for (int i = 0; i < peerTags.getLength(); ++i) {
-				Peer currentNode = new Peer((Element) peerTags.item(0));
+				Peer currentNode = new Peer((Element) peerTags.item(i));
 				if (!currentNode.isBlankPeer())
 					peersFound.add(currentNode);
 			}

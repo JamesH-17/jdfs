@@ -46,7 +46,7 @@ public class UserNode {
 	 * 
 	 */
 	public static void main(String[] args) {
-		UserInput.getInstance();
+		UserInput.getInstance(); //Need to run this statement to show exit button
 		//Printer.log(UserInput.getInstance().getNextString("Hello"));
 		
 		
@@ -120,12 +120,7 @@ public class UserNode {
 		
 		Printer.log("Starting Watch Service");
 		FileWatcher.setWatchSettingsFile(settingsReader.getWatchSettingsPath());
-		
-		//Next, add in code for watch service monitor
-		
-		//TODO: put dispatch server code in here as well
-		
-		//TODO Finally:  Add in logic for gui
+	
 	}
 	
 	private static void dispatchServer() {

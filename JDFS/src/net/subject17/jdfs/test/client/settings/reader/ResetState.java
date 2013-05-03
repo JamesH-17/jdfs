@@ -21,16 +21,18 @@ public class ResetState {
 	
 	@Test
 	public void runSuite() {
+		//truncateDB();
+		//resetFileWatchXML();
+		//resetUserXML();
+		resetPeerXML();
+	}
+	
+	public void truncateDB() {
 		try {
-			truncateDB();
+			DBManager.getInstance().truncateEverything2();
 		} catch (SQLException | DBManagerFatalException e) {
 			fail("Could not truncate db");
 		}
-		resetFileWatchXML();
-	}
-	
-	public void truncateDB() throws SQLException, DBManagerFatalException {
-		DBManager.getInstance().truncateEverything2();
 	}
 	
 	
@@ -44,9 +46,11 @@ public class ResetState {
 		} catch (IOException e) {
 			Printer.logErr(e);
 		}
-		
-		testSource = localRoot.resolve("TEST").resolve("UsersTest.xml");
-		toDelete = localRoot.resolve("Users.xml");
+	}
+	
+	public void resetUserXML() {
+		Path testSource =  localRoot.resolve("TEST").resolve("UsersTest.xml");
+		Path toDelete = localRoot.resolve("Users.xml");
 		
 		try {
 			Files.deleteIfExists(toDelete);
@@ -55,5 +59,16 @@ public class ResetState {
 			Printer.logErr(e);
 		}
 	}
-
+	
+	public void resetPeerXML() {
+		Path testSource = localRoot.resolve("TEST").resolve("PeersTest.xml");
+		Path toDelete = localRoot.resolve("Peers.xml");
+		
+		try {
+			Files.deleteIfExists(toDelete);
+			Files.copy(testSource, toDelete);
+		} catch (IOException e) {
+			Printer.logErr(e);
+		}
+	}
 }
