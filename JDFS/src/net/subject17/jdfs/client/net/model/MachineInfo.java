@@ -17,7 +17,7 @@ public class MachineInfo {
 	public final ArrayList<User> users;
 	public final UUID MachineGUID;
 	
-	@JsonIgnore
+
 	public MachineInfo(){
 		users = AccountManager.getInstance().getUsers();
 		MachineGUID = Settings.getMachineGUIDSafe();
