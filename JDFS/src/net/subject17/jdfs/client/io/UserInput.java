@@ -33,6 +33,7 @@ public class UserInput {
 	
 	public String getNextString(String messageToDisplay){
 		Printer.println(messageToDisplay);
+		gui.showModal(messageToDisplay);
 		while (null == nextInput){
 			try {
 				Thread.sleep(200);

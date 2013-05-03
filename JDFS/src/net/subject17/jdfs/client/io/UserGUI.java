@@ -20,4 +20,8 @@ public class UserGUI implements Runnable {
 		visInput.dispose();
 	}
 
+	public void showModal(String messageToDisplay) {
+		visInput.showModal(messageToDisplay);
+	}
+
 }

@@ -5,7 +5,7 @@
         <userName>james</userName>
         <GUID>1711566d-f3f0-4cce-ba9d-341c33531088</GUID>
         <linkedMachines>
-            <machine>27ac1049-6735-4f10-a78e-7f88b54996eb</machine>
+            <machine>90972e14-de1b-4863-847a-d6074b3e768e</machine>
         </linkedMachines>
     </user>
     <user>
@@ -13,7 +13,7 @@
         <userName>inactive</userName>
         <GUID>2306cfcd-0aaa-43ef-9c02-8de542a867df</GUID>
         <linkedMachines>
-            <machine>27ac1049-6735-4f10-a78e-7f88b54996eb</machine>
+            <machine>90972e14-de1b-4863-847a-d6074b3e768e</machine>
         </linkedMachines>
     </user>
 </users>

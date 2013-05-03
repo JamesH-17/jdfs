@@ -38,9 +38,9 @@ public class VisualInputFrame  extends JFrame {
       return userInput.getText();
    }
 
+	private Component frame;
    class VisualInputPanel extends JPanel implements ActionListener {
 	private static final long serialVersionUID = -2681291298064133529L;
-	//private Component frame;
 
       public VisualInputPanel() {
 
@@ -81,6 +81,14 @@ public class VisualInputFrame  extends JFrame {
       public void actionPerformed(ActionEvent ae) {
          throw new UnsupportedOperationException("Not supported yet.");
       }
-
+      public void showModal(String messageToDisplay) {
+    		// TODO Auto-generated method stub
+    		JOptionPane.showMessageDialog(frame, VisualInputFrame.this.getInputString());
+      }
   }
+
+   public void showModal(String messageToDisplay) {
+		// TODO Auto-generated method stub
+		JOptionPane.showMessageDialog(frame, VisualInputFrame.this.getInputString());
+	}
 }
