@@ -91,8 +91,9 @@ public class PeersHandler {
 		return false;
 	}
 
-	private static void addPeersToMachine(ArrayList<User> usersToAdd, UUID machineGuid) throws DBManagerFatalException, SQLException {
+	private static void addPeersToMachine(ArrayList<User> users, UUID machineGuid) throws DBManagerFatalException, SQLException {
 		
+		HashSet<User> usersToAdd = new HashSet<User>(users);
 		int machinePK = DBInterface.getMachinePKSafe(machineGuid);
 		
 		try (ResultSet peersRegisteredToMachine = DBManager.getInstance().select(
