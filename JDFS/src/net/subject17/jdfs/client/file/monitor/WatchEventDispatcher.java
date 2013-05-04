@@ -45,79 +45,80 @@ public class WatchEventDispatcher implements Runnable {
 				// wait for key to be signaled
 				Printer.log("Watch Event Dispatcher started");
 			    try {
-			    	//TODO may want to make this poll every 60 seconds or something.  Alternatively, place thread.sleep at end of loop
-			        key = watcher.take();
-			        Path dir = (Path)key.watchable();
-
-					Printer.log("Watch Event Dispatcher:  Event Triggered!");
-					
-			        if (run && key.isValid()) {
-					    for (WatchEvent<?> event: key.pollEvents()) {
-					        WatchEvent.Kind<?> kind = event.kind();
-		
-					        // This key is registered only
-					        // for ENTRY_CREATE events,
-					        // but an OVERFLOW event can
-					        // occur regardless if events
-					        // are lost or discarded.
-					        if (kind == StandardWatchEventKinds.OVERFLOW) {
-					        	Printer.log("Encountered OVERFLOW kind in watch service"+event);
-					            continue;
-					        }
-		
-					        // The filename is the
-					        // context of the event.
-					        @SuppressWarnings("unchecked")
-							WatchEvent<Path> ev = (WatchEvent<Path>)event;
-					        
-					        try {
-					        	Printer.log("Watch Event Dispatcher: Handling event");
-					        	//This is all this service ever does!
-					        	if (!directoriesWithWatchedFile.contains(dir)) {
-					        		//Can this ever happen?
-
-						        	Printer.log("Watch Event Dispatcher: Yep, happened");
-					        	}
-					        	Path loc = dir.resolve(ev.context());
-					        	if (watchedFiles.contains(loc) || watchedDirectories.contains(dir)) {
-					        		if (watchedDirectories.contains(dir)) {
-
-							        	Printer.log("Watch Event Dispatcher: addFileToWatchList "+ev.context());
-					        			FileWatcher.addFileToWatchList(loc);
-					        		}
-					        	
-
-						        	Printer.log("Watch Event Dispatcher: Telling TalkerPooler to update");
-					        		TalkerPooler.getInstance().UpdatePath(loc, user);
-					        	}
-					        	else {
-						        	Printer.log("Watch Event Dispatcher: File triggered isn't registerd for tracking ---skipped update");
-					        	}
-					        	//Else:  It shares a directory with a watched file, but it is not a child of a watched directory
-							}
-					        catch (InvalidKeyException
-									| NoSuchAlgorithmException
-									| NoSuchPaddingException | IOException
-									| UserException e) {
-								Printer.logErr("Error encountered in dispatching modified file ["+ev.context().toString()+"]",Printer.Level.High);
-								Printer.logErr(e);
-							}
+			    	if (null != watcher){
+				    	//TODO may want to make this poll every 60 seconds or something.  Alternatively, place thread.sleep at end of loop
+				        key = watcher.take();
+				        Path dir = (Path)key.watchable();
+	
+						Printer.log("Watch Event Dispatcher:  Event Triggered!");
+						
+				        if (run && key.isValid()) {
+						    for (WatchEvent<?> event: key.pollEvents()) {
+						        WatchEvent.Kind<?> kind = event.kind();
+			
+						        // This key is registered only
+						        // for ENTRY_CREATE events,
+						        // but an OVERFLOW event can
+						        // occur regardless if events
+						        // are lost or discarded.
+						        if (kind == StandardWatchEventKinds.OVERFLOW) {
+						        	Printer.log("Encountered OVERFLOW kind in watch service"+event);
+						            continue;
+						        }
+			
+						        // The filename is the
+						        // context of the event.
+						        @SuppressWarnings("unchecked")
+								WatchEvent<Path> ev = (WatchEvent<Path>)event;
+						        
+						        try {
+						        	Printer.log("Watch Event Dispatcher: Handling event");
+						        	//This is all this service ever does!
+						        	if (!directoriesWithWatchedFile.contains(dir)) {
+						        		//Can this ever happen?
+	
+							        	Printer.log("Watch Event Dispatcher: Yep, happened");
+						        	}
+						        	Path loc = dir.resolve(ev.context());
+						        	if (watchedFiles.contains(loc) || watchedDirectories.contains(dir)) {
+						        		if (watchedDirectories.contains(dir)) {
+	
+								        	Printer.log("Watch Event Dispatcher: addFileToWatchList "+ev.context());
+						        			FileWatcher.addFileToWatchList(loc);
+						        		}
+						        	
+	
+							        	Printer.log("Watch Event Dispatcher: Telling TalkerPooler to update");
+						        		TalkerPooler.getInstance().UpdatePath(loc, user);
+						        	}
+						        	else {
+							        	Printer.log("Watch Event Dispatcher: File triggered isn't registerd for tracking ---skipped update");
+						        	}
+						        	//Else:  It shares a directory with a watched file, but it is not a child of a watched directory
+								}
+						        catch (InvalidKeyException
+										| NoSuchAlgorithmException
+										| NoSuchPaddingException | IOException
+										| UserException e) {
+									Printer.logErr("Error encountered in dispatching modified file ["+ev.context().toString()+"]",Printer.Level.High);
+									Printer.logErr(e);
+								}
+						    }
+			
+						    // Reset the key -- this step is critical if you want to
+						    // receive further watch events.  If the key is no longer valid,
+						    // the directory is inaccessible so exit the loop.
+						    boolean valid = key.reset();
+						    Printer.log("Watch Event Dispatcher: Key still valid: "+valid, Printer.Level.VeryLow);
+						    
+						    if (!key.isValid()) {
+						    	directoriesWithWatchedFile.remove(dir);
+						    	removeAllFilesWatchedInDir(dir);
+						    }
 					    }
-		
-					    // Reset the key -- this step is critical if you want to
-					    // receive further watch events.  If the key is no longer valid,
-					    // the directory is inaccessible so exit the loop.
-					    boolean valid = key.reset();
-					    Printer.log("Watch Event Dispatcher: Key still valid: "+valid, Printer.Level.VeryLow);
-					    
-					    if (!key.isValid()) {
-					    	directoriesWithWatchedFile.remove(dir);
-					    	removeAllFilesWatchedInDir(dir);
-					    }
-				    }
-		        
+			    	}
 					Thread.sleep(timeBetweenHandlesInMillis);
-   
+			    	
 			    } catch (InterruptedException e) {
 			    	Printer.logErr(e);
 			    	
