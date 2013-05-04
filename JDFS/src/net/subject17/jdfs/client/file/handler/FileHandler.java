@@ -472,7 +472,7 @@ public final class FileHandler {
 			criteriaRequestString += " AND PeerFiles.ParentGUID LIKE '"+criteria.parentGUID+"'";
 			//This should not be null in the current iteration of the program.  Once we can get entire directories, that will change
 			if (null != criteria.relativeParentLoc)
-				criteriaRequestString += " AND PeerFiles.ParentLocation LIKE '"+criteria.relativeParentLoc+"'";
+				criteriaRequestString += " AND PeerFiles.RelativeParentPath LIKE '"+criteria.relativeParentLoc+"'";
 			else
 				Printer.logErr("Functionality required for future:  Retrieve entire directory", Printer.Level.High);
 		}
