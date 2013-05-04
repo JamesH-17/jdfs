@@ -71,7 +71,7 @@ public final class FileWatcher {
 	//Keep in mind each watchList actually tracks some user data
 	private static HashMap<User,WatchList> watchLists; //I'm considering making a superclass that handles what to do with switching watchlists
 														//Actually, it would be pretty easy to just put a watch file location for each user, and pass in the list here
-	private static ConcurrentHashMap<WatchKey,Path> watchKeys; //The event we get back is a watchkey, so we index by that
+	private static HashMap<WatchKey,Path> watchKeys; //The event we get back is a watchkey, so we index by that
 	private static HashSet<Path> directoriesWithWatchedFile;
 	private static HashSet<Path> watchedDirectories;
 	private static HashSet<Path> watchedFiles;
@@ -720,7 +720,7 @@ public final class FileWatcher {
 				watchKeys.remove(key);
 			}
 		}
-		watchKeys = new ConcurrentHashMap<WatchKey,Path>();
+		watchKeys = new HashMap<WatchKey,Path>();
 		
 		directoriesWithWatchedFile = new HashSet<Path>();
 		watchedDirectories = new HashSet<Path>();

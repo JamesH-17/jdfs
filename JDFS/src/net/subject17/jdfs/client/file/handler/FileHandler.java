@@ -162,6 +162,7 @@ public final class FileHandler {
 		//////////////////////////////////////////////////
 		//  Third, fill out with more peers if needed	//
 		//////////////////////////////////////////////////
+		Printer.log("-------------------------------------------Filling out peers");
 		fillOutIPs(peerIPs);
 		
 		return peerIPs;
@@ -217,14 +218,15 @@ public final class FileHandler {
 		//////////////////////////////////////////////////
 		//  Third, fill out with more peers if needed	//
 		//////////////////////////////////////////////////
+		Printer.log("-------------------------------------------Filling out peers");
 		fillOutIPs(peerIPs);
 		
 		return peerIPs;
 	}
 	
 	private static HashSet<String> fillOutIPs(HashSet<String> peerIPs) throws FileHandlerException {
-		if (minNumPeersToGrab < peerIPs.size()) {
-			int numOfEachToGrab = peerIPs.size() - minNumPeersToGrab; //Guaranteed to be > 0
+		if (minNumPeersToGrab > peerIPs.size()) {
+			int numOfEachToGrab = minNumPeersToGrab - peerIPs.size(); //Guaranteed to be > 0
 			
 			try (	ResultSet peersIP6 = DBManager.getInstance().select(
 					"SELECT TOP "+numOfEachToGrab+" "+
@@ -494,6 +496,9 @@ public final class FileHandler {
 			if (filesFound.next()) {
 				return new FileRetrieverInfo(filesFound);
 			}
+			else {
+				Printer.log("none found");
+			}
 		}
 		catch (SQLException e) {
 			Printer.logErr("SQLException encountered in FileHandler [getFileStoredOnMachine], refusing to send");
@@ -503,6 +508,7 @@ public final class FileHandler {
 			Printer.logErr("IOException encountered in FileHandler [getFileStoredOnMachine], refusing to send");
 			Printer.logErr(e);
 		}
+		Printer.log("Not on machine");
 		return null;
 	}
 

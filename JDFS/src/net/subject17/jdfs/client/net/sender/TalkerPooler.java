@@ -53,6 +53,7 @@ public final class TalkerPooler {
 			Thread[] talkers;
 			
 			FileSenderInfo info = FileHandler.getInstance().prepareToSendFile(context);
+			Printer.log("Sending info:"+info);
 			
 			HashSet<String> peerIPs = (null == info.fileGuid) ? 
 					FileHandler.getInstance().getPeersToSendFileTo(info.parentGUID, Paths.get(info.locationRelativeToParent))

@@ -170,9 +170,13 @@ public final class Talker implements Runnable {
 		String response = in.readLine();
 		
 		if (null != response && response.equals(LanguageProtocol.ACK)) { 
-
-			output.println( JDFSUtil.toJSON(fileRetriever.criteria) );
+			String jsonOut = JDFSUtil.toJSON(fileRetriever.criteria);
+			
+			Printer.log("JSON of criteria:"+jsonOut);
+			output.println( jsonOut );
+			
 			response = in.readLine();
+			Printer.log("Got response "+response);
 			
 			if (null != response && response.equals(LanguageProtocol.ACCEPT_FILE_TRANS)) {
 				output.println(LanguageProtocol.ACK);
@@ -180,6 +184,8 @@ public final class Talker implements Runnable {
 				String json = in.readLine();
 				ObjectMapper mapper = new ObjectMapper();
 				FileRetrieverInfo incomingInfo = mapper.convertValue(json, FileRetrieverInfo.class);
+				
+				Printer.log("Got json:"+json);
 				
 				fileRetriever.setPort(PortMgr.getNextAvailablePort());
 				
@@ -197,7 +203,7 @@ public final class Talker implements Runnable {
 				
 				FileHandler.getInstance().manageRecievedFile(fileRetriever.storeLocation, incomingInfo);
 			}
-		}		
+		}
 	}
 	
 	private void sendFile(PrintWriter output, BufferedReader in) throws IOException, NumberFormatException {

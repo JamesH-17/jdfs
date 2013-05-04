@@ -151,15 +151,20 @@ public final class ListenConnectionHandler implements Runnable {
 		try {
 			//Acknowledge, wait on receiving file info
 			toClient.println(LanguageProtocol.ACK);
+			Printer.log("Responding with "+LanguageProtocol.ACK);
+			
 			
 			String json = fromClient.readLine();
+			Printer.print("Handling file retrieval, got json "+json);
 			
 			for (int attempt = 0; attempt < 3 && (null == json || json.equals("")); ++attempt ) {
 				toClient.println(LanguageProtocol.UNKNOWN);
 				json = fromClient.readLine();
+				Printer.print("Handling file retrieval, got json "+json);
 			}
 			
 			if (null == json || json.equals("")) {
+				Printer.log("Failed to get good json from client");
 				toClient.println(LanguageProtocol.UNKNOWN);
 			} else {
 
@@ -189,6 +194,12 @@ public final class ListenConnectionHandler implements Runnable {
 						
 						return LanguageProtocol.FILE_SEND_SUCC;
 					}
+					else {
+						Printer.logErr("Didn't equal ack");
+					}
+				}
+				else {
+					Printer.logErr("info was nulll");
 				}
 			}
 			
