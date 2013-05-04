@@ -13,27 +13,28 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 public final class FileSenderInfo {
 	//For decrypting.  THE MOST IMPORTANT VARIABLE HERE!
-	public final String AESInitializationVector;
+	public String AESInitializationVector;
 	
 	//Identification
-	public final String fileLocation;
-	public final UUID fileGuid;
-	public final UUID userGuid;
-	public final UUID sendingMachineGuid;
+	public String fileLocation;
+	public UUID fileGuid;
+	public UUID userGuid;
+	public UUID sendingMachineGuid;
 	
 	//Meta data
-	public final Date lastUpdatedDate;
-	public final int priority;
-	public final int size;
-	public final String Checksum;
+	public Date lastUpdatedDate;
+	public int priority;
+	public int size;
+	public String Checksum;
 	
 	//For directories only
-	public final UUID parentGUID;
-	public final String locationRelativeToParent; //Resolved against TLD of watched dir 
+	public UUID parentGUID;
+	public String locationRelativeToParent; //Resolved against TLD of watched dir 
 	
 	@JsonIgnore
-	public final String encryptedFileLocation; //Used by sender
+	public String encryptedFileLocation; //Used by sender
 	
+	public FileSenderInfo(){}
 	@JsonIgnore
 	public FileSenderInfo(	EncryptedFileInfoStruct info, 
 							Path fileLocation,
