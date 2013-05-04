@@ -164,7 +164,7 @@ public final class ListenConnectionHandler implements Runnable {
 			} else {
 
 
-				ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, Visibility.ANY);;
+				ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, Visibility.ANY);
 				mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 				//See if we have the file, if so, send it
 				FileRetrieverRequest criteria = mapper.readValue(json, FileRetrieverRequest.class);

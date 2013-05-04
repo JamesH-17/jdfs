@@ -12,21 +12,21 @@ public final class FileRetrieverRequest {
 	//Had to remove final modifiers for json parsing
 	///
 	
-	private final String defaultComparison = ">";
+	private String defaultComparison = ">";
 	
 	//Identification
-	public final UUID fileGuid;
-	public final UUID userGuid;
-	public final UUID sendingMachineGuid;
+	public UUID fileGuid;
+	public UUID userGuid;
+	public UUID sendingMachineGuid;
 
-	public final Timestamp lastUpdatedDate;
-	public final String comparison;
+	public Timestamp lastUpdatedDate;
+	public String comparison;
 	
 	//For directories only
-	public final UUID parentGUID;
-	public final String relativeParentLoc; //Resolved against TLD of watched dir
+	public UUID parentGUID;
+	public String relativeParentLoc; //Resolved against TLD of watched dir
 	
-	@JsonIgnore
+	
 	public FileRetrieverRequest() {
 		fileGuid = null;
 		userGuid = null;

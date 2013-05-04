@@ -1,25 +1,15 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <peers>
-    <peer>
-        <machine>7c9936bb-59e6-451b-a6fd-37340bbaabf5</machine>
-        <accountEmail>inactive</accountEmail>
-        <userName>inactive@gmail.com</userName>
-        <peerGUID>650484e5-8fa0-497e-a545-9e416ed3bc2e</peerGUID>
-    </peer>
-    <peer>
-        <accountEmail>James-Laptop</accountEmail>
-        <userName>17subject@gmail.com</userName>
-        <peerGUID>e99628b0-d5d2-4396-850b-ad6b5c0d789d</peerGUID>
-    </peer>
-    <peer>
-        <accountEmail>test</accountEmail>
-        <userName>jdfs-test@mailinator.net</userName>
-        <peerGUID>dc0353d5-a9a2-469b-99d3-509bf6e3f28e</peerGUID>
-    </peer>
-    <peer>
-        <machine>7c9936bb-59e6-451b-a6fd-37340bbaabf5</machine>
-        <accountEmail>james</accountEmail>
-        <userName>dboyzetown@gmail.com</userName>
-        <peerGUID>1711566d-f3f0-4cce-ba9d-341c33531088</peerGUID>
-    </peer>
+	<peer>
+		<userName>test</userName>
+		<accountEmail>jdfs-test@mailinator.net</accountEmail>
+		<ip4>1.1.1.1</ip4>
+		<ip6>2001:0db8:85a3:0042:1000:8a2e:0370:7334</ip6>
+	</peer>
+	<peer>
+		<userName>James-Laptop</userName>
+		<accountEmail>17subject@gmail.com</accountEmail>
+		<ip4>10.1.48.139</ip4>
+		<machine>97b22885-f491-4e6a-b45b-831c1e7acf68</machine>
+	</peer>
 </peers>
